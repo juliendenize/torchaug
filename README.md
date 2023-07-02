@@ -11,7 +11,7 @@ This library aims to remove these issues. It acts like a complementary library w
 
 To be sure to retrieve the same data augmentations as Torchvision, it has been tested on each of its augmentations.
 
-See here the implemented data augmentations.
+See [here](augmentations.md) the implemented data augmentations.
 
 ## How to use
 
