@@ -39,8 +39,12 @@ class RandomApply(transforms.RandomApply):
     ) -> None:
         super().__init__(transforms, p)
 
-        if not issubclass(type(self.transforms), nn.Module):
-            self.transforms = nn.Sequential(self.transforms)
+        if not issubclass(type(self.transforms), nn.Module) and not issubclass(
+            type(self.transforms), nn.ModuleList
+        ):
+            self.transforms = nn.ModuleList(self.transforms)
+        else:
+            self.transforms = nn.ModuleList([self.transforms])
 
     def forward(self, img: Tensor) -> Tensor:
         if self.p < torch.rand(1):
@@ -96,7 +100,7 @@ class RandomGaussianBlur(torch.nn.Module):
     def __init__(
         self,
         kernel_size: int | Tuple[int, int],
-        sigma: int | Tuple[int, int] = (0.1, 2.0),
+        sigma: float | Tuple[float, float] = (0.1, 2.0),
         p: float = 0.5,
     ):
         super().__init__()

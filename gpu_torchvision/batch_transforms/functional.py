@@ -47,46 +47,6 @@ def _get_batch_gaussian_kernel2d(
     return kernel2d
 
 
-def batch_gaussian_blur(imgs: Tensor, kernel_size: List[int], sigma: Tensor) -> Tensor:
-    if not (isinstance(imgs, torch.Tensor)):
-        raise TypeError(f"img should be Tensor. Got {type(imgs)}")
-
-    _assert_image_tensor(imgs)
-
-    dtype = imgs.dtype if torch.is_floating_point(imgs) else torch.float32
-
-    if imgs.ndim > 4:
-        b, *rest_dims, h, w = imgs.shape
-        imgs = imgs.reshape(b, math.prod(rest_dims), h, w)
-
-    device = imgs.device
-    kernel = _get_batch_gaussian_kernel2d(
-        kernel_size, sigma, dtype=dtype, device=device
-    )
-    kernel = kernel[:, None, ...]
-    kernel = kernel.expand(-1, imgs.shape[-3], kernel_size[0], kernel_size[1])
-    kernel = kernel.reshape(-1, 1, kernel_size[0], kernel_size[1])
-
-    imgs, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(imgs, [kernel.dtype])
-
-    # padding = (left, right, top, bottom)
-    padding = [
-        kernel_size[0] // 2,
-        kernel_size[0] // 2,
-        kernel_size[1] // 2,
-        kernel_size[1] // 2,
-    ]
-    imgs = torch_pad(imgs, padding, mode="reflect")
-    imgs = imgs.view(-1, kernel.size(0), imgs.size(-2), imgs.size(-1))
-    imgs = conv2d(imgs, kernel, groups=imgs.shape[-3])
-
-    imgs = _cast_squeeze_out(imgs, need_cast, need_squeeze, out_dtype)
-
-    imgs = imgs.reshape(b, *rest_dims, h, w)
-
-    return imgs
-
-
 def _batch_blend(img1: Tensor, img2: Tensor, ratio: Tensor) -> Tensor:
     ratio = ratio.float()
     bound = _max_value(img1.dtype)
@@ -156,3 +116,42 @@ def batch_adjust_saturation(img: Tensor, saturation_factor: Tensor) -> Tensor:
         return img
 
     return _batch_blend(img, rgb_to_grayscale(img), saturation_factor)
+
+
+def batch_gaussian_blur(imgs: Tensor, kernel_size: List[int], sigma: Tensor) -> Tensor:
+    if not (isinstance(imgs, torch.Tensor)):
+        raise TypeError(f"img should be Tensor. Got {type(imgs)}")
+
+    _assert_image_tensor(imgs)
+
+    dtype = imgs.dtype if torch.is_floating_point(imgs) else torch.float32
+
+    b, *rest_dims, h, w = imgs.shape
+    imgs = imgs.reshape(b, math.prod(rest_dims), h, w)
+
+    device = imgs.device
+    kernel = _get_batch_gaussian_kernel2d(
+        kernel_size, sigma, dtype=dtype, device=device
+    )
+    kernel = kernel[:, None, ...]
+    kernel = kernel.expand(-1, imgs.shape[-3], kernel_size[0], kernel_size[1])
+    kernel = kernel.reshape(-1, 1, kernel_size[0], kernel_size[1])
+
+    imgs, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(imgs, [kernel.dtype])
+
+    # padding = (left, right, top, bottom)
+    padding = [
+        kernel_size[0] // 2,
+        kernel_size[0] // 2,
+        kernel_size[1] // 2,
+        kernel_size[1] // 2,
+    ]
+    imgs = torch_pad(imgs, padding, mode="reflect")
+    imgs = imgs.view(-1, kernel.size(0), imgs.size(-2), imgs.size(-1))
+    imgs = conv2d(imgs, kernel, groups=imgs.shape[-3])
+
+    imgs = _cast_squeeze_out(imgs, need_cast, need_squeeze, out_dtype)
+
+    imgs = imgs.reshape(b, *rest_dims, h, w)
+
+    return imgs

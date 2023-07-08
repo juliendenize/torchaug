@@ -11,41 +11,6 @@ from torchvision.transforms._functional_tensor import (_assert_channels,
                                                        invert)
 
 
-def solarize(img: Tensor, threshold: float) -> Tensor:
-    _assert_image_tensor(img)
-
-    if img.ndim < 3:
-        raise TypeError(
-            f"Input image tensor should have at least 3 dimensions, but found {img.ndim}"
-        )
-
-    _assert_channels(img, [1, 3])
-
-    inverted_img = invert(img)
-    return torch.where(img >= threshold, inverted_img, img)
-
-
-def normalize(
-    tensor: Tensor,
-    mean: List[float] | Tensor,
-    std: List[float] | Tensor,
-    inplace: bool = True,
-) -> Tensor:
-    dtype = tensor.dtype
-    mean = torch.as_tensor(mean, dtype=dtype, device=tensor.device)
-    std = torch.as_tensor(std, dtype=dtype, device=tensor.device)
-
-    if not inplace:
-        tensor = tensor.clone()
-
-    if mean.ndim == 1:
-        mean = mean.view(-1, 1, 1)
-    if std.ndim == 1:
-        std = std.view(-1, 1, 1)
-
-    return tensor.sub_(mean).div_(std)
-
-
 def _get_gaussian_kernel1d(
     kernel_size: int, sigma: float, dtype: torch.dtype, device: torch.device
 ) -> Tensor:
@@ -94,3 +59,41 @@ def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: List[float]) -> Te
 
     img = _cast_squeeze_out(img, need_cast, need_squeeze, out_dtype)
     return img
+
+
+def normalize(
+    tensor: Tensor,
+    mean: List[float] | Tensor,
+    std: List[float] | Tensor,
+    inplace: bool = True,
+) -> Tensor:
+    _assert_image_tensor(tensor)
+
+    if not tensor.is_floating_point():
+        raise TypeError(f"Input tensor should be a float tensor. Got {tensor.dtype}.")
+
+    dtype = tensor.dtype
+    mean = torch.as_tensor(mean, dtype=dtype, device=tensor.device)
+    std = torch.as_tensor(std, dtype=dtype, device=tensor.device)
+
+    if not inplace:
+        tensor = tensor.clone()
+
+    if mean.ndim == 1:
+        mean = mean.view(-1, 1, 1)
+    if std.ndim == 1:
+        std = std.view(-1, 1, 1)
+
+    return tensor.sub_(mean).div_(std)
+
+
+def solarize(img: Tensor, threshold: float) -> Tensor:
+    if img.ndim < 3:
+        raise TypeError(
+            f"Input image tensor should have at least 3 dimensions, but found {img.ndim}"
+        )
+
+    _assert_channels(img, [1, 3])
+
+    inverted_img = invert(img)
+    return torch.where(img >= threshold, inverted_img, img)
