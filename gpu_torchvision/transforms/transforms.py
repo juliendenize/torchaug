@@ -30,7 +30,7 @@ class Normalize(transforms.Normalize):
         return normalize(tensor, self.mean, self.std, inplace=self.inplace)
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(mean={self.mean}, std={self.std}, inplace={self.inplace})"
+        return f"{self.__class__.__name__}(mean={self.mean.tolist()}, std={self.std.tolist()}, inplace={self.inplace})"
 
 
 class RandomApply(transforms.RandomApply):
