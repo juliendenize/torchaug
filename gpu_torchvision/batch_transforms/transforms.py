@@ -6,7 +6,7 @@ import torch
 from torch import Tensor, nn
 from torchvision import transforms
 from torchvision.transforms.functional import (InterpolationMode, hflip,
-                                               resize, resized_crop)
+                                               resized_crop)
 from torchvision.transforms.transforms import _setup_size
 
 from gpu_torchvision.batch_transforms.functional import (
