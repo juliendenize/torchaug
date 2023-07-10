@@ -40,11 +40,11 @@ class BatchRandomColorJitter(transforms.ColorJitter):
         saturation: float | Tuple[float, float] | None = 0,
         hue: float | Tuple[float, float] | None = 0,
         p: float = 0.0,
-        num_perm: int = 4,
+        num_rand_calls: int = 4,
     ) -> None:
         super().__init__(brightness, contrast, saturation, hue)
         self.p = p
-        self.num_perm = num_perm
+        self.num_rand_calls = num_rand_calls
 
         brightness = self.brightness
         contrast = self.contrast
@@ -128,13 +128,13 @@ class BatchRandomColorJitter(transforms.ColorJitter):
 
         indices_do_apply = torch.randperm(batch_size, device=imgs.device)[:num_apply]
 
-        num_combination = min(num_apply, self.num_perm)
+        num_combination = min(num_apply, self.num_rand_calls)
         num_apply_per_combination = ceil(num_apply / num_combination)
 
         # Avoid inplace operation
         output = imgs.clone()
 
-        for i in range(min(num_apply, self.num_perm)):
+        for i in range(min(num_apply, self.num_rand_calls)):
 
             indices_combination = indices_do_apply[
                 i * num_apply_per_combination : (i + 1) * num_apply_per_combination
@@ -329,7 +329,7 @@ class BatchRandomResizedCrop(transforms.RandomResizedCrop):
         ratio: Sequence[float] = (3.0 / 4.0, 4.0 / 3.0),
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         antialias: bool = True,
-        num_perm: int = 0,
+        num_rand_calls: int = 0,
         **kwargs,
     ) -> None:
         super().__init__(size, scale, ratio, interpolation, antialias, **kwargs)
@@ -339,12 +339,12 @@ class BatchRandomResizedCrop(transforms.RandomResizedCrop):
         elif isinstance(size, Sequence) and len(size) == 1:
             self.size = [size[0], size[0]]
 
-        if not num_perm >= 0:
+        if not num_rand_calls >= 0:
             raise ValueError(
-                f"num_perm attribute should be superior to 0, {num_perm} given."
+                f"num_rand_calls attribute should be superior to 0, {num_rand_calls} given."
             )
 
-        self.num_perm = num_perm
+        self.num_rand_calls = num_rand_calls
 
     def single_forward(self, img: Tensor) -> Tensor:
         """
@@ -360,7 +360,7 @@ class BatchRandomResizedCrop(transforms.RandomResizedCrop):
         )
 
     def forward(self, imgs: Tensor) -> Tensor:
-        if self.num_perm == 0:
+        if self.num_rand_calls == 0:
             return torch.stack([self.single_forward(img) for img in imgs])
         else:
             # Avoid inplace operation
@@ -371,12 +371,12 @@ class BatchRandomResizedCrop(transforms.RandomResizedCrop):
             )
 
             batch_size = imgs.shape[0]
-            num_combination = min(batch_size, self.num_perm)
+            num_combination = min(batch_size, self.num_rand_calls)
             num_apply_per_combination = ceil(batch_size / num_combination)
 
             indices_do_apply = torch.randperm(batch_size, device=imgs.device)
 
-            for i in range(min(batch_size, self.num_perm)):
+            for i in range(min(batch_size, self.num_rand_calls)):
                 indices_combination = indices_do_apply[
                     i * num_apply_per_combination : (i + 1) * num_apply_per_combination
                 ]
