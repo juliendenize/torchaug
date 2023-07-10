@@ -1,6 +1,6 @@
 import numbers
 from math import ceil
-from typing import Iterable, Sequence, Tuple
+from typing import Sequence, Tuple
 
 import torch
 from torch import Tensor, nn
@@ -130,7 +130,12 @@ class BatchRandomColorJitter(transforms.ColorJitter):
 
         num_combination = min(num_apply, self.num_perm)
         num_apply_per_combination = ceil(num_apply / num_combination)
+
+        # Avoid inplace operation
+        output = imgs.clone()
+
         for i in range(min(num_apply, self.num_perm)):
+
             indices_combination = indices_do_apply[
                 i * num_apply_per_combination : (i + 1) * num_apply_per_combination
             ]
@@ -167,9 +172,9 @@ class BatchRandomColorJitter(transforms.ColorJitter):
                 elif fn_id == 3 and hue_factor is not None:
                     imgs_combination[:] = batch_adjust_hue(imgs_combination, hue_factor)
 
-            imgs[indices_combination] = imgs_combination
+            output[indices_combination] = imgs_combination
 
-        return imgs
+        return output
 
     def __repr__(self) -> str:
         s = (
@@ -319,22 +324,35 @@ class BatchRandomHorizontalFlip(transforms.RandomHorizontalFlip):
 class BatchRandomResizedCrop(transforms.RandomResizedCrop):
     def __init__(
         self,
-        size: int | Iterable[int],
-        scale: Iterable[float] = ...,
-        ratio: Iterable[float] = ...,
+        size: int | Sequence[int],
+        scale: Sequence[float] = (0.08, 1.0),
+        ratio: Sequence[float] = (3.0 / 4.0, 4.0 / 3.0),
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         antialias: bool = True,
+        num_perm: int = 0,
         **kwargs,
     ) -> None:
         super().__init__(size, scale, ratio, interpolation, antialias, **kwargs)
 
+        if isinstance(size, int):
+            self.size = [size, size]
+        elif isinstance(size, Sequence) and len(size) == 1:
+            self.size = [size[0], size[0]]
+
+        if not num_perm >= 0:
+            raise ValueError(
+                f"num_perm attribute should be superior to 0, {num_perm} given."
+            )
+
+        self.num_perm = num_perm
+
     def single_forward(self, img: Tensor) -> Tensor:
         """
         Args:
-            img (PIL Image or Tensor): Image to be cropped and resized.
+            img (Tensor): Image to be cropped and resized.
 
         Returns:
-            PIL Image or Tensor: Randomly cropped and resized image.
+            Tensor: Randomly cropped and resized image.
         """
         i, j, h, w = self.get_params(img, self.scale, self.ratio)
         return resized_crop(
@@ -342,7 +360,33 @@ class BatchRandomResizedCrop(transforms.RandomResizedCrop):
         )
 
     def forward(self, imgs: Tensor) -> Tensor:
-        return torch.stack([self.single_forward(img) for img in imgs])
+        if self.num_perm == 0:
+            return torch.stack([self.single_forward(img) for img in imgs])
+        else:
+            # Avoid inplace operation
+            output = torch.empty(
+                size=(*imgs.shape[:-2], *self.size),
+                dtype=imgs.dtype,
+                device=imgs.device,
+            )
+
+            batch_size = imgs.shape[0]
+            num_combination = min(batch_size, self.num_perm)
+            num_apply_per_combination = ceil(batch_size / num_combination)
+
+            indices_do_apply = torch.randperm(batch_size, device=imgs.device)
+
+            for i in range(min(batch_size, self.num_perm)):
+                indices_combination = indices_do_apply[
+                    i * num_apply_per_combination : (i + 1) * num_apply_per_combination
+                ]
+
+                imgs_combination = imgs[indices_combination]
+                imgs_combination = self.single_forward(imgs_combination)
+
+            output[indices_combination] = imgs_combination
+
+        return output
 
 
 class BatchRandomSolarize(RandomSolarize):
@@ -357,27 +401,3 @@ class BatchRandomSolarize(RandomSolarize):
         imgs[indices_do_apply] = solarize(imgs[indices_do_apply], self.threshold)
 
         return imgs
-
-
-class BatchResize(transforms.Resize):
-    def __init__(
-        self,
-        size: int | Iterable[int],
-        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        max_size: int | None = None,
-        antialias: bool = True,
-    ) -> None:
-        super().__init__(size, interpolation, max_size, antialias)
-
-    def single_forward(self, img: Tensor) -> Tensor:
-        """
-        Args:
-            img (Tensor): Image to be scaled.
-
-        Returns:
-            Tensor: Rescaled image.
-        """
-        return resize(img, self.size, self.interpolation, self.max_size, self.antialias)
-
-    def forward(self, imgs: Tensor) -> Tensor:
-        return torch.stack([self.single_forward(img) for img in imgs])

@@ -44,4 +44,3 @@
 | BatchRandomHorizontalFlip | [x]         | [ ]    |
 | BatchRandomResizedCrop    | [x]         | [ ]    |
 | BatchRandomSolarize       | [x]         | [ ]    |
-| BatchResize               | [x]         | [ ]    |
