@@ -26,6 +26,12 @@ def test_batch_random_apply():
 
     torch.testing.assert_close(out, torchvision_out)
 
+    transforms.BatchRandomApply(
+        [mono_transforms.Normalize([225, 225, 225], [0.25, 0.25, 0.25])],
+        0.5,
+        inplace=False,
+    )(imgs)
+
 
 def test_batch_random_color_jitter():
     torch.manual_seed(28)
@@ -63,6 +69,7 @@ def test_batch_random_color_jitter():
     transforms.BatchRandomColorJitter(0.5, 0.5, 0.5, 0.1, 0.5, 0)(imgs)
     transforms.BatchRandomColorJitter(0.5, 0.5, 0.5, 0.1, 0.5, -1)(imgs)
     transforms.BatchRandomColorJitter(0.5, 0.5, 0.5, 0.1, 0.5, 16)(imgs)
+    transforms.BatchRandomColorJitter(0.5, 0.5, 0.5, 0.1, 0.5, inplace=False)(imgs)
 
 
 def test_batch_random_gaussian_blur():
@@ -83,6 +90,8 @@ def test_batch_random_gaussian_blur():
 
     torch.testing.assert_close(out, torchvision_out)
 
+    transforms.BatchRandomGaussianBlur([3, 3], [0.1, 2.0], 0.5, inplace=False)(imgs)
+
 
 def test_batch_random_gray_scale():
     torch.manual_seed(28)
@@ -96,9 +105,11 @@ def test_batch_random_gray_scale():
     torchvision_out = imgs.clone()
     torchvision_out[indices_to_apply] = F_tv.rgb_to_grayscale(imgs[indices_to_apply], 3)
 
-    out = transforms.BatchRandomGrayScale(3, 0.5)(imgs)
+    out = transforms.BatchRandomGrayScale(0.5)(imgs)
 
     torch.testing.assert_close(out, torchvision_out)
+
+    transforms.BatchRandomGrayScale(0.5, inplace=False)(imgs)
 
 
 def test_batch_random_horizontal_flip():
@@ -116,6 +127,8 @@ def test_batch_random_horizontal_flip():
     out = transforms.BatchRandomHorizontalFlip(0.5)(imgs)
 
     torch.testing.assert_close(out, torchvision_out)
+
+    transforms.BatchRandomHorizontalFlip(0.5, inplace=False)(imgs)
 
 
 def test_batch_random_resized_crop():
@@ -178,3 +191,5 @@ def test_batch_random_solarize():
     out = transforms.BatchRandomSolarize(0.5, 0.5)(imgs)
 
     torch.testing.assert_close(out, torchvision_out)
+
+    transforms.BatchRandomSolarize(0.5, 0.5, inplace=False)(imgs)
