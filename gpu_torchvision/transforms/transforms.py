@@ -100,7 +100,8 @@ class RandomColorJitter(transforms.ColorJitter):
         hue: float | Tuple[float, float] | None = 0,
         p: float = 0.0,
     ):
-        """Randomly change the brightness, contrast, saturation and hue to images. The images is expected to have
+        """Randomly change the brightness, contrast, saturation and hue to images. The images is expected to have.
+
         [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
 
         Args:

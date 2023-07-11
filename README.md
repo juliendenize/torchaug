@@ -33,4 +33,8 @@ transform = RandomColorJitter(...)
 
 ## How to contribute
 
-Feel free to contribute to this library by making and/or pull requests. For each features you implement, add tests to be sure it works.
+Feel free to contribute to this library by making issues and/or pull requests. For each features you implement, add tests to make sure it works.
+
+## LICENSE
+
+This project is under the CeCILL license 2.1.
