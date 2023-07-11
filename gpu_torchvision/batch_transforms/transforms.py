@@ -1,4 +1,5 @@
 import numbers
+from itertools import permutations
 from math import ceil
 from typing import Sequence, Tuple
 
@@ -157,8 +158,6 @@ class BatchRandomColorJitter(transforms.ColorJitter):
             tuple: The parameters used to apply the randomized transform
             along with their random order.
         """
-        fn_idx = torch.randperm(4)
-
         b = (
             None
             if brightness is None
@@ -186,7 +185,7 @@ class BatchRandomColorJitter(transforms.ColorJitter):
             else torch.empty((batch_size,), device=hue.device).uniform_(hue[0], hue[1])
         )
 
-        return fn_idx, b, c, s, h
+        return b, c, s, h
 
     def forward(self, imgs: Tensor) -> Tensor:
         """
@@ -210,48 +209,73 @@ class BatchRandomColorJitter(transforms.ColorJitter):
         # At most 24 (= 4!) different combinations possible.
         num_combination = min(num_combination, 24)
 
+        combinations = list(permutations(range(0, 4)))
+        idx_perms = torch.randperm(len(combinations))[:num_combination]
+
         indices_do_apply = torch.randperm(batch_size, device=imgs.device)[:num_apply]
         num_apply_per_combination = ceil(num_apply / num_combination)
 
         output = imgs if self.inplace else imgs.clone()
 
-        for i in range(num_combination):
+        (
+            brightness_factor,
+            contrast_factor,
+            saturation_factor,
+            hue_factor,
+        ) = self.get_params(
+            self.brightness,
+            self.contrast,
+            self.saturation,
+            self.hue,
+            indices_do_apply.shape[0],
+        )
 
+        for i, idx_perm in enumerate(idx_perms):
             indices_combination = indices_do_apply[
                 i * num_apply_per_combination : (i + 1) * num_apply_per_combination
             ]
 
-            (
-                fn_idx,
-                brightness_factor,
-                contrast_factor,
-                saturation_factor,
-                hue_factor,
-            ) = self.get_params(
-                self.brightness,
-                self.contrast,
-                self.saturation,
-                self.hue,
-                indices_combination.shape[0],
-            )
+            fn_idx = combinations[idx_perm]
 
             imgs_combination = output[indices_combination]
 
             for fn_id in fn_idx:
                 if fn_id == 0 and brightness_factor is not None:
                     imgs_combination[:] = batch_adjust_brightness(
-                        imgs_combination, brightness_factor
+                        imgs_combination,
+                        brightness_factor[
+                            i
+                            * num_apply_per_combination : (i + 1)
+                            * num_apply_per_combination
+                        ],
                     )
                 elif fn_id == 1 and contrast_factor is not None:
                     imgs_combination[:] = batch_adjust_contrast(
-                        imgs_combination, contrast_factor
+                        imgs_combination,
+                        contrast_factor[
+                            i
+                            * num_apply_per_combination : (i + 1)
+                            * num_apply_per_combination
+                        ],
                     )
                 elif fn_id == 2 and saturation_factor is not None:
                     imgs_combination[:] = batch_adjust_saturation(
-                        imgs_combination, saturation_factor
+                        imgs_combination,
+                        saturation_factor[
+                            i
+                            * num_apply_per_combination : (i + 1)
+                            * num_apply_per_combination
+                        ],
                     )
                 elif fn_id == 3 and hue_factor is not None:
-                    imgs_combination[:] = batch_adjust_hue(imgs_combination, hue_factor)
+                    imgs_combination[:] = batch_adjust_hue(
+                        imgs_combination,
+                        hue_factor[
+                            i
+                            * num_apply_per_combination : (i + 1)
+                            * num_apply_per_combination
+                        ],
+                    )
 
             output[indices_combination] = imgs_combination
 
