@@ -27,9 +27,12 @@ class BatchRandomApply(RandomApply):
         num_apply = round(self.p * batch_size)
 
         indices_do_apply = torch.randperm(batch_size, device=imgs.device)[:num_apply]
-        imgs[indices_do_apply] = self.transforms(imgs[indices_do_apply])
+        output = imgs.clone()
 
-        return imgs
+        for t in self.transforms:
+            output[indices_do_apply] = t(output[indices_do_apply])
+
+        return output
 
 
 class BatchRandomColorJitter(transforms.ColorJitter):
@@ -40,10 +43,16 @@ class BatchRandomColorJitter(transforms.ColorJitter):
         saturation: float | Tuple[float, float] | None = 0,
         hue: float | Tuple[float, float] | None = 0,
         p: float = 0.0,
-        num_rand_calls: int = 4,
+        num_rand_calls: int = 1,
     ) -> None:
         super().__init__(brightness, contrast, saturation, hue)
         self.p = p
+
+        if not num_rand_calls >= -1:
+            raise ValueError(
+                f"num_rand_calls attribute should be superior to -1, {num_rand_calls} given."
+            )
+
         self.num_rand_calls = num_rand_calls
 
         brightness = self.brightness
@@ -123,12 +132,18 @@ class BatchRandomColorJitter(transforms.ColorJitter):
         return fn_idx, b, c, s, h
 
     def forward(self, imgs: Tensor) -> Tensor:
+        if self.p == 0.0 or self.num_rand_calls == 0:
+            return imgs
+
         batch_size = imgs.shape[0]
         num_apply = round(self.p * batch_size)
 
-        indices_do_apply = torch.randperm(batch_size, device=imgs.device)[:num_apply]
+        if self.num_rand_calls == -1:
+            num_combination = num_apply
+        else:
+            num_combination = min(num_apply, self.num_rand_calls)
 
-        num_combination = min(num_apply, self.num_rand_calls)
+        indices_do_apply = torch.randperm(batch_size, device=imgs.device)[:num_apply]
         num_apply_per_combination = ceil(num_apply / num_combination)
 
         # Avoid inplace operation
@@ -154,7 +169,7 @@ class BatchRandomColorJitter(transforms.ColorJitter):
                 indices_combination.shape[0],
             )
 
-            imgs_combination = imgs[indices_combination]
+            imgs_combination = output[indices_combination]
 
             for fn_id in fn_idx:
                 if fn_id == 0 and brightness_factor is not None:
@@ -329,7 +344,7 @@ class BatchRandomResizedCrop(transforms.RandomResizedCrop):
         ratio: Sequence[float] = (3.0 / 4.0, 4.0 / 3.0),
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         antialias: bool = True,
-        num_rand_calls: int = 0,
+        num_rand_calls: int = -1,
         **kwargs,
     ) -> None:
         super().__init__(size, scale, ratio, interpolation, antialias, **kwargs)
@@ -339,9 +354,9 @@ class BatchRandomResizedCrop(transforms.RandomResizedCrop):
         elif isinstance(size, Sequence) and len(size) == 1:
             self.size = [size[0], size[0]]
 
-        if not num_rand_calls >= 0:
+        if not num_rand_calls >= -1:
             raise ValueError(
-                f"num_rand_calls attribute should be superior to 0, {num_rand_calls} given."
+                f"num_rand_calls attribute should be superior to -1, {num_rand_calls} given."
             )
 
         self.num_rand_calls = num_rand_calls
@@ -360,8 +375,10 @@ class BatchRandomResizedCrop(transforms.RandomResizedCrop):
         )
 
     def forward(self, imgs: Tensor) -> Tensor:
-        if self.num_rand_calls == 0:
+        if self.num_rand_calls == -1:
             return torch.stack([self.single_forward(img) for img in imgs])
+        elif self.num_rand_calls == 0:
+            return imgs
         else:
             # Avoid inplace operation
             output = torch.empty(
@@ -384,7 +401,7 @@ class BatchRandomResizedCrop(transforms.RandomResizedCrop):
                 imgs_combination = imgs[indices_combination]
                 imgs_combination = self.single_forward(imgs_combination)
 
-            output[indices_combination] = imgs_combination
+                output[indices_combination] = imgs_combination
 
         return output
 

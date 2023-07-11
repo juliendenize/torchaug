@@ -37,10 +37,10 @@
 
 | Augmentation              | implemented | tested |
 | ------------------------- | :---------: | :----: |
-| BatchRandomApply          | [x]         | [ ]    |
-| BatchRandomColorJitter    | [x]         | [ ]    |
-| BatchRandomGaussianBlur   | [x]         | [ ]    |
-| BatchRandomGrayScale      | [x]         | [ ]    |
-| BatchRandomHorizontalFlip | [x]         | [ ]    |
-| BatchRandomResizedCrop    | [x]         | [ ]    |
-| BatchRandomSolarize       | [x]         | [ ]    |
+| BatchRandomApply          | [x]         | [x]    |
+| BatchRandomColorJitter    | [x]         | [x]    |
+| BatchRandomGaussianBlur   | [x]         | [x]    |
+| BatchRandomGrayScale      | [x]         | [x]    |
+| BatchRandomHorizontalFlip | [x]         | [x]    |
+| BatchRandomResizedCrop    | [x]         | [x]    |
+| BatchRandomSolarize       | [x]         | [x]    |
