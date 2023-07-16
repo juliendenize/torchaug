@@ -40,8 +40,8 @@ def test_batch_random_color_jitter():
     transforms.BatchRandomColorJitter(0.5, 0.5, 0.5, 0.1, 0.5, 0).__repr__()
 
     imgs = torch.randn(8, 3, 8, 8)
-    indices_to_apply = torch.tensor([[6, 3], [2, 4]])
-    orders = torch.tensor([[2, 3, 0, 1], [2, 3, 1, 0]])
+    indices_to_apply = torch.tensor([[0, 1], [7, 5]])
+    orders = torch.tensor([[1, 0, 2, 3], [2, 0, 1, 3]])
     brightnesss = torch.tensor([[0.5807553, 1.0611039], [1.0105517, 0.9287435]])
     contrasts = torch.tensor([[0.8417916, 0.9093333], [0.8968358, 1.4652505]])
     saturations = torch.tensor([[1.2338004, 1.3543849], [0.5746976, 0.6757473]])

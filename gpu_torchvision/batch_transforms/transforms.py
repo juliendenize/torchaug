@@ -43,14 +43,24 @@ class BatchRandomApply(RandomApply):
         Returns:
             Tensor: Randomly transformed batch of images.
         """
-        batch_size = imgs.shape[0]
-        num_apply = round(self.p * batch_size)
 
-        indices_do_apply = torch.randperm(batch_size, device=imgs.device)[:num_apply]
-        output = imgs if self.inplace else imgs.clone()
+        if self.p == 0:
+            return imgs
 
-        for t in self.transforms:
-            output[indices_do_apply] = t(output[indices_do_apply])
+        output: Tensor = imgs if self.inplace else imgs.clone()
+
+        if self.p == 1.0:
+            for t in self.transforms:
+                output = t(output)
+        else:
+            batch_size = imgs.shape[0]
+            num_apply = round(self.p * batch_size)
+            indices_do_apply = torch.randperm(batch_size, device=imgs.device)[
+                :num_apply
+            ]
+
+            for t in self.transforms:
+                output[indices_do_apply] = t(output[indices_do_apply])
 
         return output
 
@@ -199,7 +209,15 @@ class BatchRandomColorJitter(transforms.ColorJitter):
             return imgs
 
         batch_size = imgs.shape[0]
-        num_apply = round(self.p * batch_size)
+
+        if self.p == 1.0:
+            num_apply = batch_size
+            indices_do_apply = torch.arange(batch_size, device=imgs.device)
+        else:
+            num_apply = round(self.p * batch_size)
+            indices_do_apply = torch.randperm(batch_size, device=imgs.device)[
+                :num_apply
+            ]
 
         if self.num_rand_calls == -1:
             num_combination = num_apply
@@ -212,7 +230,6 @@ class BatchRandomColorJitter(transforms.ColorJitter):
         combinations = list(permutations(range(0, 4)))
         idx_perms = torch.randperm(len(combinations))[:num_combination]
 
-        indices_do_apply = torch.randperm(batch_size, device=imgs.device)[:num_apply]
         num_apply_per_combination = ceil(num_apply / num_combination)
 
         output = imgs if self.inplace else imgs.clone()
@@ -371,17 +388,26 @@ class BatchRandomGaussianBlur(torch.nn.Module):
             Tensor: Randomly gaussian blurred images
         """
 
+        if self.p == 0:
+            return imgs
+
+        output: Tensor = imgs if self.inplace else imgs.clone()
         batch_size = imgs.shape[0]
-        num_apply = round(self.p * batch_size)
 
-        indices_do_apply = torch.randperm(batch_size, device=imgs.device)[:num_apply]
+        if self.p == 1.0:
+            sigma: Tensor = self.get_params(self.sigma[0], self.sigma[1], batch_size)
 
-        sigma: Tensor = self.get_params(self.sigma[0], self.sigma[1], num_apply)
+            output = batch_gaussian_blur(output, self.kernel_size, sigma)
+        else:
+            num_apply = round(self.p * batch_size)
+            indices_do_apply = torch.randperm(batch_size, device=imgs.device)[
+                :num_apply
+            ]
 
-        output: Tensor = imgs.clone() if not self.inplace else imgs
-        output[indices_do_apply] = batch_gaussian_blur(
-            output[indices_do_apply], self.kernel_size, sigma
-        )
+            sigma: Tensor = self.get_params(self.sigma[0], self.sigma[1], num_apply)
+            output[indices_do_apply] = batch_gaussian_blur(
+                output[indices_do_apply], self.kernel_size, sigma
+            )
 
         return output
 
@@ -426,13 +452,21 @@ class BatchRandomGrayScale(transforms.Grayscale):
             Tensor: Randomly grayscaled batch of images.
         """
 
-        batch_size = imgs.shape[0]
-        num_apply = round(self.p * batch_size)
-
-        indices_do_apply = torch.randperm(batch_size, device=imgs.device)[:num_apply]
+        if self.p == 0:
+            return imgs
 
         output: Tensor = imgs if self.inplace else imgs.clone()
-        output[indices_do_apply] = super().forward(output[indices_do_apply])
+
+        if self.p == 1.0:
+            output = super().forward(output)
+        else:
+            batch_size = imgs.shape[0]
+            num_apply = round(self.p * batch_size)
+            indices_do_apply = torch.randperm(batch_size, device=imgs.device)[
+                :num_apply
+            ]
+
+            output[indices_do_apply] = super().forward(output[indices_do_apply])
 
         return output
 
@@ -474,13 +508,21 @@ class BatchRandomHorizontalFlip(transforms.RandomHorizontalFlip):
             Tensor: Randomly horizontally fliped batch of images.
         """
 
-        batch_size = imgs.shape[0]
-        num_apply = round(self.p * batch_size)
-
-        indices_do_apply = torch.randperm(batch_size, device=imgs.device)[:num_apply]
+        if self.p == 0:
+            return imgs
 
         output: Tensor = imgs if self.inplace else imgs.clone()
-        output[indices_do_apply] = hflip(output[indices_do_apply])
+
+        if self.p == 1.0:
+            output = hflip(output)
+        else:
+            batch_size = imgs.shape[0]
+            num_apply = round(self.p * batch_size)
+            indices_do_apply = torch.randperm(batch_size, device=imgs.device)[
+                :num_apply
+            ]
+
+            output[indices_do_apply] = hflip(output[indices_do_apply])
 
         return output
 
@@ -647,13 +689,23 @@ class BatchRandomSolarize(RandomSolarize):
             Tensor: Randomly solarized batch of images.
         """
 
-        batch_size = imgs.shape[0]
-        num_apply = round(self.p * batch_size)
-
-        indices_do_apply = torch.randperm(batch_size, device=imgs.device)[:num_apply]
+        if self.p == 0:
+            return imgs
 
         output: Tensor = imgs if self.inplace else imgs.clone()
-        output[indices_do_apply] = solarize(output[indices_do_apply], self.threshold)
+
+        if self.p == 1.0:
+            output = solarize(output, self.threshold)
+        else:
+            batch_size = imgs.shape[0]
+            num_apply = round(self.p * batch_size)
+            indices_do_apply = torch.randperm(batch_size, device=imgs.device)[
+                :num_apply
+            ]
+
+            output[indices_do_apply] = solarize(
+                output[indices_do_apply], self.threshold
+            )
 
         return output
 
