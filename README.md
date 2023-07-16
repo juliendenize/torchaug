@@ -1,4 +1,4 @@
-# GPU Torchvision
+# Torchaug
 
 ## Introduction
 
@@ -17,16 +17,16 @@ See [here](augmentations.md) the implemented data augmentations.
 
 1. Install a Pytorch environment.
 
-2. Install GPU Torchvision
+2. Install Torchaug
 
 ```bash
-pip3 install gpu_torchvision
+pip3 install torchaug
 ```
 
 3. Import data augmentations just as Torchvision
 
 ```python
-from gpu_torchvision.transforms import RandomColorJitter
+from torchaug.transforms import RandomColorJitter
 
 transform = RandomColorJitter(...)
 ```

@@ -6,7 +6,7 @@ from torch import Tensor, nn
 from torchvision import transforms
 from torchvision.transforms.transforms import _setup_size
 
-from gpu_torchvision.transforms.functional import (gaussian_blur, normalize,
+from torchaug.transforms.functional import (gaussian_blur, normalize,
                                                    solarize)
 
 

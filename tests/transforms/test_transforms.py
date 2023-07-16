@@ -1,7 +1,7 @@
 import torch
 import torchvision.transforms as tv_transforms
 
-import gpu_torchvision.transforms as transforms
+import torchaug.transforms as transforms
 
 
 def test_normalize():

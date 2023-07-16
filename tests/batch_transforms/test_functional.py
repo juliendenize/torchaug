@@ -1,7 +1,7 @@
 import torch
 import torchvision.transforms.functional as F_tv
 
-import gpu_torchvision.batch_transforms.functional as F
+import torchaug.batch_transforms.functional as F
 
 
 def test_batch_adjust_brightness():

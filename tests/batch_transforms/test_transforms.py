@@ -2,8 +2,8 @@ import torch
 import torchvision.transforms.functional as F_tv
 from torchvision.transforms.functional import InterpolationMode
 
-import gpu_torchvision.batch_transforms as transforms
-import gpu_torchvision.transforms as mono_transforms
+import torchaug.batch_transforms as transforms
+import torchaug.transforms as mono_transforms
 
 
 def test_batch_random_apply():

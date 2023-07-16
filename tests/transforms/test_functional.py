@@ -1,7 +1,7 @@
 import torch
 import torchvision.transforms.functional as F_tv
 
-import gpu_torchvision.transforms.functional as F
+import torchaug.transforms.functional as F
 
 
 def test_gaussian_blur():

@@ -6,7 +6,7 @@ from setuptools import find_packages, setup
 _PATH_ROOT = os.path.dirname(__file__)
 
 
-def _load_py_module(fname, pkg="gpu_torchvision"):
+def _load_py_module(fname, pkg="torchaug"):
     spec = spec_from_file_location(
         os.path.join(pkg, fname), os.path.join(_PATH_ROOT, pkg, fname)
     )
@@ -23,7 +23,7 @@ long_description = setup_tools._load_readme_description(
 )
 
 setup(
-    name="GPU Torchvison",
+    name="Torchaug",
     version=about.__version__,
     description=about.__docs__,
     author=about.__author__,
