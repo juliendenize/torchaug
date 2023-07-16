@@ -2,7 +2,7 @@
 
 ## Setting for comparison
 
-The script used for comparison is [here](./speed_script.py). Keep in mind that this script **does not** test for improvement based on eliminating CPU/GPU synchronization by Torchaug in comparison with Torchvision, which should favor Torchaug.
+The script used for comparison is [here](./speed_script.py). Keep in mind that this script **does not test** the improvement based on eliminating the CPU/GPU synchronization by Torchaug in comparison with Torchvision, which should favor Torchaug.
 
 It was performed on **1 GPU P500** and **6 logical cores of an Intel(R) Xeon(R) Gold 6126 CPU @ 2.60GHz**.
 
@@ -33,8 +33,6 @@ Time in ms averaged on 1000 runs for Torchvision and Torchaug.
 
 Input `torch.randn(B, 3, 224, 224)`. In our script B=64.
 
-Time in ms averaged on 100 runs for Torchvision and Torchaug.
-
 Using Torchvision, to have random call on each element of a batch, one has to iterate over the elements of the batch as the following:
 ```python
 import torchvision.transforms as transforms
@@ -44,6 +42,8 @@ torch.stack([t(img) for img in batch_input])
 ```
 In our implementation, there is no need to iterate over the elements, but some augmentations allow for flexibility between making several random calls for sub-batches and time of computations.
 
+
+Time in ms averaged on 100 runs for Torchvision and Torchaug.
 ### CPU
 
 | Augmentation              | Random Calls | Torchvision | Torchaug     |
