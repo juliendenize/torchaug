@@ -27,8 +27,10 @@ pip3 install torchaug
 
 ```python
 from torchaug.transforms import RandomColorJitter
+from torchaug.batch_transforms import BatchRandomColorJitter
 
 transform = RandomColorJitter(...)
+batch_transform = BatchRandomColorJitter(...)
 ```
 
 ## How to contribute
