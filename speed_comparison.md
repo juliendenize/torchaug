@@ -4,7 +4,7 @@
 
 The script used for comparison is [here](./speed_script.py). Keep in mind that this script **does not test** the improvement based on eliminating the CPU/GPU synchronization by Torchaug in comparison with Torchvision, which should favor Torchaug.
 
-It was performed on **1 GPU P500** and **6 logical cores of an Intel(R) Xeon(R) Gold 6126 CPU @ 2.60GHz**.
+It was performed on **1 GPU P5000** and **6 logical cores of an Intel(R) Xeon(R) Gold 6126 CPU @ 2.60GHz**.
 
 ## Transforms
 
