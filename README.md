@@ -15,7 +15,7 @@ See [here](augmentations.md) the implemented data augmentations and [here](speed
 
 ## How to use
 
-1. Install a Pytorch environment.
+1. Install a Pytorch (>= 2.0) environment.
 
 2. Install Torchaug
 
