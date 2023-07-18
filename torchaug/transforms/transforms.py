@@ -6,8 +6,7 @@ from torch import Tensor, nn
 from torchvision import transforms
 from torchvision.transforms.transforms import _setup_size
 
-from torchaug.transforms.functional import (gaussian_blur, normalize,
-                                                   solarize)
+from torchaug.transforms.functional import gaussian_blur, normalize, solarize
 
 
 class Normalize(transforms.Normalize):
@@ -67,14 +66,14 @@ class RandomApply(transforms.RandomApply):
     def __init__(
         self, transforms: Sequence[nn.Module] | nn.Module, p: float = 0.5
     ) -> None:
-        super().__init__(transforms, p)
-
-        if not issubclass(type(self.transforms), nn.Module) and not issubclass(
-            type(self.transforms), nn.ModuleList
+        if not issubclass(type(transforms), nn.Module) and not issubclass(
+            type(transforms), nn.ModuleList
         ):
-            self.transforms = nn.ModuleList(self.transforms)
-        else:
-            self.transforms = nn.ModuleList([self.transforms])
+            transforms = nn.ModuleList(transforms)
+        elif not issubclass(type(transforms), nn.ModuleList):
+            transforms = nn.ModuleList([transforms])
+
+        super().__init__(transforms, p)
 
     def forward(self, img: Tensor) -> Tensor:
         """
@@ -84,10 +83,11 @@ class RandomApply(transforms.RandomApply):
         Returns:
             Tensor: Randomly transformed image.
         """
-
         if self.p < torch.rand(1):
             return img
-        img = self.transforms(img)
+
+        for t in self.transforms:
+            img = t(img)
         return img
 
 

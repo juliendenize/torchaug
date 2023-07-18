@@ -45,7 +45,8 @@ def test_random_apply():
         [
             transforms.Normalize((0.5,), (0.5,)),
             transforms.RandomGaussianBlur((3, 3), (0.1, 2.0)),
-        ]
+        ],
+        p=1,
     )(tensor)
     transforms.RandomApply(
         [
@@ -57,7 +58,8 @@ def test_random_apply():
         [
             transforms.Normalize((0.5,), (0.5,)),
             transforms.RandomGaussianBlur((3, 3), (0.1, 2.0), p=0),
-        ]
+        ],
+        p=0.0,
     )(tensor)
 
 

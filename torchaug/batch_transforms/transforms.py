@@ -10,9 +10,11 @@ from torchvision.transforms.functional import (InterpolationMode, hflip,
                                                resized_crop)
 from torchvision.transforms.transforms import _setup_size
 
-from torchaug.batch_transforms.functional import (
-    batch_adjust_brightness, batch_adjust_contrast, batch_adjust_hue,
-    batch_adjust_saturation, batch_gaussian_blur)
+from torchaug.batch_transforms.functional import (batch_adjust_brightness,
+                                                  batch_adjust_contrast,
+                                                  batch_adjust_hue,
+                                                  batch_adjust_saturation,
+                                                  batch_gaussian_blur)
 from torchaug.transforms.functional import solarize
 from torchaug.transforms.transforms import RandomApply, RandomSolarize
 
