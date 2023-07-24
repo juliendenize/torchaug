@@ -15,12 +15,15 @@ See [here](augmentations.md) the implemented data augmentations and [here](speed
 
 ## How to use
 
-1. Install a Pytorch (>= 2.0) environment.
+0. Install a Pytorch (>= 2.0) environment.
+
+1. Clone the repo.
 
 2. Install Torchaug
 
 ```bash
-pip3 install torchaug
+cd torchaug
+pip3 install .
 ```
 
 3. Import data augmentations just as Torchvision
