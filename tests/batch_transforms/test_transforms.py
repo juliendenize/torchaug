@@ -1,3 +1,4 @@
+import pytest
 import torch
 import torchvision.transforms.functional as F_tv
 from torchvision.transforms.functional import InterpolationMode
@@ -24,13 +25,29 @@ def test_batch_random_apply():
         [mono_transforms.Normalize([225, 225, 225], [0.25, 0.25, 0.25])], 0.5
     )(imgs)
 
+    # test consistency with Torchvision
     torch.testing.assert_close(out, torchvision_out)
 
+    # test not inplace
     transforms.BatchRandomApply(
         [mono_transforms.Normalize([225, 225, 225], [0.25, 0.25, 0.25])],
         0.5,
         inplace=False,
     )(imgs)
+
+    # test p = 0. and p = 1.
+    torch.testing.assert_close(
+        transforms.BatchRandomApply(
+            [mono_transforms.Normalize([225, 225, 225], [0.25, 0.25, 0.25])], 0.0
+        )(imgs),
+        imgs,
+    )
+    torch.testing.assert_close(
+        transforms.BatchRandomApply(
+            [mono_transforms.Normalize([225, 225, 225], [0.25, 0.25, 0.25])], 1.0
+        )(imgs),
+        F_tv.normalize(imgs, [225, 225, 225], [0.25, 0.25, 0.25]),
+    )
 
 
 def test_batch_random_color_jitter():
@@ -64,12 +81,38 @@ def test_batch_random_color_jitter():
                     torchvision_out[i] = F_tv.adjust_hue(torchvision_out[i], h)
     out = transforms.BatchRandomColorJitter(0.5, 0.5, 0.5, 0.1, 0.5, 2)(imgs)
 
+    # test consistency with Torchvision
     torch.testing.assert_close(out, torchvision_out)
 
+    # test different num_random calls
     transforms.BatchRandomColorJitter(0.5, 0.5, 0.5, 0.1, 0.5, 0)(imgs)
     transforms.BatchRandomColorJitter(0.5, 0.5, 0.5, 0.1, 0.5, -1)(imgs)
     transforms.BatchRandomColorJitter(0.5, 0.5, 0.5, 0.1, 0.5, 16)(imgs)
+
+    # test p = 0. and p = 1.
+    torch.testing.assert_close(
+        transforms.BatchRandomColorJitter(0.5, 0.5, 0.5, 0.1, 0.0, 16)(imgs), imgs
+    )
+    transforms.BatchRandomColorJitter(0.5, 0.5, 0.5, 0.1, 1.0, 16)(imgs)
+
+    # test not inplace
     transforms.BatchRandomColorJitter(0.5, 0.5, 0.5, 0.1, 0.5, inplace=False)(imgs)
+
+    # test wrong num rand calls
+    with pytest.raises(
+        ValueError,
+        match="num_rand_calls attribute should be an int superior to -1, ahah given.",
+    ):
+        transforms.BatchRandomResizedCrop(
+            4, (0.08, 1), (3 / 4, 4 / 3), num_rand_calls="ahah"
+        )
+    with pytest.raises(
+        ValueError,
+        match="num_rand_calls attribute should be an int superior to -1, -2 given.",
+    ):
+        transforms.BatchRandomResizedCrop(
+            4, (0.08, 1), (3 / 4, 4 / 3), num_rand_calls=-2
+        )
 
 
 def test_batch_random_gaussian_blur():
@@ -88,9 +131,57 @@ def test_batch_random_gaussian_blur():
 
     out = transforms.BatchRandomGaussianBlur([3, 3], [0.1, 2.0], 0.5)(imgs)
 
+    # test consistency with Torchvision
     torch.testing.assert_close(out, torchvision_out)
 
+    # test not inplace
     transforms.BatchRandomGaussianBlur([3, 3], [0.1, 2.0], 0.5, inplace=False)(imgs)
+
+    # test p = 0. and p = 1.
+    torch.testing.assert_close(
+        transforms.BatchRandomGaussianBlur([3, 3], [0.1, 2.0], 0.0)(imgs), imgs
+    )
+    transforms.BatchRandomGaussianBlur([3, 3], [0.1, 2.0], 1.0)(imgs)
+
+    # test various type kernel
+    transforms.BatchRandomGaussianBlur(3, [0.1, 2.0], 0.5, inplace=False)
+    transforms.BatchRandomGaussianBlur([3], [0.1, 2.0], 0.5, inplace=False)
+
+    # test various type sigma
+    transforms.BatchRandomGaussianBlur([3], 1, 0.5, inplace=False)
+    transforms.BatchRandomGaussianBlur([3], 1.0, 0.5, inplace=False)
+
+    # test wrong kernel value
+    with pytest.raises(
+        ValueError, match="Kernel size value should be an odd and positive number."
+    ):
+        transforms.BatchRandomGaussianBlur(0, [0.1, 2.0], 0.5, inplace=False)
+        transforms.BatchRandomGaussianBlur(-1, [0.1, 2.0], 0.5, inplace=False)
+
+    # test sigma number is inferior or equal to 0.
+    with pytest.raises(
+        ValueError, match="If sigma is a single number, it must be positive."
+    ):
+        transforms.BatchRandomGaussianBlur(3, 0, 0.5, inplace=False)
+        transforms.BatchRandomGaussianBlur(3, 0.0, 0.5, inplace=False)
+        transforms.BatchRandomGaussianBlur(3, -1, 0.5, inplace=False)
+        transforms.BatchRandomGaussianBlur(3, -1.0, 0.5, inplace=False)
+
+    # test sigma sequence wrong
+    with pytest.raises(
+        ValueError,
+        match=r"sigma values should be positive and of the form \(min, max\).",
+    ):
+        transforms.BatchRandomGaussianBlur(3, [2.0, 1.0], 0.5, inplace=False)
+        transforms.BatchRandomGaussianBlur(3, [0.0, 1.0], 0.5, inplace=False)
+
+    # test sigma wrong type
+    with pytest.raises(
+        ValueError,
+        match="sigma should be a single number or a list/tuple with length 2.",
+    ):
+        transforms.BatchRandomGaussianBlur(3, [2.0, 3.0, 4.0], 0.5, inplace=False)
+        transforms.BatchRandomGaussianBlur(3, "ahah", 0.5, inplace=False)
 
 
 def test_batch_random_gray_scale():
@@ -107,9 +198,17 @@ def test_batch_random_gray_scale():
 
     out = transforms.BatchRandomGrayScale(0.5)(imgs)
 
+    # test consistency with Torchvision
     torch.testing.assert_close(out, torchvision_out)
 
+    # test not inplace
     transforms.BatchRandomGrayScale(0.5, inplace=False)(imgs)
+
+    # test p = 0. and p = 1.
+    torch.testing.assert_close(transforms.BatchRandomGrayScale(0.0)(imgs), imgs)
+    torch.testing.assert_close(
+        transforms.BatchRandomGrayScale(1.0)(imgs), F_tv.rgb_to_grayscale(imgs, 3)
+    )
 
 
 def test_batch_random_horizontal_flip():
@@ -126,9 +225,15 @@ def test_batch_random_horizontal_flip():
 
     out = transforms.BatchRandomHorizontalFlip(0.5)(imgs)
 
+    # test consistency with Torchvision
     torch.testing.assert_close(out, torchvision_out)
 
+    # test not inplace
     transforms.BatchRandomHorizontalFlip(0.5, inplace=False)(imgs)
+
+    # test p = 0. and p = 1.
+    torch.testing.assert_close(transforms.BatchRandomHorizontalFlip(0.0)(imgs), imgs)
+    transforms.BatchRandomHorizontalFlip(1.0)(imgs)
 
 
 def test_batch_random_resized_crop():
@@ -165,8 +270,10 @@ def test_batch_random_resized_crop():
         4, (0.08, 1), (3 / 4, 4 / 3), num_rand_calls=2
     )(imgs)
 
+    # test consistency with Torchvision
     torch.testing.assert_close(out, torchvision_out)
 
+    # test different num rand calls
     transforms.BatchRandomResizedCrop(4, (0.08, 1), (3 / 4, 4 / 3), num_rand_calls=-1)(
         imgs
     )
@@ -176,6 +283,43 @@ def test_batch_random_resized_crop():
     transforms.BatchRandomResizedCrop(4, (0.08, 1), (3 / 4, 4 / 3), num_rand_calls=16)(
         imgs
     )
+
+    # test size as list of one int
+    transforms.BatchRandomResizedCrop(
+        [4], (0.08, 1), (3 / 4, 4 / 3), num_rand_calls=16
+    )(imgs)
+
+    # test wrong num rand calls
+    with pytest.raises(
+        ValueError,
+        match="num_rand_calls attribute should be an int superior to -1, ahah given.",
+    ):
+        transforms.BatchRandomResizedCrop(
+            4, (0.08, 1), (3 / 4, 4 / 3), num_rand_calls="ahah"
+        )
+    with pytest.raises(
+        ValueError,
+        match="num_rand_calls attribute should be an int superior to -1, -2 given.",
+    ):
+        transforms.BatchRandomResizedCrop(
+            4, (0.08, 1), (3 / 4, 4 / 3), num_rand_calls=-2
+        )
+
+    # test wrong size
+    with pytest.raises(
+        TypeError,
+        match="size should be a int or a sequence of int. Got 4..",
+    ):
+        transforms.BatchRandomResizedCrop(
+            4.0, (0.08, 1), (3 / 4, 4 / 3), num_rand_calls=16
+        )
+    with pytest.raises(
+        TypeError,
+        match="size should be a int or a sequence of int. Got ahah.",
+    ):
+        transforms.BatchRandomResizedCrop(
+            "ahah", (0.08, 1), (3 / 4, 4 / 3), num_rand_calls=16
+        )
 
 
 def test_batch_random_solarize():
@@ -190,6 +334,14 @@ def test_batch_random_solarize():
     torchvision_out[indices_to_apply] = F_tv.solarize(imgs[indices_to_apply], 0.5)
     out = transforms.BatchRandomSolarize(0.5, 0.5)(imgs)
 
+    # test consistency with Torchvision
     torch.testing.assert_close(out, torchvision_out)
 
+    # test not inplace
     transforms.BatchRandomSolarize(0.5, 0.5, inplace=False)(imgs)
+
+    # test p = 0. and p = 1.
+    torch.testing.assert_close(transforms.BatchRandomSolarize(0.5, 0.0)(imgs), imgs)
+    torch.testing.assert_close(
+        transforms.BatchRandomSolarize(0.5, 1.0)(imgs), F_tv.solarize(imgs, 0.5)
+    )

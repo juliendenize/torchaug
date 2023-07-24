@@ -15,6 +15,7 @@ class Normalize(transforms.Normalize):
         mean: Sequence[float] | float,
         std: Sequence[float] | float,
         inplace: bool = False,
+        value_check: bool = False,
     ) -> None:
         """Normalize a tensor image with mean and standard deviation. This transform does not support PIL Image.
         Given mean: ``(mean[1],...,mean[n])`` and std: ``(std[1],..,std[n])`` for ``n`` channels, this transform
@@ -29,6 +30,8 @@ class Normalize(transforms.Normalize):
             mean (sequence): Sequence of means for each channel.
             std (sequence): Sequence of standard deviations for each channel.
             inplace (bool): Bool to make this operation in-place.
+            value_check (bool, optional): Bool to perform tensor value check.
+                Might cause slow down on some devices because of synchronization. Default, False.
         """
 
         super().__init__(mean=mean, std=std)
@@ -39,20 +42,33 @@ class Normalize(transforms.Normalize):
         mean = torch.as_tensor(mean)
         std = torch.as_tensor(std)
 
-        if mean.ndim == 1:
+        if mean.ndim in [0, 1]:
             mean = mean.view(-1, 1, 1)
-        if std.ndim == 1:
+        if std.ndim in [0, 1]:
             std = std.view(-1, 1, 1)
 
         self.register_buffer("mean", mean)
         self.register_buffer("std", std)
         self.inplace = inplace
+        self.value_check = value_check
 
     def forward(self, tensor: Tensor) -> Tensor:
-        return normalize(tensor, self.mean, self.std, inplace=self.inplace)
+        return normalize(
+            tensor,
+            self.mean,
+            self.std,
+            inplace=self.inplace,
+            value_check=self.value_check,
+        )
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(mean={self.mean.tolist()}, std={self.std.tolist()}, inplace={self.inplace})"
+        return (
+            f"{self.__class__.__name__}("
+            f"mean={self.mean.tolist()},"
+            f" std={self.std.tolist()},"
+            f" inplace={self.inplace},"
+            f" value_check={self.value_check})"
+        )
 
 
 class RandomApply(transforms.RandomApply):
@@ -66,11 +82,11 @@ class RandomApply(transforms.RandomApply):
     def __init__(
         self, transforms: Sequence[nn.Module] | nn.Module, p: float = 0.5
     ) -> None:
-        if not issubclass(type(transforms), nn.Module) and not issubclass(
-            type(transforms), nn.ModuleList
+        if not isinstance(transforms, nn.Module) and not isinstance(
+            transforms, nn.ModuleList
         ):
             transforms = nn.ModuleList(transforms)
-        elif not issubclass(type(transforms), nn.ModuleList):
+        elif not isinstance(transforms, nn.ModuleList):
             transforms = nn.ModuleList([transforms])
 
         super().__init__(transforms, p)
@@ -160,6 +176,8 @@ class RandomGaussianBlur(torch.nn.Module):
             creating kernel to perform blurring. If float, sigma is fixed. If it is tuple
             of float (min, max), sigma is chosen uniformly at random to lie in the
             given range.
+        value_check (bool, optional): Bool to perform tensor value check.
+             Might cause slow down on some devices because of synchronization. Default, False.
     Returns:
         Tensor: Gaussian blurred version of the input image.
     """
@@ -169,10 +187,11 @@ class RandomGaussianBlur(torch.nn.Module):
         kernel_size: int | Tuple[int, int],
         sigma: float | Tuple[float, float] = (0.1, 2.0),
         p: float = 0.5,
+        value_check: bool = False,
     ):
         super().__init__()
         self.kernel_size = _setup_size(
-            kernel_size, "Kernel size should be a tuple/list of two integers"
+            kernel_size, "Kernel size should be a tuple/list of two integers."
         )
         for ks in self.kernel_size:
             if ks <= 0 or ks % 2 == 0:
@@ -196,6 +215,7 @@ class RandomGaussianBlur(torch.nn.Module):
 
         self.register_buffer("sigma", torch.as_tensor(sigma))
         self.p = p
+        self.value_check = value_check
 
     @staticmethod
     def get_params(sigma_min: Tensor, sigma_max: Tensor) -> Tensor:
@@ -225,10 +245,10 @@ class RandomGaussianBlur(torch.nn.Module):
         if self.p < torch.rand(1):
             return img
         sigma: Tensor = self.get_params(self.sigma[0], self.sigma[1])
-        return gaussian_blur(img, self.kernel_size, [sigma, sigma])
+        return gaussian_blur(img, self.kernel_size, [sigma, sigma], self.value_check)
 
     def __repr__(self) -> str:
-        s = f"{self.__class__.__name__}(kernel_size={self.kernel_size}, sigma={self.sigma.tolist()}, p={self.p})"
+        s = f"{self.__class__.__name__}(kernel_size={self.kernel_size}, sigma={self.sigma.tolist()}, p={self.p}, value_check={self.value_check})"
         return s
 
 
@@ -237,6 +257,7 @@ class RandomSolarize(transforms.RandomSolarize):
         self,
         threshold: float,
         p: float = 0.5,
+        value_check: bool = False,
     ):
         """Solarize the image randomly with a given probability by inverting all pixel values above a threshold.
         The img is expected to be in [..., 1 or 3, H, W] format, where ... means it can have an arbitrary number of
@@ -245,11 +266,14 @@ class RandomSolarize(transforms.RandomSolarize):
         Args:
             threshold (float): all pixels equal or above this value are inverted.
             p (float): probability of the image being solarized. Default value is 0.5.
+            value_check (bool, optional): Bool to perform tensor value check.
+                Might cause slow down on some devices because of synchronization. Default, False.
         """
         super().__init__(threshold=threshold, p=p)
         del self.threshold
 
         self.register_buffer("threshold", torch.as_tensor(threshold))
+        self.value_check = value_check
 
     def forward(self, img: Tensor):
         """
@@ -260,10 +284,12 @@ class RandomSolarize(transforms.RandomSolarize):
         """
 
         if torch.rand(1).item() < self.p:
-            return solarize(img, self.threshold)
+            return solarize(img, self.threshold, self.value_check)
         return img
 
     def __repr__(self) -> str:
         return (
-            f"{self.__class__.__name__}(threshold={self.threshold.item()}, p={self.p})"
+            f"{self.__class__.__name__}(threshold={self.threshold.item()}"
+            f", p={self.p}"
+            f", value_check={self.value_check})"
         )

@@ -1,3 +1,4 @@
+import pytest
 import torch
 import torchvision.transforms as tv_transforms
 import torchvision.transforms.functional as F_tv
@@ -107,6 +108,9 @@ def test_random_gaussian_blur():
     # Checking if RandomGaussianBlur can be printed as string
     transforms.RandomGaussianBlur((3, 3), (0.1, 2.0), 0.5).__repr__()
 
+    # Checking instantiation with one value kernel and sigma
+    transforms.RandomGaussianBlur(3, 0.1, 0.5)
+
     tensor = torch.rand((3, 16, 16))
 
     out_not_blurred = transforms.RandomGaussianBlur((3, 3), (0.1, 2.0), 0.0)(tensor)
@@ -117,6 +121,58 @@ def test_random_gaussian_blur():
 
     torch.testing.assert_close(out_blurred, torchvision_out)
     torch.testing.assert_close(out_not_blurred, tensor)
+
+    # test kernel is not int or not sequence of 2 int.
+    with pytest.raises(
+        ValueError, match="Kernel size should be a tuple/list of two integers."
+    ):
+        transforms.RandomGaussianBlur((3, 3, 3), (0.1, 2.0), 1.0)
+
+    # test kernel does not contain even or zero number.
+    with pytest.raises(
+        ValueError, match="Kernel size value should be an odd and positive number."
+    ):
+        transforms.RandomGaussianBlur((3, 2), (0.1, 2.0), 1.0)
+    with pytest.raises(
+        ValueError, match="Kernel size value should be an odd and positive number."
+    ):
+        transforms.RandomGaussianBlur((3, 0), (0.1, 2.0), 1.0)
+
+    # test sigma number is inferior or equal to 0.
+    with pytest.raises(
+        ValueError, match="If sigma is a single number, it must be positive."
+    ):
+        transforms.RandomGaussianBlur((3, 3), 0, 1.0)
+    with pytest.raises(
+        ValueError, match="If sigma is a single number, it must be positive."
+    ):
+        transforms.RandomGaussianBlur((3, 3), -1, 1.0)
+
+    # test sigma sequence is in form 0 < sigma[0] < sigma[1].
+    with pytest.raises(
+        ValueError,
+        match=r"sigma values should be positive and of the form \(min, max\).",
+    ):
+        transforms.RandomGaussianBlur((3, 3), (2.0, 1.0), 1.0)
+    with pytest.raises(
+        ValueError,
+        match=r"sigma values should be positive and of the form \(min, max\).",
+    ):
+        transforms.RandomGaussianBlur((3, 3), (0.0, 1.0), 1.0)
+
+    # test sigma sequence has more than 2 elements.
+    with pytest.raises(
+        ValueError,
+        match="sigma should be a single number or a list/tuple with length 2.",
+    ):
+        transforms.RandomGaussianBlur((3, 3), (0.1, 2.0, 3.0), 1.0)
+
+    # test sigma is of wrong type.
+    with pytest.raises(
+        ValueError,
+        match="sigma should be a single number or a list/tuple with length 2.",
+    ):
+        transforms.RandomGaussianBlur((3, 3), "ahah", 1.0)
 
 
 def test_random_solarize():

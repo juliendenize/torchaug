@@ -3,3 +3,5 @@
 .pytest_cache/*
 **/notebooks/*
 *.egg-info
+.coverage
+coverage.*

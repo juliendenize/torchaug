@@ -69,11 +69,11 @@ class BatchRandomApply(RandomApply):
     def __repr__(self) -> str:
         format_string = self.__class__.__name__ + "("
         format_string += f"\n    p={self.p}"
+        format_string += f"    inplace={self.inplace}"
         for t in self.transforms:
             format_string += "\n"
             format_string += f"    {t}"
         format_string += "\n"
-        format_string += f"    inplace={self.inplace}"
         format_string += "\n)"
         return format_string
 
@@ -102,6 +102,8 @@ class BatchRandomColorJitter(transforms.ColorJitter):
         num_rand_calls (int): Number of random calls performed to apply augmentations at different orders on sub-batches.
             If -1, B calls are performed. The maximum is 24 = 4!.
         inplace (bool): If True, perform inplace operation to save memory.
+        value_check (bool, optional): Bool to perform tensor value check.
+            Might cause slow down on some devices because of synchronization or large batch size. Default, False.
     """
 
     def __init__(
@@ -111,15 +113,16 @@ class BatchRandomColorJitter(transforms.ColorJitter):
         saturation: float | Tuple[float, float] | None = 0,
         hue: float | Tuple[float, float] | None = 0,
         p: float = 0.5,
-        num_rand_calls: int = 1,
+        num_rand_calls: int = -1,
         inplace: bool = True,
+        value_check: bool = False,
     ) -> None:
         super().__init__(brightness, contrast, saturation, hue)
         self.p = p
 
-        if not num_rand_calls >= -1:
+        if not isinstance(num_rand_calls, int) or not num_rand_calls >= -1:
             raise ValueError(
-                f"num_rand_calls attribute should be superior to -1, {num_rand_calls} given."
+                f"num_rand_calls attribute should be an int superior to -1, {num_rand_calls} given."
             )
 
         self.num_rand_calls = num_rand_calls
@@ -145,6 +148,8 @@ class BatchRandomColorJitter(transforms.ColorJitter):
         if hue is not None:
             del self.hue
             self.register_buffer("hue", torch.as_tensor(hue))
+
+        self.value_check = value_check
 
     @staticmethod
     def get_params(
@@ -267,6 +272,7 @@ class BatchRandomColorJitter(transforms.ColorJitter):
                             * num_apply_per_combination : (i + 1)
                             * num_apply_per_combination
                         ],
+                        self.value_check,
                     )
                 elif fn_id == 1 and contrast_factor is not None:
                     imgs_combination[:] = batch_adjust_contrast(
@@ -276,6 +282,7 @@ class BatchRandomColorJitter(transforms.ColorJitter):
                             * num_apply_per_combination : (i + 1)
                             * num_apply_per_combination
                         ],
+                        self.value_check,
                     )
                 elif fn_id == 2 and saturation_factor is not None:
                     imgs_combination[:] = batch_adjust_saturation(
@@ -285,6 +292,7 @@ class BatchRandomColorJitter(transforms.ColorJitter):
                             * num_apply_per_combination : (i + 1)
                             * num_apply_per_combination
                         ],
+                        self.value_check,
                     )
                 elif fn_id == 3 and hue_factor is not None:
                     imgs_combination[:] = batch_adjust_hue(
@@ -294,6 +302,7 @@ class BatchRandomColorJitter(transforms.ColorJitter):
                             * num_apply_per_combination : (i + 1)
                             * num_apply_per_combination
                         ],
+                        self.value_check,
                     )
 
             output[indices_combination] = imgs_combination
@@ -308,7 +317,8 @@ class BatchRandomColorJitter(transforms.ColorJitter):
             f", saturation={self.saturation.tolist() if self.saturation is not None else None}"
             f", hue={self.hue.tolist() if self.hue is not None else None}"
             f", p={self.p}"
-            f", inplace={self.inplace})"
+            f", inplace={self.inplace}"
+            f", value_check={self.value_check})"
         )
         return s
 
@@ -325,6 +335,8 @@ class BatchRandomGaussianBlur(torch.nn.Module):
             given range.
         p (float): Probability to apply gaussian blur.
         inplace (bool): If True, perform inplace operation to save memory.
+        value_check (bool, optional): Bool to perform tensor value check.
+            Might cause slow down on some devices because of synchronization or large batch size. Default, False.
     Returns:
         Tensor: Gaussian blurred version of the input batch of images.
     """
@@ -335,6 +347,7 @@ class BatchRandomGaussianBlur(torch.nn.Module):
         sigma: float | Tuple[float, float] = (0.1, 2.0),
         p: float = 0.5,
         inplace: bool = True,
+        value_check: bool = False,
     ):
         super().__init__()
         self.kernel_size = _setup_size(
@@ -363,6 +376,7 @@ class BatchRandomGaussianBlur(torch.nn.Module):
         self.register_buffer("sigma", torch.as_tensor(sigma))
         self.p = p
         self.inplace = inplace
+        self.value_check = value_check
 
     @staticmethod
     def get_params(sigma_min: Tensor, sigma_max: Tensor, batch_size: int) -> Tensor:
@@ -399,7 +413,9 @@ class BatchRandomGaussianBlur(torch.nn.Module):
         if self.p == 1.0:
             sigma: Tensor = self.get_params(self.sigma[0], self.sigma[1], batch_size)
 
-            output = batch_gaussian_blur(output, self.kernel_size, sigma)
+            output = batch_gaussian_blur(
+                output, self.kernel_size, sigma, self.value_check
+            )
         else:
             num_apply = round(self.p * batch_size)
             indices_do_apply = torch.randperm(batch_size, device=imgs.device)[
@@ -408,7 +424,7 @@ class BatchRandomGaussianBlur(torch.nn.Module):
 
             sigma: Tensor = self.get_params(self.sigma[0], self.sigma[1], num_apply)
             output[indices_do_apply] = batch_gaussian_blur(
-                output[indices_do_apply], self.kernel_size, sigma
+                output[indices_do_apply], self.kernel_size, sigma, self.value_check
             )
 
         return output
@@ -419,6 +435,7 @@ class BatchRandomGaussianBlur(torch.nn.Module):
             f"kernel_size={self.kernel_size}"
             f", sigma={self.sigma.tolist()}"
             f", p={self.p}"
+            f", value_check={self.value_check}"
             f", inplace={self.inplace})"
         )
         return s
@@ -529,7 +546,7 @@ class BatchRandomHorizontalFlip(transforms.RandomHorizontalFlip):
         return output
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(p={self.p}, inplace={self.inplace})"
+        return f"{self.__class__.__name__}(" f"p={self.p}" f", inplace={self.inplace})"
 
 
 class BatchRandomResizedCrop(transforms.RandomResizedCrop):
@@ -554,27 +571,11 @@ class BatchRandomResizedCrop(transforms.RandomResizedCrop):
             resizing.
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
-            If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.NEAREST_EXACT``,
+            Only ``InterpolationMode.NEAREST``, ``InterpolationMode.NEAREST_EXACT``,
             ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` are supported.
-            The corresponding Pillow integer constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
         antialias (bool, optional): Whether to apply antialiasing.
             It only affects **tensors** with bilinear or bicubic modes and it is
-            ignored otherwise: on PIL images, antialiasing is always applied on
-            bilinear or bicubic modes; on other modes (for PIL images and
-            tensors), antialiasing makes no sense and this parameter is ignored.
-            Possible values are:
-
-            - ``True``: will apply antialiasing for bilinear or bicubic modes.
-              Other mode aren't affected. This is probably what you want to use.
-            - ``False``: will not apply antialiasing for tensors on any mode. PIL
-              images are still antialiased on bilinear or bicubic modes, because
-              PIL doesn't support no antialias.
-            - ``None``: equivalent to ``False`` for tensors and ``True`` for
-              PIL images. This value exists for legacy reasons and you probably
-              don't want to use it unless you really know what you are doing.
-
-            The current default is ``None`` **but will change to** ``True`` **in
-            v0.17** for the PIL and Tensor backends to be consistent.
+            ignored otherwise.
         num_rand_calls (int): Number of random calls performed to apply augmentations at different orders on sub-batches.
             If -1, B calls are performed. The maximum is 24 = 4!.
     """
@@ -589,16 +590,20 @@ class BatchRandomResizedCrop(transforms.RandomResizedCrop):
         num_rand_calls: int = -1,
         **kwargs,
     ) -> None:
-        super().__init__(size, scale, ratio, interpolation, antialias, **kwargs)
-
         if isinstance(size, int):
             self.size = [size, size]
-        elif isinstance(size, Sequence) and len(size) == 1:
+        elif isinstance(size, Sequence) and isinstance(size[0], int) and len(size) == 1:
             self.size = [size[0], size[0]]
+        elif not isinstance(size, Sequence) or not all(
+            [isinstance(s, int) for s in size]
+        ):
+            raise TypeError(f"size should be a int or a sequence of int. Got {size}.")
 
-        if not num_rand_calls >= -1:
+        super().__init__(size, scale, ratio, interpolation, antialias, **kwargs)
+
+        if not isinstance(num_rand_calls, int) or not num_rand_calls >= -1:
             raise ValueError(
-                f"num_rand_calls attribute should be superior to -1, {num_rand_calls} given."
+                f"num_rand_calls attribute should be an int superior to -1, {num_rand_calls} given."
             )
 
         self.num_rand_calls = num_rand_calls
@@ -668,7 +673,13 @@ class BatchRandomResizedCrop(transforms.RandomResizedCrop):
 
 
 class BatchRandomSolarize(RandomSolarize):
-    def __init__(self, threshold: float, p: float = 0.5, inplace: bool = True) -> None:
+    def __init__(
+        self,
+        threshold: float,
+        p: float = 0.5,
+        inplace: bool = True,
+        value_check: bool = False,
+    ) -> None:
         """Solarize the image randomly with a given probability by inverting all pixel values above a threshold.
         The img it is expected to be in [..., 1 or 3, H, W] format, where ... means it can have an arbitrary number
         of leading dimensions.
@@ -677,10 +688,13 @@ class BatchRandomSolarize(RandomSolarize):
             threshold (float): all pixels equal or above this value are inverted.
             p (float): probability of the image being solarized. Default value is 0.5.
             inplace (bool): If True, perform inplace operation to save memory.
+            value_check (bool, optional): Bool to perform tensor value check.
+            Might cause slow down on some devices because of synchronization or large batch size. Default, False.
         """
 
         super().__init__(threshold, p)
         self.inplace = inplace
+        self.value_check = value_check
 
     def forward(self, imgs: Tensor) -> Tensor:
         """
@@ -697,7 +711,7 @@ class BatchRandomSolarize(RandomSolarize):
         output: Tensor = imgs if self.inplace else imgs.clone()
 
         if self.p == 1.0:
-            output = solarize(output, self.threshold)
+            output = solarize(output, self.threshold, self.value_check)
         else:
             batch_size = imgs.shape[0]
             num_apply = round(self.p * batch_size)
@@ -706,7 +720,7 @@ class BatchRandomSolarize(RandomSolarize):
             ]
 
             output[indices_do_apply] = solarize(
-                output[indices_do_apply], self.threshold
+                output[indices_do_apply], self.threshold, self.value_check
             )
 
         return output
@@ -716,5 +730,6 @@ class BatchRandomSolarize(RandomSolarize):
             f"{self.__class__.__name__}("
             f"threshold={self.threshold.item()}"
             f", p={self.p}"
-            f", inplace={self.inplace})"
+            f", inplace={self.inplace}"
+            f", value_check={self.value_check})"
         )
