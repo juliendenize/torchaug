@@ -23,7 +23,7 @@ long_description = setup_tools._load_readme_description(
 )
 
 setup(
-    name="Torchaug",
+    name="torchaug",
     version=about.__version__,
     description=about.__docs__,
     author=about.__author__,
