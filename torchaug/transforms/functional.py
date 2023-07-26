@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import List
 
 import torch
@@ -12,7 +14,6 @@ from torchvision.transforms._functional_tensor import (_assert_channels,
 from torchvision.utils import _log_api_usage_once
 
 from torchaug.transforms._utils import _assert_tensor, is_tensor_on_cpu
-
 
 def _get_gaussian_kernel1d(
     kernel_size: int, sigma: float, dtype: torch.dtype, device: torch.device
