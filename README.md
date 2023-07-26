@@ -2,6 +2,8 @@
 
 ***Under active development, subject to API change***
 
+[![PyPI python](https://img.shields.io/pypi/pyversions/torchaug)](https://pypi.org/project/torchaug)
+[![PyPI version](https://badge.fury.io/py/torchaug.svg)](https://pypi.org/project/torchaug)
 [![codecov](https://codecov.io/gh/juliendenize/torchaug/branch/main/graph/badge.svg?token=CA266XDW8D)](https://codecov.io/gh/juliendenize/torchaug)
 [![License](https://img.shields.io/badge/license-CeCILL--C-green.svg)](LICENSE)
 
