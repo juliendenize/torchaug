@@ -26,16 +26,13 @@ See [here](augmentations.md) the implemented data augmentations and [here](speed
 
 0. Install a Pytorch >= 2.0 environment and Python >= 3.8.
 
-1. Clone the repo.
-
-2. Install Torchaug
+1. Install Torchaug.
 
 ```bash
-cd torchaug
-pip3 install .
+pip3 install torchaug
 ```
 
-3. Import data augmentations just as Torchvision
+2. Import data augmentations either from `torchaug.transforms` or `torchaug.batch_transforms` packages.
 
 ```python
 from torchaug.transforms import RandomColorJitter
