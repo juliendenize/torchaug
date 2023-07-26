@@ -1,0 +1,56 @@
+[build-system]
+requires = ["setuptools>=61.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "torchaug"
+authors = [
+  { name="Julien Denize", email="julien.denize@hotmail.fr" },
+]
+description = "Torchvision Complementary tool to perform batch and GPU data augmentations."
+keywords = [
+  "computer vision",
+  "deep learning",
+  "pytorch",
+]
+requires-python = ">=3.8"
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Environment :: Console",
+  "Environment :: GPU",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Education",
+  "Intended Audience :: Information Technology",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: CEA CNRS Inria Logiciel Libre License, version 2.1 (CeCILL-2.1)",
+  "Natural Language :: English",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Scientific/Engineering :: Image Processing",
+  "Topic :: Software Development :: Libraries",
+]
+dynamic = [
+  "dependencies",
+  "readme",
+  "version",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/juliendenize/torchaug"
+"Bug Tracker" = "https://github.com/juliendenize/torchaug/issues"
+"Download" = "https://github.com/juliendenize/torchaug"
+"Source Code" = "https://github.com/juliendenize/torchaug"
+
+[tool.setuptools]
+packages = ["torchaug"]
+license-files = ["LICENSE"]
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+version = {attr = "torchaug.__version__"}
+readme = {file = ["README.md"], content-type = "text/markdown"}
