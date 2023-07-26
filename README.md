@@ -1,4 +1,10 @@
+**Efficient vision data augmentations for on GPU and/or batched data.**
+
+***Under active development, subject to API change***
+
 [![codecov](https://codecov.io/gh/juliendenize/torchaug/branch/main/graph/badge.svg?token=CA266XDW8D)](https://codecov.io/gh/juliendenize/torchaug)
+[![License](https://img.shields.io/badge/license-CeCILL--C-green.svg)](LICENSE)
+
 # Torchaug
 
 ## Introduction
