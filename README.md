@@ -1,3 +1,4 @@
+[![codecov](https://codecov.io/gh/juliendenize/torchaug/branch/main/graph/badge.svg?token=CA266XDW8D)](https://codecov.io/gh/juliendenize/torchaug)
 # Torchaug
 
 ## Introduction
