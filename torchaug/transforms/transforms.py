@@ -364,6 +364,7 @@ class VideoWrapper(nn.Module):
         super().__init__()
 
         self.transform = transform
+        self.video_format = video_format
 
         if self.video_format == "CTHW":
             self.time_before_channel = False
@@ -374,13 +375,11 @@ class VideoWrapper(nn.Module):
                 f"video_format should be either 'CTHW' or 'TCHW'. Got {self.video_format}."
             )
 
-        self.video_format = video_format
-
     def forward(self, video: Tensor):
         _assert_video_tensor(video)
 
         if not self.time_before_channel:
-            videos = videos.permute(1, 0, 2, 3)
+            video = video.permute(1, 0, 2, 3)
 
         video = self.transform(video)
 

@@ -52,4 +52,4 @@ def transfer_on_device(
 
 def _assert_video_tensor(video: torch.Tensor) -> None:
     if not isinstance(video, torch.Tensor) or not _is_tensor_video(video):
-        raise TypeError("Tensor is not a torch batch of videos.")
+        raise TypeError("Tensor is not a torch video.")

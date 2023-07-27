@@ -253,3 +253,46 @@ def test_video_normalize():
         transforms.VideoNormalize(
             (0.5,), (0.5, 0.1, 0), inplace=True, video_format="CTHW"
         )(tensor)
+
+    # test wrong tensor dimension
+    tensor = torch.rand((6, 3, 2, 3, 16, 16))
+    with pytest.raises(
+        TypeError, match="Tensor is not a torch video or a batch of videos."
+    ):
+        transforms.VideoNormalize(
+            (0.5,), (0.5, 0.1, 0), inplace=True, video_format="CTHW"
+        )(tensor)
+
+
+def test_video_wrapper():
+    torch.manual_seed(28)
+
+    transform = transforms.Normalize((0.5,), (0.5,), inplace=False, value_check=True)
+
+    # test if VideoWrapper can be printed as string
+    transforms.VideoWrapper(transform=transform).__repr__()
+
+    # test CTHW format
+    tensor = torch.rand((3, 2, 16, 16))
+    torchvision_out = tv_transforms.Normalize((0.5,), (0.5,), inplace=False)(tensor)
+    out = transforms.VideoWrapper(transform=transform)(tensor)
+    torch.testing.assert_close(out, torchvision_out)
+
+    # test TCHW format
+    torchvision_out = tv_transforms.Normalize((0.5,), (0.5,), inplace=False)(tensor)
+    out = transforms.VideoWrapper(transform=transform, video_format="TCHW")(tensor.permute(1, 0, 2, 3))
+    torch.testing.assert_close(out.permute(1, 0, 2, 3), torchvision_out)
+
+
+    # test wrong video_format
+    with pytest.raises(
+        ValueError, match="video_format should be either 'CTHW' or 'TCHW'. Got ahah."
+    ):
+        transforms.VideoWrapper(transform=transform, video_format="ahah")(tensor)
+
+    # test wrong tensor dimension
+    tensor = torch.rand((6, 3, 2, 3, 16, 16))
+    with pytest.raises(
+        TypeError, match="Tensor is not a torch video."
+    ):
+        transforms.VideoWrapper(transform=transform)(tensor)

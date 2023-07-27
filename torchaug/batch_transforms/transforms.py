@@ -760,6 +760,8 @@ class BatchVideoWrapper(nn.Module):
         super().__init__()
 
         self.transform = transform
+        self.video_format = video_format
+        self.same_on_frames = same_on_frames
 
         if self.video_format == "CTHW":
             self.time_before_channel = False
@@ -771,9 +773,6 @@ class BatchVideoWrapper(nn.Module):
             raise ValueError(
                 f"video_format should be either 'CTHW' or 'TCHW'. Got {self.video_format}."
             )
-
-        self.same_on_frames = same_on_frames
-        self.video_format = video_format
 
     def forward(self, videos: Tensor):
         _assert_batch_videos_tensor(videos)
