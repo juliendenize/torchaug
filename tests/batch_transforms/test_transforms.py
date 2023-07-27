@@ -104,16 +104,12 @@ def test_batch_random_color_jitter():
         ValueError,
         match="num_rand_calls attribute should be an int superior to -1, ahah given.",
     ):
-        transforms.BatchRandomColorJitter(
-            num_rand_calls="ahah"
-        )
+        transforms.BatchRandomColorJitter(num_rand_calls="ahah")
     with pytest.raises(
         ValueError,
         match="num_rand_calls attribute should be an int superior to -1, -2 given.",
     ):
-        transforms.BatchRandomColorJitter(
-            num_rand_calls=-2
-        )
+        transforms.BatchRandomColorJitter(num_rand_calls=-2)
 
 
 def test_batch_random_gaussian_blur():
@@ -351,7 +347,9 @@ def test_batch_random_solarize():
 def test_batch_video_wrapper():
     torch.manual_seed(28)
 
-    transform = mono_transforms.Normalize((0.5,), (0.5,), inplace=False, value_check=True)
+    transform = mono_transforms.Normalize(
+        (0.5,), (0.5,), inplace=False, value_check=True
+    )
 
     # test if BatchVideoWrapper can be printed as string
     transforms.BatchVideoWrapper(transform=transform).__repr__()
@@ -364,18 +362,28 @@ def test_batch_video_wrapper():
 
     # test TCHW format
     torchvision_out = tv_transforms.Normalize((0.5,), (0.5,), inplace=False)(tensor)
-    out = transforms.BatchVideoWrapper(transform=transform, video_format="TCHW")(tensor.permute(0, 2, 1, 3, 4))
+    out = transforms.BatchVideoWrapper(transform=transform, video_format="TCHW")(
+        tensor.permute(0, 2, 1, 3, 4)
+    )
     torch.testing.assert_close(out.permute(0, 2, 1, 3, 4), torchvision_out)
 
     # test same_on_frames
     image = torch.randn((3, 224, 224))
     video = torch.stack([image, image])
     batch_video = torch.stack([video, video])
-    out = transforms.BatchVideoWrapper(transform=transforms.BatchRandomColorJitter(0.5, p=1.), video_format="TCHW", same_on_frames=True)(batch_video)
+    out = transforms.BatchVideoWrapper(
+        transform=transforms.BatchRandomColorJitter(0.5, p=1.0),
+        video_format="TCHW",
+        same_on_frames=True,
+    )(batch_video)
     torch.testing.assert_close(out[:, 0], out[:, 1])
     with pytest.raises(AssertionError):
         torch.testing.assert_close(out[0], out[1])
-    out = transforms.BatchVideoWrapper(transform=transforms.BatchRandomColorJitter(0.5, p=1.), video_format="TCHW", same_on_frames=False)(batch_video)
+    out = transforms.BatchVideoWrapper(
+        transform=transforms.BatchRandomColorJitter(0.5, p=1.0),
+        video_format="TCHW",
+        same_on_frames=False,
+    )(batch_video)
     with pytest.raises(AssertionError):
         torch.testing.assert_close(out[:, 0], out[:, 1])
 
@@ -387,7 +395,5 @@ def test_batch_video_wrapper():
 
     # test wrong tensor dimension
     tensor = torch.rand((6, 3, 2, 3, 16, 16))
-    with pytest.raises(
-        TypeError, match="Tensor is not a torch batch of videos."
-    ):
+    with pytest.raises(TypeError, match="Tensor is not a torch batch of videos."):
         transforms.BatchVideoWrapper(transform=transform)(tensor)

@@ -17,7 +17,6 @@ from torchaug.transforms._utils import (_assert_tensor, is_tensor_on_cpu,
                                         transfer_on_device)
 
 
-
 def _get_gaussian_kernel1d(
     kernel_size: int, sigma: float, dtype: torch.dtype, device: torch.device
 ) -> Tensor:

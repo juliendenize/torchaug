@@ -280,9 +280,10 @@ def test_video_wrapper():
 
     # test TCHW format
     torchvision_out = tv_transforms.Normalize((0.5,), (0.5,), inplace=False)(tensor)
-    out = transforms.VideoWrapper(transform=transform, video_format="TCHW")(tensor.permute(1, 0, 2, 3))
+    out = transforms.VideoWrapper(transform=transform, video_format="TCHW")(
+        tensor.permute(1, 0, 2, 3)
+    )
     torch.testing.assert_close(out.permute(1, 0, 2, 3), torchvision_out)
-
 
     # test wrong video_format
     with pytest.raises(
@@ -292,7 +293,5 @@ def test_video_wrapper():
 
     # test wrong tensor dimension
     tensor = torch.rand((6, 3, 2, 3, 16, 16))
-    with pytest.raises(
-        TypeError, match="Tensor is not a torch video."
-    ):
+    with pytest.raises(TypeError, match="Tensor is not a torch video."):
         transforms.VideoWrapper(transform=transform)(tensor)
