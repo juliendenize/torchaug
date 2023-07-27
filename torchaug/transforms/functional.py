@@ -13,7 +13,9 @@ from torchvision.transforms._functional_tensor import (_assert_channels,
                                                        _max_value, invert)
 from torchvision.utils import _log_api_usage_once
 
-from torchaug.transforms._utils import _assert_tensor, is_tensor_on_cpu
+from torchaug.transforms._utils import (_assert_tensor, is_tensor_on_cpu,
+                                        transfer_on_device)
+
 
 
 def _get_gaussian_kernel1d(
@@ -110,7 +112,7 @@ def gaussian_blur(
             s = float(sigma)
             sigma_t = torch.tensor([s, s], device=img.device)
         elif isinstance(sigma, torch.Tensor):
-            sigma_t = sigma.to(device=img.device, non_blocking=True)
+            sigma_t = transfer_on_device(sigma, img.device, non_blocking=True)
 
             dim_sigma = sigma_t.ndim + 1 if sigma_t.ndim == 0 else sigma_t.ndim
             len_sigma = 1 if sigma_t.ndim == 0 else sigma_t.shape[0]

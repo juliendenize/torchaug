@@ -369,6 +369,13 @@ def test_batch_gaussian_blur():
     y_batch = F.batch_gaussian_blur(stacked_x, [3, 3], torch.tensor(1))
     torch.testing.assert_close(y_batch, torch.stack((y_0, y_0, y_0)))
 
+    # test sigma GPU transfer (if available)
+    if torch.cuda.is_available():
+        y_0 = F_tv.gaussian_blur(x, [3, 3], 1.0)
+        stacked_x = torch.stack((x, x, x))
+        y_batch = F.batch_gaussian_blur(stacked_x.cuda(), [3, 3], torch.tensor(1)).cpu()
+        torch.testing.assert_close(y_batch, torch.stack((y_0, y_0, y_0)))
+
     # test 1 float sigma
     y_0 = F_tv.gaussian_blur(x, [3, 3], 1.0)
     stacked_x = torch.stack((x, x, x))

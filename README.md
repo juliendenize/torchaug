@@ -24,7 +24,7 @@ See [here](augmentations.md) the implemented data augmentations and [here](speed
 
 ## How to use
 
-0. Install a Pytorch >= 2.0 environment and Python >= 3.8.
+0. Install a Pytorch >= 2.0 environment.
 
 1. Install Torchaug.
 
