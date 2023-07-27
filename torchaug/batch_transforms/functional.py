@@ -18,7 +18,7 @@ from torchvision.utils import _log_api_usage_once
 
 from torchaug.batch_transforms._utils import (_assert_batch_channels,
                                               _assert_batch_images_tensor,
-                                              get_batched_dimensions)
+                                              get_batched_img_dimensions)
 from torchaug.transforms._utils import _assert_tensor
 
 
@@ -41,7 +41,7 @@ def _get_batch_gaussian_kernel1d(
 
 
 def _get_batch_gaussian_kernel2d(
-    kernel_size: List[int], sigma: List[float], dtype: torch.dtype, device: torch.device
+    kernel_size: list[int], sigma: list[float], dtype: torch.dtype, device: torch.device
 ) -> Tensor:
     kernel1d_x = _get_batch_gaussian_kernel1d(
         kernel_size[0], sigma[:, 0, None], dtype, device
@@ -151,7 +151,7 @@ def batch_adjust_contrast(
     else:
         raise TypeError(f"contrast_factor should be a float or Tensor.")
 
-    c = get_batched_dimensions(imgs)[1]
+    c = get_batched_img_dimensions(imgs)[1]
     dtype = imgs.dtype if torch.is_floating_point(imgs) else torch.float32
     if c == 3:
         mean = torch.mean(
@@ -203,7 +203,7 @@ def batch_adjust_hue(
     _assert_image_tensor(imgs)
     _assert_batch_channels(imgs, [1, 3])
 
-    if get_batched_dimensions(imgs)[1] == 1:  # Match PIL behaviour
+    if get_batched_img_dimensions(imgs)[1] == 1:  # Match PIL behaviour
         return imgs
 
     batch_size = imgs.shape[0]
@@ -263,7 +263,7 @@ def batch_adjust_saturation(
     _assert_image_tensor(imgs)
     _assert_batch_channels(imgs, [1, 3])
 
-    if get_batched_dimensions(imgs)[1] == 1:  # Match PIL behaviour
+    if get_batched_img_dimensions(imgs)[1] == 1:  # Match PIL behaviour
         return imgs
 
     batch_size = imgs.shape[0]
@@ -291,8 +291,8 @@ def batch_adjust_saturation(
 
 def batch_gaussian_blur(
     imgs: Tensor,
-    kernel_size: int | List[int],
-    sigma: int | float | List[int] | List[float] | torch.Tensor | None = None,
+    kernel_size: int | list[int],
+    sigma: int | float | list[int] | list[float] | torch.Tensor | None = None,
     value_check: bool = False,
 ) -> Tensor:
     """Performs Gaussian blurring on the batch of images by given kernel. If is expected to have [B, ..., H, W]

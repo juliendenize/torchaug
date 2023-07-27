@@ -15,6 +15,7 @@ from torchvision.utils import _log_api_usage_once
 
 from torchaug.transforms._utils import _assert_tensor, is_tensor_on_cpu
 
+
 def _get_gaussian_kernel1d(
     kernel_size: int, sigma: float, dtype: torch.dtype, device: torch.device
 ) -> Tensor:
@@ -30,7 +31,7 @@ def _get_gaussian_kernel1d(
 
 
 def _get_gaussian_kernel2d(
-    kernel_size: List[int], sigma: List[float], dtype: torch.dtype, device: torch.device
+    kernel_size: list[int], sigma: list[float], dtype: torch.dtype, device: torch.device
 ) -> Tensor:
     kernel1d_x = _get_gaussian_kernel1d(kernel_size[0], sigma[0], dtype, device)
     kernel1d_y = _get_gaussian_kernel1d(kernel_size[1], sigma[1], dtype, device)
@@ -40,8 +41,8 @@ def _get_gaussian_kernel2d(
 
 def gaussian_blur(
     img: Tensor,
-    kernel_size: List[int],
-    sigma: int | float | List[int] | List[float] | torch.Tensor | None = None,
+    kernel_size: list[int],
+    sigma: int | float | list[int] | list[float] | torch.Tensor | None = None,
     value_check: bool = False,
 ) -> Tensor:
     """Performs Gaussian blurring on the image by given kernel. If is expected to have [..., H, W] shape, where ...
@@ -162,8 +163,8 @@ def gaussian_blur(
 
 def normalize(
     tensor: Tensor,
-    mean: List[float] | Tensor,
-    std: List[float] | Tensor,
+    mean: list[float] | Tensor,
+    std: list[float] | Tensor,
     inplace: bool = True,
     value_check: bool = False,
 ) -> Tensor:
@@ -203,9 +204,7 @@ def normalize(
         tensor = tensor.clone()
 
     if (value_check or is_tensor_on_cpu(std)) and not torch.all(torch.gt(std, 0)):
-        raise ValueError(
-            f"std evaluated to zero after conversion to {dtype}, leading to division by zero."
-        )
+        raise ValueError(f"std contains a zero leading to division by zero.")
 
     if mean.ndim == 1:
         mean = mean.view(-1, 1, 1)
