@@ -205,9 +205,7 @@ def normalize(
         tensor = tensor.clone()
 
     if (value_check or is_tensor_on_cpu(std)) and not torch.all(torch.gt(std, 0)):
-        raise ValueError(
-            f"std evaluated to zero after conversion to {dtype}, leading to division by zero."
-        )
+        raise ValueError(f"std contains a zero leading to division by zero.")
 
     if mean.ndim == 1:
         mean = mean.view(-1, 1, 1)

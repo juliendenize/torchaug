@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 import numbers
-from typing import Sequence, Tuple
+from typing import Sequence
 
 import torch
 from torch import Tensor, nn
 from torchvision import transforms
 from torchvision.transforms.transforms import _setup_size
 
+from torchaug.batch_transforms._utils import \
+    _assert_video_or_batch_videos_tensor
+from torchaug.transforms._utils import _assert_video_tensor
 from torchaug.transforms.functional import gaussian_blur, normalize, solarize
 
 
@@ -19,14 +22,11 @@ class Normalize(transforms.Normalize):
         inplace: bool = False,
         value_check: bool = False,
     ) -> None:
-        """Normalize a tensor image with mean and standard deviation. This transform does not support PIL Image.
-        Given mean: ``(mean[1],...,mean[n])`` and std: ``(std[1],..,std[n])`` for ``n`` channels, this transform
-        will normalize each channel of the input ``torch.*Tensor`` i.e.,
+        """Normalize a tensor image with mean and standard deviation. Given mean: ``(mean[1],...,mean[n])`` and
+        std: ``(std[1],..,std[n])`` for ``n`` channels, this transform will normalize each channel of the input
+        ``torch.*Tensor`` i.e.,
 
         ``output[channel] = (input[channel] - mean[channel]) / std[channel]``
-
-        .. note::
-            This transform acts out of place, i.e., it does not mutate the input tensor.
 
         Args:
             mean (sequence): Sequence of means for each channel.
@@ -112,10 +112,10 @@ class RandomApply(transforms.RandomApply):
 class RandomColorJitter(transforms.ColorJitter):
     def __init__(
         self,
-        brightness: float | Tuple[float, float] | None = 0,
-        contrast: float | Tuple[float, float] | None = 0,
-        saturation: float | Tuple[float, float] | None = 0,
-        hue: float | Tuple[float, float] | None = 0,
+        brightness: float | tuple[float, float] | None = 0,
+        contrast: float | tuple[float, float] | None = 0,
+        saturation: float | tuple[float, float] | None = 0,
+        hue: float | tuple[float, float] | None = 0,
         p: float = 0.0,
     ):
         """Randomly change the brightness, contrast, saturation and hue to images. The images is expected to have.
@@ -186,8 +186,8 @@ class RandomGaussianBlur(torch.nn.Module):
 
     def __init__(
         self,
-        kernel_size: int | Tuple[int, int],
-        sigma: float | Tuple[float, float] = (0.1, 2.0),
+        kernel_size: int | tuple[int, int],
+        sigma: float | tuple[float, float] = (0.1, 2.0),
         p: float = 0.5,
         value_check: bool = False,
     ):
@@ -294,4 +294,103 @@ class RandomSolarize(transforms.RandomSolarize):
             f"{self.__class__.__name__}(threshold={self.threshold.item()}"
             f", p={self.p}"
             f", value_check={self.value_check})"
+        )
+
+
+class VideoNormalize(Normalize):
+    """Normalize a tensor video with mean and standard deviation. Given mean: ``(mean[1],...,mean[n])`` and std:
+    ``(std[1],..,std[n])`` for ``n`` channels, this transform will normalize each channel of the input
+    ``torch.*Tensor`` i.e.,
+
+    ``output[channel] = (input[channel] - mean[channel]) / std[channel]``
+
+    Videos should be in format [..., T, C, H, W] or [..., C, T, H, W] with ... 0 or 1 leading dimension.
+
+    Args:
+        mean (sequence): Sequence of means for each channel.
+        std (sequence): Sequence of standard deviations for each channel.
+        video_format(str): Dimension order of the video. Can be ``TCHW`` or ``CTHW``.
+        inplace (bool): Bool to make this operation in-place.
+        value_check (bool, optional): Bool to perform tensor value check.
+            Might cause slow down on some devices because of synchronization. Default, False.
+    """
+
+    def __init__(
+        self,
+        mean: Sequence[float] | None = None,
+        std: Sequence[float] | None = None,
+        inplace: bool = False,
+        value_check: bool = False,
+        video_format: str = "CTHW",
+    ) -> None:
+        super().__init__(mean=mean, std=std, inplace=inplace, value_check=value_check)
+
+        self.video_format = video_format
+
+        if self.video_format == "CTHW":
+            self.time_before_channel = False
+        elif self.video_format == "TCHW":
+            self.time_before_channel = True
+        else:
+            raise ValueError(
+                f"video_format should be either 'CTHW' or 'TCHW'. Got {self.video_format}."
+            )
+
+    def forward(self, video: Tensor):
+        _assert_video_or_batch_videos_tensor(video)
+
+        if self.time_before_channel:
+            dims = [0, 2, 1, 3, 4] if video.ndim == 5 else [1, 0, 2, 3]
+            video = video.permute(dims)
+
+        video = super().forward(video)
+
+        if self.time_before_channel:
+            video = video.permute(dims)
+
+        return video
+
+
+class VideoWrapper(nn.Module):
+    """Wrap a transform to handle video data. If the frames should be augmented differently, the transform must
+    handle the leading dimension differently. The video is expected to be in format [C, T, H, W] or [T, C, H, W].
+
+    Args:
+        transform (nn.Module): The transform to wrap.
+        video_format (str, optional): Format of the video. Either ``CTHW`` or ``TCHW``. Defaults to "CTHW".
+    """
+
+    def __init__(self, transform: nn.Module, video_format: str = "CTHW") -> None:
+        super().__init__()
+
+        self.transform = transform
+        self.video_format = video_format
+
+        if self.video_format == "CTHW":
+            self.time_before_channel = False
+        elif self.video_format == "TCHW":
+            self.time_before_channel = True
+        else:
+            raise ValueError(
+                f"video_format should be either 'CTHW' or 'TCHW'. Got {self.video_format}."
+            )
+
+    def forward(self, video: Tensor):
+        _assert_video_tensor(video)
+
+        if not self.time_before_channel:
+            video = video.permute(1, 0, 2, 3)
+
+        video = self.transform(video)
+
+        if not self.time_before_channel:
+            video = video.permute(1, 0, 2, 3)
+
+        return video
+
+    def __repr__(self):
+        return (
+            f"{self.__class__.__name__}(\n"
+            f"  transform={self.transform},\n"
+            f"  video_format={self.video_format})"
         )

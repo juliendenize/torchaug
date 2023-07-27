@@ -13,6 +13,10 @@ def _assert_tensor(obj: Any) -> None:
         raise TypeError(f"Object should be a tensor. Got {type(obj)}.")
 
 
+def _is_tensor_video(x: torch.Tensor) -> bool:
+    return x.ndim == 4
+
+
 def is_tensor_on_cpu(tensor: torch.Tensor) -> bool:
     """Check if tensor is on CPU.
 
@@ -44,3 +48,8 @@ def transfer_on_device(
     tensor = tensor.to(device=device, non_blocking=non_blocking)
 
     return tensor
+
+
+def _assert_video_tensor(video: torch.Tensor) -> None:
+    if not isinstance(video, torch.Tensor) or not _is_tensor_video(video):
+        raise TypeError("Tensor is not a torch video.")

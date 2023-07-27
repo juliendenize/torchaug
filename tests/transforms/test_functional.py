@@ -172,7 +172,7 @@ def test_normalize():
     # Test if std contains a 0.
     with pytest.raises(
         ValueError,
-        match="std evaluated to zero after conversion to torch.float32, leading to division by zero.",
+        match="std contains a zero leading to division by zero.",
     ):
         F.normalize(x, mean, [0, 0.225, 0.225], False, True)
 

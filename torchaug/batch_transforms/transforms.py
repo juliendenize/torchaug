@@ -3,7 +3,7 @@ from __future__ import annotations
 import numbers
 from itertools import permutations
 from math import ceil
-from typing import Sequence, Tuple
+from typing import Sequence
 
 import torch
 from torch import Tensor, nn
@@ -12,6 +12,7 @@ from torchvision.transforms.functional import (InterpolationMode, hflip,
                                                resized_crop)
 from torchvision.transforms.transforms import _setup_size
 
+from torchaug.batch_transforms._utils import _assert_batch_videos_tensor
 from torchaug.batch_transforms.functional import (batch_adjust_brightness,
                                                   batch_adjust_contrast,
                                                   batch_adjust_hue,
@@ -110,10 +111,10 @@ class BatchRandomColorJitter(transforms.ColorJitter):
 
     def __init__(
         self,
-        brightness: float | Tuple[float, float] | None = 0,
-        contrast: float | Tuple[float, float] | None = 0,
-        saturation: float | Tuple[float, float] | None = 0,
-        hue: float | Tuple[float, float] | None = 0,
+        brightness: float | tuple[float, float] | None = 0,
+        contrast: float | tuple[float, float] | None = 0,
+        saturation: float | tuple[float, float] | None = 0,
+        hue: float | tuple[float, float] | None = 0,
         p: float = 0.5,
         num_rand_calls: int = -1,
         inplace: bool = True,
@@ -160,7 +161,7 @@ class BatchRandomColorJitter(transforms.ColorJitter):
         saturation: Tensor | None,
         hue: Tensor | None,
         batch_size: int,
-    ) -> Tuple[Tensor, Tensor | None, Tensor | None, Tensor | None, Tensor | None]:
+    ) -> tuple[Tensor, Tensor | None, Tensor | None, Tensor | None, Tensor | None]:
         """Get the parameters for the randomized transform to be applied on image.
 
         Args:
@@ -345,8 +346,8 @@ class BatchRandomGaussianBlur(torch.nn.Module):
 
     def __init__(
         self,
-        kernel_size: int | Tuple[int, int],
-        sigma: float | Tuple[float, float] = (0.1, 2.0),
+        kernel_size: int | tuple[int, int],
+        sigma: float | tuple[float, float] = (0.1, 2.0),
         p: float = 0.5,
         inplace: bool = True,
         value_check: bool = False,
@@ -734,4 +735,71 @@ class BatchRandomSolarize(RandomSolarize):
             f", p={self.p}"
             f", inplace={self.inplace}"
             f", value_check={self.value_check})"
+        )
+
+
+class BatchVideoWrapper(nn.Module):
+    """Wrap a transform to handle batched video data. The transform is expected to handle the leading dimension
+    differently. The batch of videos is expected to be in format [B, C, T, H, W] or [B, T, C, H, W].
+
+    Args:
+        transform (nn.Module): The transform to wrap.
+        same_on_frames (bool, optional): If True, apply the same transform on all the frames, else it
+            flattens the batch and temporal dimensions to apply different transformations to each frame.
+            Defaults to True.
+        video_format (str, optional): Format of the video. Either ``CTHW`` or ``TCHW``. Defaults to "CTHW".
+    """
+
+    def __init__(
+        self,
+        transform: nn.Module,
+        same_on_frames: bool = True,
+        video_format: str = "CTHW",
+    ) -> None:
+
+        super().__init__()
+
+        self.transform = transform
+        self.video_format = video_format
+        self.same_on_frames = same_on_frames
+
+        if self.video_format == "CTHW":
+            self.time_before_channel = False
+
+        elif self.video_format == "TCHW":
+            self.time_before_channel = True
+
+        else:
+            raise ValueError(
+                f"video_format should be either 'CTHW' or 'TCHW'. Got {self.video_format}."
+            )
+
+    def forward(self, videos: Tensor):
+        _assert_batch_videos_tensor(videos)
+
+        if self.time_before_channel:
+            b, t, c, h, w = videos.shape
+        else:
+            b, c, t, h, w = videos.shape
+            videos = videos.permute(0, 2, 1, 3, 4)
+
+        if not self.same_on_frames:
+            videos = videos.reshape(b * t, c, h, w)
+
+        videos = self.transform(videos)
+
+        if not self.same_on_frames:
+            videos = videos.reshape(b, t, *videos.shape[-3:])
+
+        if not self.time_before_channel:
+            videos = videos.permute(0, 2, 1, 3, 4)
+
+        return videos
+
+    def __repr__(self):
+        return (
+            f"{self.__class__.__name__}(\n"
+            f"  transform={self.transform},\n"
+            f"  same_on_frames={self.same_on_frames},\n"
+            f"  video_format={self.video_format})"
         )

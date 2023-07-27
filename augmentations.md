@@ -20,6 +20,8 @@
 | RandomColorJitter  | [x]         | [x]    |
 | RandomGaussianBlur | [x]         | [x]    |
 | RandomSolarize     | [x]         | [x]    |
+| VideoNormalize     | [x]         | [x]    |
+| VideoWrapper       | [x]         | [x]    |
 
 ## Batch transforms
 
@@ -44,3 +46,4 @@
 | BatchRandomHorizontalFlip | [x]         | [x]    |
 | BatchRandomResizedCrop    | [x]         | [x]    |
 | BatchRandomSolarize       | [x]         | [x]    |
+| BatchVideoWrapper         | [x]         | [x]    |
