@@ -44,6 +44,12 @@ def test_gaussian_blur():
     y = F.gaussian_blur(x, [3, 3], torch.tensor([2.0]))
     torch.testing.assert_close(y, y_2)
 
+    # test sigma GPU transfer (if available)
+    if torch.cuda.is_available():
+        y_2 = F_tv.gaussian_blur(x, [3, 3], 2.0)
+        y = F.gaussian_blur(x.cuda(), [3, 3], torch.tensor([2.0])).cpu()
+        torch.testing.assert_close(y, y_2)
+
     # test value sigma Tensor([2., 2.]).
     y_2 = F_tv.gaussian_blur(x, [3, 3], 2.0)
     y = F.gaussian_blur(x, [3, 3], torch.tensor([2.0]))
