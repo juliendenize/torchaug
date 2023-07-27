@@ -350,6 +350,16 @@ class VideoNormalize(Normalize):
 
         return video
 
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}("
+            f"mean={self.mean.tolist()},"
+            f" std={self.std.tolist()},"
+            f" inplace={self.inplace},"
+            f" value_check={self.value_check},"
+            f" video_format={self.video_format})"
+        )
+
 
 class VideoWrapper(nn.Module):
     """Wrap a transform to handle video data. If the frames should be augmented differently, the transform must
