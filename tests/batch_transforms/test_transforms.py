@@ -103,15 +103,15 @@ def test_batch_random_color_jitter():
         ValueError,
         match="num_rand_calls attribute should be an int superior to -1, ahah given.",
     ):
-        transforms.BatchRandomResizedCrop(
-            4, (0.08, 1), (3 / 4, 4 / 3), num_rand_calls="ahah"
+        transforms.BatchRandomColorJitter(
+            num_rand_calls="ahah"
         )
     with pytest.raises(
         ValueError,
         match="num_rand_calls attribute should be an int superior to -1, -2 given.",
     ):
-        transforms.BatchRandomResizedCrop(
-            4, (0.08, 1), (3 / 4, 4 / 3), num_rand_calls=-2
+        transforms.BatchRandomColorJitter(
+            num_rand_calls=-2
         )
 
 
