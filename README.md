@@ -16,7 +16,7 @@ Torchvision has been implemented over Pytorch and Pillow to perform Computer Vis
 - Some CPU/GPU synchronizations cannot be avoided.
 - Batch data augmentations are not completely random, meaning that random parameters are sampled for the whole batch and not each unique component.
 
-This library aims to remove these issues. It acts like a complementary library with Torchvision and does not use the same namespace. Still, it follows the same nomenclature as Torchvision with *functional* augmentations and *transforms* class wrappers.
+This library aims to remove these issues. It acts like a complementary library to Torchvision and does not use the same namespace. Still, it follows the same nomenclature as Torchvision with *functional* augmentations and *transforms* class wrappers.
 
 To be sure to retrieve the same data augmentations as Torchvision, it has been tested on each of its augmentations.
 
