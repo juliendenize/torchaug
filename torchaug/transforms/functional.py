@@ -9,6 +9,7 @@ from torchvision.transforms._functional_tensor import (_assert_channels,
                                                        _cast_squeeze_in,
                                                        _cast_squeeze_out,
                                                        _max_value, invert)
+from torchvision.transforms.functional import convert_image_dtype
 from torchvision.utils import _log_api_usage_once
 
 from torchaug.transforms._utils import (_assert_tensor, is_tensor_on_cpu,
@@ -164,26 +165,33 @@ def normalize(
     tensor: Tensor,
     mean: list[float] | Tensor,
     std: list[float] | Tensor,
+    cast_dtype: torch.dtype | None = None,
     inplace: bool = True,
     value_check: bool = False,
 ) -> Tensor:
-    """Normalize a float tensor image with mean and standard deviation.
+    """Normalize a tensor image with mean and standard deviation.
 
     .. note::
         This transform acts out of place by default, i.e., it does not mutates the input tensor.
 
+    .. note::
+        If tensor is not float, user has to set `cast_dtype` to True to raising error. The function will cast and scale the tensor
+        and return a normalized float tensor.
+
     See :class:`~torchvision.transforms.Normalize` for more details.
 
     Args:
-        tensor (Tensor): Float tensor image of size (C, H, W) or (B, C, H, W) to be normalized.
+        tensor (Tensor): Tensor image of size (C, H, W) or (B, C, H, W) to be normalized.
         mean (sequence or Tensor): Sequence of means for each channel.
         std (sequence or Tensor): Sequence of standard deviations for each channel.
+        cast_dtype (dtype, optional): If not None, scale and cast input to dtype. Expected to be a float dtype.
+            Default, None.
         inplace(bool, optional): Bool to make this operation inplace.
         value_check (bool, optional): Bool to perform tensor value check.
             Might cause slow down on some devices because of synchronization. Default, False.
 
     Returns:
-        Tensor: Normalized Tensor image.
+        Tensor: Normalized float Tensor image.
     """
 
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
@@ -192,14 +200,24 @@ def normalize(
     _assert_tensor(tensor)
     _assert_image_tensor(tensor)
 
-    if not tensor.is_floating_point():
-        raise TypeError(f"Input tensor should be a float tensor. Got {tensor.dtype}.")
+    if not tensor.is_floating_point() and cast_dtype is None:
+        raise TypeError(
+            f"Input tensor should be a float tensor or cast_dtype set to a float dtype."
+            f" Got {tensor.dtype} and {cast_dtype}."
+        )
+    elif cast_dtype is not None and tensor.dtype != cast_dtype:
+        if not torch.tensor(0, dtype=cast_dtype).is_floating_point():
+            raise ValueError(f"cast_dtype should be a float dtype. Got {cast_dtype}.")
+        casted = True
+        tensor = convert_image_dtype(tensor, dtype=torch.float32)
+    else:
+        casted = False
 
     dtype = tensor.dtype
     mean = torch.as_tensor(mean, dtype=dtype, device=tensor.device)
     std = torch.as_tensor(std, dtype=dtype, device=tensor.device)
 
-    if not inplace:
+    if not inplace and not casted:
         tensor = tensor.clone()
 
     if (value_check or is_tensor_on_cpu(std)) and not torch.all(torch.gt(std, 0)):
@@ -210,7 +228,9 @@ def normalize(
     if std.ndim == 1:
         std = std.view(-1, 1, 1)
 
-    return tensor.sub_(mean).div_(std)
+    tensor = tensor.sub_(mean).div_(std)
+
+    return tensor
 
 
 def solarize(

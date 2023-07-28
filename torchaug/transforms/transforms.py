@@ -7,6 +7,7 @@ import torch
 from torch import Tensor, nn
 from torchvision import transforms
 from torchvision.transforms.transforms import _setup_size
+from torchvision.utils import _log_api_usage_once
 
 from torchaug.batch_transforms._utils import \
     _assert_video_or_batch_videos_tensor
@@ -14,32 +15,32 @@ from torchaug.transforms._utils import _assert_video_tensor
 from torchaug.transforms.functional import gaussian_blur, normalize, solarize
 
 
-class Normalize(transforms.Normalize):
+class Normalize(nn.Module):
     def __init__(
         self,
         mean: Sequence[float] | float,
         std: Sequence[float] | float,
+        cast_dtype: torch.dtype | None = None,
         inplace: bool = False,
         value_check: bool = False,
     ) -> None:
         """Normalize a tensor image with mean and standard deviation. Given mean: ``(mean[1],...,mean[n])`` and
         std: ``(std[1],..,std[n])`` for ``n`` channels, this transform will normalize each channel of the input
-        ``torch.*Tensor`` i.e.,
+        ``torch.Tensor`` i.e.,
 
         ``output[channel] = (input[channel] - mean[channel]) / std[channel]``
 
         Args:
             mean (sequence): Sequence of means for each channel.
             std (sequence): Sequence of standard deviations for each channel.
+            cast_dtype (dtype, optional): If not None, scale and cast input to dtype. Expected to be a float dtype.
+                Default, None.
             inplace (bool): Bool to make this operation in-place.
             value_check (bool, optional): Bool to perform tensor value check.
                 Might cause slow down on some devices because of synchronization. Default, False.
         """
-
-        super().__init__(mean=mean, std=std)
-
-        del self.mean
-        del self.std
+        super().__init__()
+        _log_api_usage_once(self)
 
         mean = torch.as_tensor(mean)
         std = torch.as_tensor(std)
@@ -53,12 +54,14 @@ class Normalize(transforms.Normalize):
         self.register_buffer("std", std)
         self.inplace = inplace
         self.value_check = value_check
+        self.cast_dtype = cast_dtype
 
     def forward(self, tensor: Tensor) -> Tensor:
         return normalize(
             tensor,
-            self.mean,
-            self.std,
+            mean=self.mean,
+            std=self.std,
+            cast_dtype=self.cast_dtype,
             inplace=self.inplace,
             value_check=self.value_check,
         )
@@ -68,6 +71,7 @@ class Normalize(transforms.Normalize):
             f"{self.__class__.__name__}("
             f"mean={self.mean.tolist()},"
             f" std={self.std.tolist()},"
+            f" cast_dtype={self.cast_dtype},"
             f" inplace={self.inplace},"
             f" value_check={self.value_check})"
         )
@@ -310,6 +314,8 @@ class VideoNormalize(Normalize):
         mean (sequence): Sequence of means for each channel.
         std (sequence): Sequence of standard deviations for each channel.
         video_format(str): Dimension order of the video. Can be ``TCHW`` or ``CTHW``.
+        cast_dtype (dtype, optional): If not None, scale and cast input to the dtype. Expected to be a float dtype.
+            Default, None.
         inplace (bool): Bool to make this operation in-place.
         value_check (bool, optional): Bool to perform tensor value check.
             Might cause slow down on some devices because of synchronization. Default, False.
@@ -319,11 +325,18 @@ class VideoNormalize(Normalize):
         self,
         mean: Sequence[float] | None = None,
         std: Sequence[float] | None = None,
+        cast_dtype: torch.dtype | None = None,
         inplace: bool = False,
         value_check: bool = False,
         video_format: str = "CTHW",
     ) -> None:
-        super().__init__(mean=mean, std=std, inplace=inplace, value_check=value_check)
+        super().__init__(
+            mean=mean,
+            std=std,
+            cast_dtype=cast_dtype,
+            inplace=inplace,
+            value_check=value_check,
+        )
 
         self.video_format = video_format
 
@@ -355,6 +368,7 @@ class VideoNormalize(Normalize):
             f"{self.__class__.__name__}("
             f"mean={self.mean.tolist()},"
             f" std={self.std.tolist()},"
+            f" cast_dtype={self.cast_dtype},"
             f" inplace={self.inplace},"
             f" value_check={self.value_check},"
             f" video_format={self.video_format})"

@@ -1,6 +1,7 @@
 import pytest
 import torch
 import torchvision.transforms.functional as F_tv
+from torchvision.transforms.functional import convert_image_dtype
 
 import torchaug.transforms.functional as F
 
@@ -141,12 +142,14 @@ def test_normalize():
 
     # Test not inplace.
     torch.testing.assert_close(
-        F.normalize(x, mean, std, False), F_tv.normalize(x, mean, std, False)
+        F.normalize(x, mean, std, inplace=False),
+        F_tv.normalize(x, mean, std, inplace=False),
     )
 
     # Test not inplace and value check that passes.
     torch.testing.assert_close(
-        F.normalize(x, mean, std, False, True), F_tv.normalize(x, mean, std, False)
+        F.normalize(x, mean, std, inplace=False, value_check=True),
+        F_tv.normalize(x, mean, std, inplace=False),
     )
 
     x_tv = x.clone()
@@ -154,7 +157,8 @@ def test_normalize():
 
     # Test inplace.
     torch.testing.assert_close(
-        F.normalize(y, mean, std, True), F_tv.normalize(x_tv, mean, std, True)
+        F.normalize(y, mean, std, inplace=True),
+        F_tv.normalize(x_tv, mean, std, inplace=True),
     )
 
     # Test input is not tensor.
@@ -163,18 +167,36 @@ def test_normalize():
     ):
         F.normalize([2, 0, 3], mean, std)
 
-    # Test input is float tensor.
+    # Test input is int tensor.
+    int_tensor = torch.randint(1, 256, (3, 10, 10), dtype=torch.uint8)
+    torch.testing.assert_close(
+        F.normalize(int_tensor, mean, std, cast_dtype=torch.float32, inplace=False),
+        F_tv.normalize(
+            convert_image_dtype(int_tensor, dtype=torch.float32),
+            mean,
+            std,
+            inplace=False,
+        ),
+    )
     with pytest.raises(
-        TypeError, match="Input tensor should be a float tensor. Got torch.uint8."
+        TypeError,
+        match="Input tensor should be a float tensor or cast_dtype set to a float dtype. Got torch.uint8 and None.",
     ):
-        F.normalize(torch.randint(3, 10, (3, 10, 10), dtype=torch.uint8), mean, std)
+        F.normalize(int_tensor, mean, std, cast_dtype=None)
+    with pytest.raises(
+        ValueError,
+        match="cast_dtype should be a float dtype. Got torch.int32.",
+    ):
+        F.normalize(int_tensor, mean, std, cast_dtype=torch.int32)
 
     # Test if std contains a 0.
     with pytest.raises(
         ValueError,
         match="std contains a zero leading to division by zero.",
     ):
-        F.normalize(x, mean, [0, 0.225, 0.225], False, True)
+        F.normalize(
+            x, mean, [0, 0.225, 0.225], cast_dtype=None, inplace=False, value_check=True
+        )
 
 
 def test_solarize():
