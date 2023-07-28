@@ -16,11 +16,11 @@ Torchvision has been implemented over Pytorch and Pillow to perform Computer Vis
 - Some CPU/GPU synchronizations cannot be avoided.
 - Batch data augmentations are not completely random, meaning that random parameters are sampled for the whole batch and not each unique component.
 
-This library aims to remove these issues. It acts like a complementary library with Torchvision and does not use the same namespace. Still, it follows the same nomenclature as Torchvision with *functional* augmentations and *class* wrappers.
+This library aims to remove these issues. It acts like a complementary library with Torchvision and does not use the same namespace. Still, it follows the same nomenclature as Torchvision with *functional* augmentations and *transforms* class wrappers.
 
 To be sure to retrieve the same data augmentations as Torchvision, it has been tested on each of its augmentations.
 
-See [here](augmentations.md) the implemented data augmentations and [here](speed_comparison.md) the speed comparison with Torchvision.
+See [augmentations.md](augmentations.md) for the implemented data augmentations and [speed_comparison.md](speed_comparison.md) for the speed comparison with Torchvision.
 
 ## How to use
 
@@ -29,7 +29,7 @@ See [here](augmentations.md) the implemented data augmentations and [here](speed
 1. Install Torchaug.
 
 ```bash
-pip3 install torchaug
+pip install torchaug
 ```
 
 2. Import data augmentations either from `torchaug.transforms` or `torchaug.batch_transforms` packages.
