@@ -2,6 +2,7 @@ import pytest
 import torch
 import torchvision.transforms as tv_transforms
 import torchvision.transforms.functional as F_tv
+from torchvision.transforms.functional import convert_image_dtype
 
 import torchaug.transforms as transforms
 
@@ -23,6 +24,36 @@ def test_normalize():
     # test value_check
     out = transforms.Normalize((0.5,), (0.5,), inplace=False, value_check=True)(tensor)
     torch.testing.assert_close(out, torchvision_out)
+
+    # test keep_dtype
+    int_tensor = torch.randint(1, 256, (3, 10, 10), dtype=torch.uint8)
+    out = transforms.Normalize(
+        (0.5,),
+        (0.5,),
+        inplace=False,
+        cast_dtype=torch.float32,
+    )(int_tensor)
+    torch.testing.assert_close(
+        out,
+        F_tv.normalize(
+            convert_image_dtype(int_tensor, dtype=torch.float32),
+            (0.5,),
+            (0.5,),
+            inplace=False,
+        ),
+    )
+    with pytest.raises(
+        TypeError,
+        match="Input tensor should be a float tensor or cast_dtype set to a float dtype. Got torch.uint8 and None.",
+    ):
+        transforms.Normalize((0.5,), (0.5,), inplace=False, cast_dtype=None)(int_tensor)
+    with pytest.raises(
+        ValueError,
+        match="cast_dtype should be a float dtype. Got torch.int32.",
+    ):
+        transforms.Normalize((0.5,), (0.5,), inplace=False, cast_dtype=torch.int32)(
+            int_tensor
+        )
 
     # test wrong value_check
     with pytest.raises(
@@ -224,6 +255,35 @@ def test_video_normalize():
         (0.5,), (0.5,), inplace=False, value_check=True, video_format="CTHW"
     )(tensor)
     torch.testing.assert_close(out, torchvision_out)
+
+    # test keep_dtype
+    int_tensor = torch.randint(1, 256, (10, 3, 10, 10), dtype=torch.uint8)
+    out = transforms.VideoNormalize(
+        (0.5,), (0.5,), inplace=False, cast_dtype=torch.float32, video_format="TCHW"
+    )(int_tensor)
+    torch.testing.assert_close(
+        out,
+        F_tv.normalize(
+            convert_image_dtype(int_tensor, dtype=torch.float32),
+            (0.5,),
+            (0.5,),
+            inplace=False,
+        ),
+    )
+    with pytest.raises(
+        TypeError,
+        match="Input tensor should be a float tensor or cast_dtype set to a float dtype. Got torch.uint8 and None.",
+    ):
+        transforms.VideoNormalize(
+            (0.5,), (0.5,), inplace=False, cast_dtype=None, video_format="TCHW"
+        )(int_tensor)
+    with pytest.raises(
+        ValueError,
+        match="cast_dtype should be a float dtype. Got torch.int32.",
+    ):
+        transforms.VideoNormalize(
+            (0.5,), (0.5,), inplace=False, cast_dtype=torch.int32, video_format="TCHW"
+        )(int_tensor)
 
     # test batch video tensor
     tensor = torch.rand((3, 2, 3, 16, 16))
