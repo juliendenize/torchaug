@@ -232,41 +232,53 @@ def test_video_normalize():
     torch.manual_seed(28)
 
     # test if VideoNormalize can be printed as string
-    transforms.VideoNormalize((0.5,), (0.5,)).__repr__()
+    transforms.VideoNormalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)).__repr__()
 
     # test the optional in-place behaviour
-    tensor = torch.rand((3, 2, 16, 16))
-    torchvision_out = tv_transforms.Normalize((0.5,), (0.5,), inplace=False)(tensor)
-    out = transforms.VideoNormalize((0.5,), (0.5,), inplace=False)(tensor)
-    torch.testing.assert_close(out, torchvision_out)
-    out_inplace = transforms.VideoNormalize((0.5,), (0.5,), inplace=True)(
-        tensor.clone()
+    tensor = torch.rand((3, 8, 16, 16))
+    torchvision_out = tv_transforms.Normalize(
+        (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=False
+    )(tensor.permute(1, 0, 2, 3)).permute(1, 0, 2, 3)
+    out = transforms.VideoNormalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=False)(
+        tensor
     )
+    torch.testing.assert_close(out, torchvision_out)
+    out_inplace = transforms.VideoNormalize(
+        (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=True
+    )(tensor.clone())
     torch.testing.assert_close(out_inplace, torchvision_out)
 
     # test `TCHW` video_format
-    out = transforms.VideoNormalize((0.5,), (0.5,), inplace=False, video_format="TCHW")(
-        tensor.permute(1, 0, 2, 3)
-    )
+    out = transforms.VideoNormalize(
+        (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=False, video_format="TCHW"
+    )(tensor.permute(1, 0, 2, 3))
     torch.testing.assert_close(out.permute(1, 0, 2, 3), torchvision_out)
 
     # test value_check
     out = transforms.VideoNormalize(
-        (0.5,), (0.5,), inplace=False, value_check=True, video_format="CTHW"
+        (0.5, 0.5, 0.5),
+        (0.5, 0.5, 0.5),
+        inplace=False,
+        value_check=True,
+        video_format="CTHW",
     )(tensor)
     torch.testing.assert_close(out, torchvision_out)
 
     # test keep_dtype
-    int_tensor = torch.randint(1, 256, (10, 3, 10, 10), dtype=torch.uint8)
+    int_tensor = torch.randint(1, 256, (8, 3, 10, 10), dtype=torch.uint8)
     out = transforms.VideoNormalize(
-        (0.5,), (0.5,), inplace=False, cast_dtype=torch.float32, video_format="TCHW"
+        (0.5, 0.5, 0.5),
+        (0.5, 0.5, 0.5),
+        inplace=False,
+        cast_dtype=torch.float32,
+        video_format="TCHW",
     )(int_tensor)
     torch.testing.assert_close(
         out,
         F_tv.normalize(
             convert_image_dtype(int_tensor, dtype=torch.float32),
-            (0.5,),
-            (0.5,),
+            (0.5, 0.5, 0.5),
+            (0.5, 0.5, 0.5),
             inplace=False,
         ),
     )
@@ -275,36 +287,50 @@ def test_video_normalize():
         match="Input tensor should be a float tensor or cast_dtype set to a float dtype. Got torch.uint8 and None.",
     ):
         transforms.VideoNormalize(
-            (0.5,), (0.5,), inplace=False, cast_dtype=None, video_format="TCHW"
+            (0.5, 0.5, 0.5),
+            (0.5, 0.5, 0.5),
+            inplace=False,
+            cast_dtype=None,
+            video_format="TCHW",
         )(int_tensor)
     with pytest.raises(
         ValueError,
         match="cast_dtype should be a float dtype. Got torch.int32.",
     ):
         transforms.VideoNormalize(
-            (0.5,), (0.5,), inplace=False, cast_dtype=torch.int32, video_format="TCHW"
+            (0.5, 0.5, 0.5),
+            (0.5, 0.5, 0.5),
+            inplace=False,
+            cast_dtype=torch.int32,
+            video_format="TCHW",
         )(int_tensor)
 
     # test batch video tensor
-    tensor = torch.rand((3, 2, 3, 16, 16))
-    torchvision_out = tv_transforms.Normalize((0.5,), (0.5,), inplace=False)(tensor)
-    out = transforms.VideoNormalize((0.5,), (0.5,), inplace=False)(tensor)
+    tensor = torch.rand((3, 10, 3, 16, 16))
+    torchvision_out = tv_transforms.Normalize(
+        (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=False
+    )(tensor)
+    out = transforms.VideoNormalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=False)(
+        tensor.permute(0, 2, 1, 3, 4)
+    ).permute(0, 2, 1, 3, 4)
     torch.testing.assert_close(out, torchvision_out)
 
     # test batch `TCHW` video tensor
-    torchvision_out = tv_transforms.Normalize((0.5,), (0.5,), inplace=False)(tensor)
-    out = transforms.VideoNormalize((0.5,), (0.5,), inplace=False, video_format="TCHW")(
-        tensor.permute(0, 2, 1, 3, 4)
-    )
-    torch.testing.assert_close(out.permute(0, 2, 1, 3, 4), torchvision_out)
+    torchvision_out = tv_transforms.Normalize(
+        (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=False
+    )(tensor)
+    out = transforms.VideoNormalize(
+        (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=False, video_format="TCHW"
+    )(tensor)
+    torch.testing.assert_close(out, torchvision_out)
 
     # test wrong video_format
     with pytest.raises(
         ValueError, match="video_format should be either 'CTHW' or 'TCHW'. Got ahah."
     ):
-        transforms.VideoNormalize((0.5,), (0.5,), inplace=True, video_format="ahah")(
-            tensor
-        )
+        transforms.VideoNormalize(
+            (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=True, video_format="ahah"
+        )(tensor)
 
     # test wrong value_check
     with pytest.raises(

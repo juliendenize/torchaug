@@ -359,13 +359,13 @@ class VideoNormalize(Normalize):
     def forward(self, video: Tensor):
         _assert_video_or_batch_videos_tensor(video)
 
-        if self.time_before_channel:
+        if not self.time_before_channel:
             dims = [0, 2, 1, 3, 4] if video.ndim == 5 else [1, 0, 2, 3]
             video = video.permute(dims)
 
         video = super().forward(video)
 
-        if self.time_before_channel:
+        if not self.time_before_channel:
             video = video.permute(dims)
 
         return video
