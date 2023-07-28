@@ -1,18 +1,36 @@
 from __future__ import annotations
 
 import numbers
+from abc import ABC, abstractmethod
 from typing import Sequence
 
 import torch
-import torchvision.transforms as tv_transforms
+import torchvision.transforms.functional as F_tv
 from torch import Tensor, nn
 from torchvision.transforms.transforms import _setup_size
 
+import torchaug.transforms.functional as F
 from torchaug.batch_transforms._utils import \
     _assert_video_or_batch_videos_tensor
-from torchaug.transforms._utils import _assert_video_tensor
-from torchaug.transforms.functional import gaussian_blur, normalize, solarize
+from torchaug.transforms._utils import _assert_video_tensor, _check_input
 from torchaug.utils import _log_api_usage_once
+
+
+class RandomTransform(nn.Module, ABC):
+    def __init__(self, p: float) -> None:
+        super().__init__()
+        self.p = p
+
+    @abstractmethod
+    def _apply_transform(self, img: torch.Tensor):
+        ...
+
+    def forward(self, img: torch.Tensor):
+        if self.p == 0.0:
+            return img
+        elif self.p == 1.0 or torch.rand(1).item() < self.p:
+            return self._apply_transform(img)
+        return img
 
 
 class Normalize(nn.Module):
@@ -57,7 +75,7 @@ class Normalize(nn.Module):
         self.cast_dtype = cast_dtype
 
     def forward(self, tensor: Tensor) -> Tensor:
-        return normalize(
+        return F.normalize(
             tensor,
             mean=self.mean,
             std=self.std,
@@ -77,7 +95,7 @@ class Normalize(nn.Module):
         )
 
 
-class RandomApply(tv_transforms.RandomApply):
+class RandomApply(RandomTransform):
     """Apply randomly a list of transformations with a given probability.
 
     Args:
@@ -88,6 +106,9 @@ class RandomApply(tv_transforms.RandomApply):
     def __init__(
         self, transforms: Sequence[nn.Module] | nn.Module, p: float = 0.5
     ) -> None:
+        super().__init__(p=p)
+        _log_api_usage_once(self)
+
         if not isinstance(transforms, nn.Module) and not isinstance(
             transforms, nn.ModuleList
         ):
@@ -95,26 +116,31 @@ class RandomApply(tv_transforms.RandomApply):
         elif not isinstance(transforms, nn.ModuleList):
             transforms = nn.ModuleList([transforms])
 
-        super().__init__(transforms, p)
-        _log_api_usage_once(self)
+        self.transforms = transforms
 
-    def forward(self, img: Tensor) -> Tensor:
+    def _apply_transform(self, img: Tensor) -> Tensor:
         """
         Args:
             img (Tensor): Images to transform.
 
         Returns:
-            Tensor: Randomly transformed image.
+            Tensor: Transformed image.
         """
-        if self.p < torch.rand(1):
-            return img
-
         for t in self.transforms:
             img = t(img)
         return img
 
+    def __repr__(self) -> str:
+        format_string = self.__class__.__name__ + "("
+        format_string += f"\n    p={self.p}"
+        for t in self.transforms:
+            format_string += "\n"
+            format_string += f"    {t}"
+        format_string += "\n)"
+        return format_string
 
-class RandomColorJitter(tv_transforms.ColorJitter):
+
+class RandomColorJitter(RandomTransform):
     def __init__(
         self,
         brightness: float | tuple[float, float] | None = 0,
@@ -145,23 +171,88 @@ class RandomColorJitter(tv_transforms.ColorJitter):
                 or use an interpolation that generates negative values before using this function.
             p (float): Probability to apply color jitter.
         """
-        super().__init__(brightness, contrast, saturation, hue)
+        super().__init__(p=p)
         _log_api_usage_once(self)
 
         self.p = p
+        self.brightness = _check_input(brightness, "brightness")
+        self.contrast = _check_input(contrast, "contrast")
+        self.saturation = _check_input(saturation, "saturation")
+        self.hue = _check_input(
+            hue, "hue", center=0, bound=(-0.5, 0.5), clip_first_on_zero=False
+        )
 
-    def forward(self, img: Tensor) -> Tensor:
-        """
+    @staticmethod
+    def get_params(
+        brightness: list[float] | None,
+        contrast: list[float] | None,
+        saturation: list[float] | None,
+        hue: list[float] | None,
+    ) -> tuple[Tensor, float | None, float | None, float | None, float | None]:
+        """Get the parameters for the randomized transform to be applied on image.
+
         Args:
-            img (Tensor): Image to be jittered.
+            brightness (tuple of float (min, max), optional): The range from which the brightness_factor is chosen
+                uniformly. Pass None to turn off the transformation.
+            contrast (tuple of float (min, max), optional): The range from which the contrast_factor is chosen
+                uniformly. Pass None to turn off the transformation.
+            saturation (tuple of float (min, max), optional): The range from which the saturation_factor is chosen
+                uniformly. Pass None to turn off the transformation.
+            hue (tuple of float (min, max), optional): The range from which the hue_factor is chosen uniformly.
+                Pass None to turn off the transformation.
 
         Returns:
-            Tensor: Randomly jittered image.
+            tuple: The parameters used to apply the randomized transform
+            along with their random order.
         """
+        fn_idx = torch.randperm(4)
 
-        if self.p < torch.rand(1):
-            return img
-        return super().forward(img)
+        b = (
+            None
+            if brightness is None
+            else float(torch.empty(1).uniform_(brightness[0], brightness[1]))
+        )
+        c = (
+            None
+            if contrast is None
+            else float(torch.empty(1).uniform_(contrast[0], contrast[1]))
+        )
+        s = (
+            None
+            if saturation is None
+            else float(torch.empty(1).uniform_(saturation[0], saturation[1]))
+        )
+        h = None if hue is None else float(torch.empty(1).uniform_(hue[0], hue[1]))
+
+        return fn_idx, b, c, s, h
+
+    def _apply_transform(self, img: Tensor) -> Tensor:
+        """
+        Args:
+            img (Tensor): Input image.
+
+        Returns:
+            Tensor: Color jittered image.
+        """
+        (
+            fn_idx,
+            brightness_factor,
+            contrast_factor,
+            saturation_factor,
+            hue_factor,
+        ) = self.get_params(self.brightness, self.contrast, self.saturation, self.hue)
+
+        for fn_id in fn_idx:
+            if fn_id == 0 and brightness_factor is not None:
+                img = F_tv.adjust_brightness(img, brightness_factor)
+            elif fn_id == 1 and contrast_factor is not None:
+                img = F_tv.adjust_contrast(img, contrast_factor)
+            elif fn_id == 2 and saturation_factor is not None:
+                img = F_tv.adjust_saturation(img, saturation_factor)
+            elif fn_id == 3 and hue_factor is not None:
+                img = F_tv.adjust_hue(img, hue_factor)
+
+        return img
 
     def __repr__(self) -> str:
         s = (
@@ -175,7 +266,7 @@ class RandomColorJitter(tv_transforms.ColorJitter):
         return s
 
 
-class RandomGaussianBlur(torch.nn.Module):
+class RandomGaussianBlur(RandomTransform):
     """Blurs image with randomly chosen Gaussian blur.
 
     The image is expected to have the shape [..., C, H, W], where ... means an arbitrary number of leading dimensions.
@@ -187,8 +278,6 @@ class RandomGaussianBlur(torch.nn.Module):
             given range.
         value_check (bool, optional): Bool to perform tensor value check.
              Might cause slow down on some devices because of synchronization. Default, False.
-    Returns:
-        Tensor: Gaussian blurred version of the input image.
     """
 
     def __init__(
@@ -198,7 +287,7 @@ class RandomGaussianBlur(torch.nn.Module):
         p: float = 0.5,
         value_check: bool = False,
     ):
-        super().__init__()
+        super().__init__(p=p)
         _log_api_usage_once(self)
 
         self.kernel_size = _setup_size(
@@ -225,7 +314,6 @@ class RandomGaussianBlur(torch.nn.Module):
             )
 
         self.register_buffer("sigma", torch.as_tensor(sigma))
-        self.p = p
         self.value_check = value_check
 
     @staticmethod
@@ -245,25 +333,22 @@ class RandomGaussianBlur(torch.nn.Module):
             + sigma_min
         )
 
-    def forward(self, img: Tensor) -> Tensor:
+    def _apply_transform(self, img: Tensor) -> Tensor:
         """
         Args:
             img (Tensor): Image to be blurred.
         Returns:
-            Tensor: Randomly gaussian blurred image.
+            Tensor: Gaussian blurred image.
         """
-
-        if self.p < torch.rand(1):
-            return img
         sigma: Tensor = self.get_params(self.sigma[0], self.sigma[1])
-        return gaussian_blur(img, self.kernel_size, [sigma, sigma], self.value_check)
+        return F.gaussian_blur(img, self.kernel_size, [sigma, sigma], self.value_check)
 
     def __repr__(self) -> str:
         s = f"{self.__class__.__name__}(kernel_size={self.kernel_size}, sigma={self.sigma.tolist()}, p={self.p}, value_check={self.value_check})"
         return s
 
 
-class RandomSolarize(nn.Module):
+class RandomSolarize(RandomTransform):
     def __init__(
         self,
         threshold: float,
@@ -280,24 +365,20 @@ class RandomSolarize(nn.Module):
             value_check (bool, optional): Bool to perform tensor value check.
                 Might cause slow down on some devices because of synchronization. Default, False.
         """
-        super().__init__()
+        super().__init__(p=p)
         _log_api_usage_once(self)
 
         self.register_buffer("threshold", torch.as_tensor(threshold))
-        self.p = p
         self.value_check = value_check
 
-    def forward(self, img: Tensor):
+    def _apply_transform(self, img: Tensor):
         """
         Args:
             img (Tensor): Image to be solarized.
         Returns:
-            Tensor: Randomly solarized image.
+            Tensor: Solarized image.
         """
-
-        if torch.rand(1).item() < self.p:
-            return solarize(img, self.threshold, self.value_check)
-        return img
+        return F.solarize(img, self.threshold, self.value_check)
 
     def __repr__(self) -> str:
         return (
