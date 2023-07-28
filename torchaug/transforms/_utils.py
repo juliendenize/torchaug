@@ -29,7 +29,7 @@ def is_tensor_on_cpu(tensor: torch.Tensor) -> bool:
     return tensor.device.type == "cpu"
 
 
-def transfer_on_device(
+def transfer_tensor_on_device(
     tensor: torch.Tensor, device: torch.device, non_blocking: bool = False
 ) -> torch.Tensor:
     """Transfer a tensor to a device.

@@ -18,7 +18,8 @@ from torchvision.utils import _log_api_usage_once
 from torchaug.batch_transforms._utils import (_assert_batch_channels,
                                               _assert_batch_images_tensor,
                                               get_batched_img_dimensions)
-from torchaug.transforms._utils import _assert_tensor, transfer_on_device
+from torchaug.transforms._utils import (_assert_tensor,
+                                        transfer_tensor_on_device)
 
 
 def _get_batch_gaussian_kernel1d(
@@ -94,7 +95,9 @@ def batch_adjust_brightness(
             batch_size
         )
     elif isinstance(brightness_factor, torch.Tensor):
-        brightness_factor = transfer_on_device(brightness_factor, imgs.device, True)
+        brightness_factor = transfer_tensor_on_device(
+            brightness_factor, imgs.device, True
+        )
         if value_check and not torch.all(torch.ge(brightness_factor, 0)):
             raise ValueError(f"brightness_factor is not non-negative.")
         if brightness_factor.numel() == 1:
@@ -142,7 +145,7 @@ def batch_adjust_contrast(
             batch_size
         )
     elif isinstance(contrast_factor, torch.Tensor):
-        contrast_factor = transfer_on_device(contrast_factor, imgs.device, True)
+        contrast_factor = transfer_tensor_on_device(contrast_factor, imgs.device, True)
         if value_check and not torch.all(torch.ge(contrast_factor, 0)):
             raise ValueError(f"contrast_factor is not non-negative.")
         if contrast_factor.numel() == 1:
@@ -214,7 +217,7 @@ def batch_adjust_hue(
             raise ValueError(f"hue_factor is not between -0.5 and 0.5.")
         hue_factor = torch.tensor(hue_factor, device=imgs.device).expand(batch_size)
     elif isinstance(hue_factor, torch.Tensor):
-        hue_factor = transfer_on_device(hue_factor, imgs.device, True)
+        hue_factor = transfer_tensor_on_device(hue_factor, imgs.device, True)
         if value_check and not torch.all(
             torch.logical_and(torch.ge(hue_factor, -0.5), torch.le(hue_factor, 0.5))
         ):
@@ -277,7 +280,9 @@ def batch_adjust_saturation(
             batch_size
         )
     elif isinstance(saturation_factor, torch.Tensor):
-        saturation_factor = transfer_on_device(saturation_factor, imgs.device, True)
+        saturation_factor = transfer_tensor_on_device(
+            saturation_factor, imgs.device, True
+        )
         if value_check and not torch.all(torch.ge(saturation_factor, 0)):
             raise ValueError(f"saturation_factor is not non-negative.")
         if saturation_factor.numel() == 1:
@@ -369,7 +374,7 @@ def batch_gaussian_blur(
             s = float(sigma)
             sigma_t = torch.tensor([[s, s]], device=imgs.device).expand((batch_size, 2))
         elif isinstance(sigma, torch.Tensor):
-            sigma_t = transfer_on_device(sigma, imgs.device, non_blocking=True)
+            sigma_t = transfer_tensor_on_device(sigma, imgs.device, non_blocking=True)
 
             dim_sigma = sigma_t.ndim
             if dim_sigma in [0, 1]:
