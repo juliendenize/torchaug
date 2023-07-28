@@ -1,27 +1,60 @@
 from __future__ import annotations
 
+import numbers
+from abc import ABC, abstractmethod
 from itertools import permutations
 from math import ceil
 from typing import Sequence
 
 import torch
 import torchvision.transforms as tv_transforms
+import torchvision.transforms.functional as F_tv
 from torch import Tensor, nn
-from torchvision.transforms.functional import (InterpolationMode, hflip,
-                                               resized_crop)
+from torchvision.transforms.functional import InterpolationMode
+from torchvision.transforms.transforms import _setup_size
 
-import torchaug.transforms as transforms
+import torchaug.transforms.functional as F
 from torchaug.batch_transforms._utils import _assert_batch_videos_tensor
 from torchaug.batch_transforms.functional import (batch_adjust_brightness,
                                                   batch_adjust_contrast,
                                                   batch_adjust_hue,
                                                   batch_adjust_saturation,
                                                   batch_gaussian_blur)
-from torchaug.transforms.functional import solarize
+from torchaug.transforms._utils import _check_input
 from torchaug.utils import _log_api_usage_once
 
 
-class BatchRandomApply(transforms.RandomApply):
+class BatchRandomTransform(nn.Module, ABC):
+    def __init__(self, p: float, inplace: bool) -> None:
+        super().__init__()
+        self.p = p
+        self.inplace = inplace
+
+    @abstractmethod
+    def _apply_transform(self, img: torch.Tensor):
+        ...
+
+    def forward(self, imgs: torch.Tensor) -> Tensor:
+        if self.p == 0:
+            return imgs
+
+        output: Tensor = imgs if self.inplace else imgs.clone()
+        batch_size = imgs.shape[0]
+
+        if self.p == 1:
+            output = self._apply_transform(output)
+        else:
+            num_apply = round(self.p * batch_size)
+            indices_do_apply = torch.randperm(batch_size, device=imgs.device)[
+                :num_apply
+            ]
+            output[indices_do_apply] = self._apply_transform(output[indices_do_apply])
+            print(indices_do_apply)
+
+        return output
+
+
+class BatchRandomApply(BatchRandomTransform):
     """Apply randomly a list of transformations to a batch of images with a given probability.
 
     Args:
@@ -36,39 +69,31 @@ class BatchRandomApply(transforms.RandomApply):
         p: float = 0.5,
         inplace: bool = True,
     ) -> None:
-        super().__init__(transforms, p)
+        super().__init__(p=p, inplace=inplace)
         _log_api_usage_once(self)
 
+        if not isinstance(transforms, nn.Module) and not isinstance(
+            transforms, nn.ModuleList
+        ):
+            transforms = nn.ModuleList(transforms)
+        elif not isinstance(transforms, nn.ModuleList):
+            transforms = nn.ModuleList([transforms])
+
+        self.transforms = transforms
         self.inplace = inplace
 
-    def forward(self, imgs: Tensor) -> Tensor:
+    def _apply_transform(self, imgs: Tensor) -> Tensor:
         """
         Args:
             imgs (Tensor): Batch of images to transform.
 
         Returns:
-            Tensor: Randomly transformed batch of images.
+            Tensor: Transformed batch of images.
         """
+        for t in self.transforms:
+            imgs[:] = t(imgs)
 
-        if self.p == 0:
-            return imgs
-
-        output: Tensor = imgs if self.inplace else imgs.clone()
-
-        if self.p == 1.0:
-            for t in self.transforms:
-                output = t(output)
-        else:
-            batch_size = imgs.shape[0]
-            num_apply = round(self.p * batch_size)
-            indices_do_apply = torch.randperm(batch_size, device=imgs.device)[
-                :num_apply
-            ]
-
-            for t in self.transforms:
-                output[indices_do_apply] = t(output[indices_do_apply])
-
-        return output
+        return imgs
 
     def __repr__(self) -> str:
         format_string = self.__class__.__name__ + "("
@@ -82,7 +107,7 @@ class BatchRandomApply(transforms.RandomApply):
         return format_string
 
 
-class BatchRandomColorJitter(transforms.RandomColorJitter):
+class BatchRandomColorJitter(BatchRandomTransform):
     """Randomly change the brightness, contrast, saturation and hue to a batch of images. The batch is expected to
     have [B, ..., 1 or 3, H, W] shape, where ... means an arbitrary number of dimensions.
 
@@ -112,16 +137,16 @@ class BatchRandomColorJitter(transforms.RandomColorJitter):
 
     def __init__(
         self,
-        brightness: float | tuple[float, float] | None = 0,
-        contrast: float | tuple[float, float] | None = 0,
-        saturation: float | tuple[float, float] | None = 0,
-        hue: float | tuple[float, float] | None = 0,
+        brightness: float | tuple[float, float] | None = None,
+        contrast: float | tuple[float, float] | None = None,
+        saturation: float | tuple[float, float] | None = None,
+        hue: float | tuple[float, float] | None = None,
         p: float = 0.5,
         num_rand_calls: int = -1,
         inplace: bool = True,
         value_check: bool = False,
     ) -> None:
-        super().__init__(brightness, contrast, saturation, hue, p)
+        super().__init__(p=p, inplace=inplace)
         _log_api_usage_once(self)
 
         if not isinstance(num_rand_calls, int) or not num_rand_calls >= -1:
@@ -129,29 +154,35 @@ class BatchRandomColorJitter(transforms.RandomColorJitter):
                 f"num_rand_calls attribute should be an int superior to -1, {num_rand_calls} given."
             )
 
+        self.p = p
         self.num_rand_calls = num_rand_calls
         self.inplace = inplace
 
-        brightness = self.brightness
-        contrast = self.contrast
-        saturation = self.saturation
-        hue = self.hue
-
         if brightness is not None:
-            del self.brightness
+            brightness = _check_input(brightness, "brightness")
             self.register_buffer("brightness", torch.as_tensor(brightness))
+        else:
+            self.brightness = None
 
         if contrast is not None:
-            del self.contrast
+            contrast = _check_input(contrast, "contrast")
             self.register_buffer("contrast", torch.as_tensor(contrast))
+        else:
+            self.contrast = None
 
         if saturation is not None:
-            del self.saturation
+            saturation = _check_input(saturation, "saturation")
             self.register_buffer("saturation", torch.as_tensor(saturation))
+        else:
+            self.saturation = None
 
         if hue is not None:
-            del self.hue
+            hue = _check_input(
+                hue, "hue", center=0, bound=(-0.5, 0.5), clip_first_on_zero=False
+            )
             self.register_buffer("hue", torch.as_tensor(hue))
+        else:
+            self.hue = None
 
         self.value_check = value_check
 
@@ -208,7 +239,7 @@ class BatchRandomColorJitter(transforms.RandomColorJitter):
 
         return b, c, s, h
 
-    def forward(self, imgs: Tensor) -> Tensor:
+    def _apply_transform(self, imgs: Tensor) -> Tensor:
         """
         Args:
             imgs (Tensor): Input batch of images.
@@ -216,34 +247,21 @@ class BatchRandomColorJitter(transforms.RandomColorJitter):
         Returns:
             Tensor: Randomly color jittered batch of images.
         """
-        if self.p == 0.0 or self.num_rand_calls == 0:
+        if self.num_rand_calls == 0:
             return imgs
 
         batch_size = imgs.shape[0]
-
-        if self.p == 1.0:
-            num_apply = batch_size
-            indices_do_apply = torch.arange(batch_size, device=imgs.device)
-        else:
-            num_apply = round(self.p * batch_size)
-            indices_do_apply = torch.randperm(batch_size, device=imgs.device)[
-                :num_apply
-            ]
-
-        if self.num_rand_calls == -1:
-            num_combination = num_apply
-        else:
-            num_combination = min(num_apply, self.num_rand_calls)
-
         # At most 24 (= 4!) different combinations possible.
-        num_combination = min(num_combination, 24)
+        num_combination = min(
+            batch_size,
+            self.num_rand_calls if self.num_rand_calls != -1 else batch_size,
+            24,
+        )
 
         combinations = list(permutations(range(0, 4)))
         idx_perms = torch.randperm(len(combinations))[:num_combination]
 
-        num_apply_per_combination = ceil(num_apply / num_combination)
-
-        output = imgs if self.inplace else imgs.clone()
+        num_apply_per_combination = ceil(batch_size / num_combination)
 
         (
             brightness_factor,
@@ -255,8 +273,10 @@ class BatchRandomColorJitter(transforms.RandomColorJitter):
             self.contrast,
             self.saturation,
             self.hue,
-            indices_do_apply.shape[0],
+            batch_size,
         )
+
+        indices_do_apply = torch.randperm(batch_size, device=imgs.device)
 
         for i, idx_perm in enumerate(idx_perms):
             indices_combination = indices_do_apply[
@@ -264,8 +284,7 @@ class BatchRandomColorJitter(transforms.RandomColorJitter):
             ]
 
             fn_idx = combinations[idx_perm]
-
-            imgs_combination = output[indices_combination]
+            imgs_combination = imgs[indices_combination]
 
             for fn_id in fn_idx:
                 if fn_id == 0 and brightness_factor is not None:
@@ -309,9 +328,9 @@ class BatchRandomColorJitter(transforms.RandomColorJitter):
                         self.value_check,
                     )
 
-            output[indices_combination] = imgs_combination
+            imgs[indices_combination] = imgs_combination
 
-        return output
+        return imgs
 
     def __repr__(self) -> str:
         s = (
@@ -327,7 +346,7 @@ class BatchRandomColorJitter(transforms.RandomColorJitter):
         return s
 
 
-class BatchRandomGaussianBlur(transforms.RandomGaussianBlur):
+class BatchRandomGaussianBlur(BatchRandomTransform):
     """Blurs batch of images with randomly chosen Gaussian blur.
 
     The batch of images is expected to be of shape [B, ..., C, H, W] where ... means an arbitrary number of dimensions.
@@ -354,14 +373,36 @@ class BatchRandomGaussianBlur(transforms.RandomGaussianBlur):
         value_check: bool = False,
     ):
         super().__init__(
-            kernel_size=kernel_size,
-            sigma=sigma,
             p=p,
-            value_check=value_check,
+            inplace=inplace,
         )
         _log_api_usage_once(self)
 
-        self.inplace = inplace
+        self.kernel_size = _setup_size(
+            kernel_size, "Kernel size should be a tuple/list of two integers."
+        )
+        for ks in self.kernel_size:
+            if ks <= 0 or ks % 2 == 0:
+                raise ValueError(
+                    "Kernel size value should be an odd and positive number."
+                )
+
+        if isinstance(sigma, numbers.Number):
+            if sigma <= 0:
+                raise ValueError("If sigma is a single number, it must be positive.")
+            sigma = (sigma, sigma)
+        elif isinstance(sigma, Sequence) and len(sigma) == 2:
+            if not 0.0 < sigma[0] <= sigma[1]:
+                raise ValueError(
+                    "sigma values should be positive and of the form (min, max)."
+                )
+        else:
+            raise ValueError(
+                "sigma should be a single number or a list/tuple with length 2."
+            )
+
+        self.register_buffer("sigma", torch.as_tensor(sigma))
+        self.value_check = value_check
 
     @staticmethod
     def get_params(sigma_min: Tensor, sigma_max: Tensor, batch_size: int) -> Tensor:
@@ -381,41 +422,19 @@ class BatchRandomGaussianBlur(transforms.RandomGaussianBlur):
             + sigma_min
         )
 
-    def forward(self, imgs: Tensor) -> Tensor:
+    def _apply_transform(self, imgs: Tensor) -> Tensor:
         """
         Args:
             imgs (Tensor): Batch of images to be blurred.
         Returns:
-            Tensor: Randomly gaussian blurred images
+            Tensor: Gaussian blurred images
         """
-
-        if self.p == 0:
-            return imgs
-
-        output: Tensor = imgs if self.inplace else imgs.clone()
-        batch_size = imgs.shape[0]
-
-        if self.p == 1.0:
-            sigma: Tensor = self.get_params(self.sigma[0], self.sigma[1], batch_size)
-
-            output = batch_gaussian_blur(
-                output, self.kernel_size, sigma, self.value_check
-            )
-        else:
-            num_apply = round(self.p * batch_size)
-            indices_do_apply = torch.randperm(batch_size, device=imgs.device)[
-                :num_apply
-            ]
-
-            sigma: Tensor = self.get_params(self.sigma[0], self.sigma[1], num_apply)
-            output[indices_do_apply] = batch_gaussian_blur(
-                output[indices_do_apply], self.kernel_size, sigma, self.value_check
-            )
-
-        return output
+        sigma: Tensor = self.get_params(self.sigma[0], self.sigma[1], imgs.shape[0])
+        imgs = batch_gaussian_blur(imgs, self.kernel_size, sigma, self.value_check)
+        return imgs
 
 
-class BatchRandomGrayScale(tv_transforms.Grayscale):
+class BatchRandomGrayScale(BatchRandomTransform):
     def __init__(
         self,
         p: float = 0.5,
@@ -432,49 +451,27 @@ class BatchRandomGrayScale(tv_transforms.Grayscale):
             Tensor: Grayscale of the batch of images.
         """
 
-        super().__init__(num_output_channels=3)
+        super().__init__(p=p, inplace=inplace)
         _log_api_usage_once(self)
 
-        self.p = p
-        self.inplace = inplace
-
-    def forward(self, imgs: Tensor) -> Tensor:
+    def _apply_transform(self, imgs: Tensor) -> Tensor:
         """
         Args:
             imgs (Tensor): Batch of images to be grayscaled.
 
         Returns:
-            Tensor: Randomly grayscaled batch of images.
+            Tensor: Grayscaled batch of images.
         """
-
-        if self.p == 0:
-            return imgs
-
-        output: Tensor = imgs if self.inplace else imgs.clone()
-
-        if self.p == 1.0:
-            output = super().forward(output)
-        else:
-            batch_size = imgs.shape[0]
-            num_apply = round(self.p * batch_size)
-            indices_do_apply = torch.randperm(batch_size, device=imgs.device)[
-                :num_apply
-            ]
-
-            output[indices_do_apply] = super().forward(output[indices_do_apply])
-
-        return output
+        imgs = F_tv.rgb_to_grayscale(imgs, 3)
+        return imgs
 
     def __repr__(self) -> str:
         return (
-            f"{self.__class__.__name__}("
-            f" num_output_channels={self.num_output_channels}"
-            f", p={self.p}"
-            f", inplace={self.inplace})"
+            f"{self.__class__.__name__}(" f", p={self.p}" f", inplace={self.inplace})"
         )
 
 
-class BatchRandomHorizontalFlip(tv_transforms.RandomHorizontalFlip):
+class BatchRandomHorizontalFlip(BatchRandomTransform):
     def __init__(
         self,
         p: float = 0.5,
@@ -490,37 +487,19 @@ class BatchRandomHorizontalFlip(tv_transforms.RandomHorizontalFlip):
         Returns:
             Tensor: Grayscale batch of images.
         """
-        super().__init__(p=p)
+        super().__init__(p=p, inplace=inplace)
         _log_api_usage_once(self)
 
-        self.inplace = inplace
-
-    def forward(self, imgs: Tensor) -> Tensor:
+    def _apply_transform(self, imgs: Tensor) -> Tensor:
         """
         Args:
             imgs (Tensor): Batch of images to be horizontally fliped.
 
         Returns:
-            Tensor: Randomly horizontally fliped batch of images.
+            Tensor: Horizontally fliped batch of images.
         """
-
-        if self.p == 0:
-            return imgs
-
-        output: Tensor = imgs if self.inplace else imgs.clone()
-
-        if self.p == 1.0:
-            output = hflip(output)
-        else:
-            batch_size = imgs.shape[0]
-            num_apply = round(self.p * batch_size)
-            indices_do_apply = torch.randperm(batch_size, device=imgs.device)[
-                :num_apply
-            ]
-
-            output[indices_do_apply] = hflip(output[indices_do_apply])
-
-        return output
+        imgs = F_tv.hflip(imgs)
+        return imgs
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(" f"p={self.p}" f", inplace={self.inplace})"
@@ -596,7 +575,7 @@ class BatchRandomResizedCrop(tv_transforms.RandomResizedCrop):
         """
 
         i, j, h, w = self.get_params(img, self.scale, self.ratio)
-        return resized_crop(
+        return F_tv.resized_crop(
             img, i, j, h, w, self.size, self.interpolation, antialias=self.antialias
         )
 
@@ -650,7 +629,7 @@ class BatchRandomResizedCrop(tv_transforms.RandomResizedCrop):
         return format_string
 
 
-class BatchRandomSolarize(transforms.RandomSolarize):
+class BatchRandomSolarize(BatchRandomTransform):
     def __init__(
         self,
         threshold: float,
@@ -670,13 +649,13 @@ class BatchRandomSolarize(transforms.RandomSolarize):
             Might cause slow down on some devices because of synchronization or large batch size. Default, False.
         """
 
-        super().__init__(threshold, p)
+        super().__init__(p=p, inplace=inplace)
         _log_api_usage_once(self)
 
-        self.inplace = inplace
+        self.register_buffer("threshold", torch.as_tensor(threshold))
         self.value_check = value_check
 
-    def forward(self, imgs: Tensor) -> Tensor:
+    def _apply_transform(self, imgs: Tensor) -> Tensor:
         """
         Args:
             imgs (Tensor): Batch of images to be solarized.
@@ -684,26 +663,8 @@ class BatchRandomSolarize(transforms.RandomSolarize):
         Returns:
             Tensor: Randomly solarized batch of images.
         """
-
-        if self.p == 0:
-            return imgs
-
-        output: Tensor = imgs if self.inplace else imgs.clone()
-
-        if self.p == 1.0:
-            output = solarize(output, self.threshold, self.value_check)
-        else:
-            batch_size = imgs.shape[0]
-            num_apply = round(self.p * batch_size)
-            indices_do_apply = torch.randperm(batch_size, device=imgs.device)[
-                :num_apply
-            ]
-
-            output[indices_do_apply] = solarize(
-                output[indices_do_apply], self.threshold, self.value_check
-            )
-
-        return output
+        imgs = F.solarize(imgs, self.threshold, self.value_check)
+        return imgs
 
     def __repr__(self) -> str:
         return (

@@ -117,20 +117,18 @@ def test_random_color_jitter():
     out_not_jittered = transforms.RandomColorJitter(0.5, 0.3, 0.1, 0.3, 0.0)(tensor)
 
     brightness, contrast, saturation, hue = (
-        torch.tensor(0.8870313763618469),
-        torch.tensor(0.8208379745483398),
-        torch.tensor(1.0451856851577759),
-        torch.tensor(0.05531376972794533),
+        torch.tensor(0.8414264917373657),
+        torch.tensor(0.9322187900543213),
+        torch.tensor(0.9402793049812317),
+        torch.tensor(0.1355568766593933),
     )
 
-    torchvision_out = F_tv.adjust_hue(
-        F_tv.adjust_contrast(
-            F_tv.adjust_saturation(
-                F_tv.adjust_brightness(tensor, brightness), saturation
-            ),
-            contrast,
+    torchvision_out = F_tv.adjust_brightness(
+        F_tv.adjust_hue(
+            F_tv.adjust_contrast(F_tv.adjust_saturation(tensor, saturation), contrast),
+            hue,
         ),
-        hue,
+        brightness,
     )
 
     torch.testing.assert_close(out_jittered, torchvision_out)
@@ -152,7 +150,7 @@ def test_random_gaussian_blur():
     transforms.RandomGaussianBlur((3, 3), (0.1, 2.0), 0.5)(tensor)
     out_blurred = transforms.RandomGaussianBlur((3, 3), (0.1, 2.0), 1.0)(tensor)
 
-    torchvision_out = F_tv.gaussian_blur(tensor, (3, 3), 0.7487103)
+    torchvision_out = F_tv.gaussian_blur(tensor, (3, 3), 0.762560)
 
     torch.testing.assert_close(out_blurred, torchvision_out)
     torch.testing.assert_close(out_not_blurred, tensor)
