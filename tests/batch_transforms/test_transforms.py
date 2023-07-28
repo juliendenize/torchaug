@@ -45,7 +45,9 @@ def test_batch_random_apply():
     )
     torch.testing.assert_close(
         transforms.BatchRandomApply(
-            [mono_transforms.Normalize([225, 225, 225], [0.25, 0.25, 0.25])], 1.0
+            [mono_transforms.Normalize([225, 225, 225], [0.25, 0.25, 0.25])],
+            1.0,
+            inplace=False,
         )(imgs),
         F_tv.normalize(imgs, [225, 225, 225], [0.25, 0.25, 0.25]),
     )
@@ -56,9 +58,10 @@ def test_batch_random_color_jitter():
 
     # Checking if BatchRandomColorJitter can be printed as string
     transforms.BatchRandomColorJitter(0.5, 0.5, 0.5, 0.1, 0.5, 0).__repr__()
+    transforms.BatchRandomColorJitter(None, None, None, None, 0.5, 0).__repr__()
 
     imgs = torch.randn(8, 3, 8, 8)
-    indices_to_apply = torch.tensor([[0, 1], [7, 5]])
+    indices_to_apply = torch.tensor([[1, 0], [7, 5]])
     orders = torch.tensor([[1, 0, 2, 3], [2, 0, 1, 3]])
     brightnesss = torch.tensor([[0.5807553, 1.0611039], [1.0105517, 0.9287435]])
     contrasts = torch.tensor([[0.8417916, 0.9093333], [0.8968358, 1.4652505]])
