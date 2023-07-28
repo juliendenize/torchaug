@@ -4,15 +4,15 @@ import numbers
 from typing import Sequence
 
 import torch
+import torchvision.transforms as tv_transforms
 from torch import Tensor, nn
-from torchvision import transforms
 from torchvision.transforms.transforms import _setup_size
-from torchvision.utils import _log_api_usage_once
 
 from torchaug.batch_transforms._utils import \
     _assert_video_or_batch_videos_tensor
 from torchaug.transforms._utils import _assert_video_tensor
 from torchaug.transforms.functional import gaussian_blur, normalize, solarize
+from torchaug.utils import _log_api_usage_once
 
 
 class Normalize(nn.Module):
@@ -77,7 +77,7 @@ class Normalize(nn.Module):
         )
 
 
-class RandomApply(transforms.RandomApply):
+class RandomApply(tv_transforms.RandomApply):
     """Apply randomly a list of transformations with a given probability.
 
     Args:
@@ -96,6 +96,7 @@ class RandomApply(transforms.RandomApply):
             transforms = nn.ModuleList([transforms])
 
         super().__init__(transforms, p)
+        _log_api_usage_once(self)
 
     def forward(self, img: Tensor) -> Tensor:
         """
@@ -113,7 +114,7 @@ class RandomApply(transforms.RandomApply):
         return img
 
 
-class RandomColorJitter(transforms.ColorJitter):
+class RandomColorJitter(tv_transforms.ColorJitter):
     def __init__(
         self,
         brightness: float | tuple[float, float] | None = 0,
@@ -145,6 +146,8 @@ class RandomColorJitter(transforms.ColorJitter):
             p (float): Probability to apply color jitter.
         """
         super().__init__(brightness, contrast, saturation, hue)
+        _log_api_usage_once(self)
+
         self.p = p
 
     def forward(self, img: Tensor) -> Tensor:
@@ -196,6 +199,8 @@ class RandomGaussianBlur(torch.nn.Module):
         value_check: bool = False,
     ):
         super().__init__()
+        _log_api_usage_once(self)
+
         self.kernel_size = _setup_size(
             kernel_size, "Kernel size should be a tuple/list of two integers."
         )
@@ -258,7 +263,7 @@ class RandomGaussianBlur(torch.nn.Module):
         return s
 
 
-class RandomSolarize(transforms.RandomSolarize):
+class RandomSolarize(nn.Module):
     def __init__(
         self,
         threshold: float,
@@ -275,10 +280,11 @@ class RandomSolarize(transforms.RandomSolarize):
             value_check (bool, optional): Bool to perform tensor value check.
                 Might cause slow down on some devices because of synchronization. Default, False.
         """
-        super().__init__(threshold=threshold, p=p)
-        del self.threshold
+        super().__init__()
+        _log_api_usage_once(self)
 
         self.register_buffer("threshold", torch.as_tensor(threshold))
+        self.p = p
         self.value_check = value_check
 
     def forward(self, img: Tensor):
@@ -337,6 +343,7 @@ class VideoNormalize(Normalize):
             inplace=inplace,
             value_check=value_check,
         )
+        _log_api_usage_once(self)
 
         self.video_format = video_format
 
@@ -386,6 +393,7 @@ class VideoWrapper(nn.Module):
 
     def __init__(self, transform: nn.Module, video_format: str = "CTHW") -> None:
         super().__init__()
+        _log_api_usage_once(self)
 
         self.transform = transform
         self.video_format = video_format

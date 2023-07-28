@@ -13,13 +13,13 @@ from torchvision.transforms._functional_tensor import (_assert_image_tensor,
                                                        _rgb2hsv,
                                                        convert_image_dtype,
                                                        rgb_to_grayscale)
-from torchvision.utils import _log_api_usage_once
 
 from torchaug.batch_transforms._utils import (_assert_batch_channels,
                                               _assert_batch_images_tensor,
                                               get_batched_img_dimensions)
 from torchaug.transforms._utils import (_assert_tensor,
                                         transfer_tensor_on_device)
+from torchaug.utils import _log_api_usage_once
 
 
 def _get_batch_gaussian_kernel1d(

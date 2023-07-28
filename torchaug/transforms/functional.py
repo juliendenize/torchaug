@@ -10,10 +10,10 @@ from torchvision.transforms._functional_tensor import (_assert_channels,
                                                        _cast_squeeze_out,
                                                        _max_value, invert)
 from torchvision.transforms.functional import convert_image_dtype
-from torchvision.utils import _log_api_usage_once
 
 from torchaug.transforms._utils import (_assert_tensor, is_tensor_on_cpu,
                                         transfer_tensor_on_device)
+from torchaug.utils import _log_api_usage_once
 
 
 def _get_gaussian_kernel1d(

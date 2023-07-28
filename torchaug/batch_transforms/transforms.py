@@ -1,17 +1,16 @@
 from __future__ import annotations
 
-import numbers
 from itertools import permutations
 from math import ceil
 from typing import Sequence
 
 import torch
+import torchvision.transforms as tv_transforms
 from torch import Tensor, nn
-from torchvision import transforms
 from torchvision.transforms.functional import (InterpolationMode, hflip,
                                                resized_crop)
-from torchvision.transforms.transforms import _setup_size
 
+import torchaug.transforms as transforms
 from torchaug.batch_transforms._utils import _assert_batch_videos_tensor
 from torchaug.batch_transforms.functional import (batch_adjust_brightness,
                                                   batch_adjust_contrast,
@@ -19,10 +18,10 @@ from torchaug.batch_transforms.functional import (batch_adjust_brightness,
                                                   batch_adjust_saturation,
                                                   batch_gaussian_blur)
 from torchaug.transforms.functional import solarize
-from torchaug.transforms.transforms import RandomApply, RandomSolarize
+from torchaug.utils import _log_api_usage_once
 
 
-class BatchRandomApply(RandomApply):
+class BatchRandomApply(transforms.RandomApply):
     """Apply randomly a list of transformations to a batch of images with a given probability.
 
     Args:
@@ -38,6 +37,8 @@ class BatchRandomApply(RandomApply):
         inplace: bool = True,
     ) -> None:
         super().__init__(transforms, p)
+        _log_api_usage_once(self)
+
         self.inplace = inplace
 
     def forward(self, imgs: Tensor) -> Tensor:
@@ -81,7 +82,7 @@ class BatchRandomApply(RandomApply):
         return format_string
 
 
-class BatchRandomColorJitter(transforms.ColorJitter):
+class BatchRandomColorJitter(transforms.RandomColorJitter):
     """Randomly change the brightness, contrast, saturation and hue to a batch of images. The batch is expected to
     have [B, ..., 1 or 3, H, W] shape, where ... means an arbitrary number of dimensions.
 
@@ -120,8 +121,8 @@ class BatchRandomColorJitter(transforms.ColorJitter):
         inplace: bool = True,
         value_check: bool = False,
     ) -> None:
-        super().__init__(brightness, contrast, saturation, hue)
-        self.p = p
+        super().__init__(brightness, contrast, saturation, hue, p)
+        _log_api_usage_once(self)
 
         if not isinstance(num_rand_calls, int) or not num_rand_calls >= -1:
             raise ValueError(
@@ -326,7 +327,7 @@ class BatchRandomColorJitter(transforms.ColorJitter):
         return s
 
 
-class BatchRandomGaussianBlur(torch.nn.Module):
+class BatchRandomGaussianBlur(transforms.RandomGaussianBlur):
     """Blurs batch of images with randomly chosen Gaussian blur.
 
     The batch of images is expected to be of shape [B, ..., C, H, W] where ... means an arbitrary number of dimensions.
@@ -352,34 +353,15 @@ class BatchRandomGaussianBlur(torch.nn.Module):
         inplace: bool = True,
         value_check: bool = False,
     ):
-        super().__init__()
-        self.kernel_size = _setup_size(
-            kernel_size, "Kernel size should be a tuple/list of two integers"
+        super().__init__(
+            kernel_size=kernel_size,
+            sigma=sigma,
+            p=p,
+            value_check=value_check,
         )
-        for ks in self.kernel_size:
-            if ks <= 0 or ks % 2 == 0:
-                raise ValueError(
-                    "Kernel size value should be an odd and positive number."
-                )
+        _log_api_usage_once(self)
 
-        if isinstance(sigma, numbers.Number):
-            if sigma <= 0:
-                raise ValueError("If sigma is a single number, it must be positive.")
-            sigma = (sigma, sigma)
-        elif isinstance(sigma, Sequence) and len(sigma) == 2:
-            if not 0.0 < sigma[0] <= sigma[1]:
-                raise ValueError(
-                    "sigma values should be positive and of the form (min, max)."
-                )
-        else:
-            raise ValueError(
-                "sigma should be a single number or a list/tuple with length 2."
-            )
-
-        self.register_buffer("sigma", torch.as_tensor(sigma))
-        self.p = p
         self.inplace = inplace
-        self.value_check = value_check
 
     @staticmethod
     def get_params(sigma_min: Tensor, sigma_max: Tensor, batch_size: int) -> Tensor:
@@ -432,19 +414,8 @@ class BatchRandomGaussianBlur(torch.nn.Module):
 
         return output
 
-    def __repr__(self) -> str:
-        s = (
-            f"{self.__class__.__name__}("
-            f"kernel_size={self.kernel_size}"
-            f", sigma={self.sigma.tolist()}"
-            f", p={self.p}"
-            f", value_check={self.value_check}"
-            f", inplace={self.inplace})"
-        )
-        return s
 
-
-class BatchRandomGrayScale(transforms.Grayscale):
+class BatchRandomGrayScale(tv_transforms.Grayscale):
     def __init__(
         self,
         p: float = 0.5,
@@ -462,6 +433,8 @@ class BatchRandomGrayScale(transforms.Grayscale):
         """
 
         super().__init__(num_output_channels=3)
+        _log_api_usage_once(self)
+
         self.p = p
         self.inplace = inplace
 
@@ -501,7 +474,7 @@ class BatchRandomGrayScale(transforms.Grayscale):
         )
 
 
-class BatchRandomHorizontalFlip(transforms.RandomHorizontalFlip):
+class BatchRandomHorizontalFlip(tv_transforms.RandomHorizontalFlip):
     def __init__(
         self,
         p: float = 0.5,
@@ -517,8 +490,9 @@ class BatchRandomHorizontalFlip(transforms.RandomHorizontalFlip):
         Returns:
             Tensor: Grayscale batch of images.
         """
-
         super().__init__(p=p)
+        _log_api_usage_once(self)
+
         self.inplace = inplace
 
     def forward(self, imgs: Tensor) -> Tensor:
@@ -552,7 +526,7 @@ class BatchRandomHorizontalFlip(transforms.RandomHorizontalFlip):
         return f"{self.__class__.__name__}(" f"p={self.p}" f", inplace={self.inplace})"
 
 
-class BatchRandomResizedCrop(transforms.RandomResizedCrop):
+class BatchRandomResizedCrop(tv_transforms.RandomResizedCrop):
     """Crop a random portion of a batch of images and resize it to a given size.
 
     The batch shape is expected to be [B, ..., H, W], where ... means an arbitrary number of dimensions
@@ -603,6 +577,7 @@ class BatchRandomResizedCrop(transforms.RandomResizedCrop):
             raise TypeError(f"size should be a int or a sequence of int. Got {size}.")
 
         super().__init__(size, scale, ratio, interpolation, antialias, **kwargs)
+        _log_api_usage_once(self)
 
         if not isinstance(num_rand_calls, int) or not num_rand_calls >= -1:
             raise ValueError(
@@ -675,7 +650,7 @@ class BatchRandomResizedCrop(transforms.RandomResizedCrop):
         return format_string
 
 
-class BatchRandomSolarize(RandomSolarize):
+class BatchRandomSolarize(transforms.RandomSolarize):
     def __init__(
         self,
         threshold: float,
@@ -696,6 +671,8 @@ class BatchRandomSolarize(RandomSolarize):
         """
 
         super().__init__(threshold, p)
+        _log_api_usage_once(self)
+
         self.inplace = inplace
         self.value_check = value_check
 
@@ -756,8 +733,8 @@ class BatchVideoWrapper(nn.Module):
         same_on_frames: bool = True,
         video_format: str = "CTHW",
     ) -> None:
-
         super().__init__()
+        _log_api_usage_once(self)
 
         self.transform = transform
         self.video_format = video_format
