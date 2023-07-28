@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import numbers
 from typing import Any
 
@@ -84,4 +86,3 @@ def transfer_tensor_on_device(
     tensor = tensor.to(device=device, non_blocking=non_blocking)
 
     return tensor
-
