@@ -50,7 +50,6 @@ class BatchRandomTransform(nn.Module, ABC):
                 :num_apply
             ]
             output[indices_do_apply] = self._apply_transform(output[indices_do_apply])
-            print(indices_do_apply)
 
         return output
 
