@@ -824,6 +824,9 @@ class BatchVideoResize(nn.Module):
 
         videos = videos.reshape(b, t, *videos.shape[-3:])
 
+        if not self.time_before_channel:
+            videos = videos.permute(0, 2, 1, 3, 4)
+
         return videos
 
     def __repr__(self) -> str:
