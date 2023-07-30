@@ -832,6 +832,6 @@ class BatchVideoResize(nn.Module):
             f"(size={self.size}, "
             f"interpolation={self.interpolation.value}, "
             f"max_size={self.max_size}, "
-            f"antialias={self.antialias})"
+            f"antialias={self.antialias}, "
             f"video_format={self.video_format})"
         )
