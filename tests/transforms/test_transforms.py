@@ -80,7 +80,7 @@ def test_normalize():
 def test_mul_255():
     torch.manual_seed(28)
 
-    # test if Div255 can be printed as string
+    # test if Mul255 can be printed as string
     transforms.Mul255(False).__repr__()
     tensor = torch.rand((3, 16, 16))
     expected_out = tensor * 255
