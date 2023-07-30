@@ -433,6 +433,17 @@ class BatchRandomGaussianBlur(BatchRandomTransform):
         imgs = batch_gaussian_blur(imgs, self.kernel_size, sigma, self.value_check)
         return imgs
 
+    def __repr__(self) -> str:
+        s = (
+            f"{self.__class__.__name__}(",
+            f"kernel_size={self.kernel_size}, ",
+            f"sigma={self.sigma.tolist()}, "
+            f"p={self.p}, "
+            f"inplace={self.inplace}, ",
+            f"value_check={self.value_check})",
+        )
+        return s
+
 
 class BatchRandomGrayScale(BatchRandomTransform):
     def __init__(
