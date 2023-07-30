@@ -47,4 +47,4 @@
 | BatchRandomResizedCrop    | [x]         | [x]    |
 | BatchRandomSolarize       | [x]         | [x]    |
 | BatchVideoWrapper         | [x]         | [x]    |
-| BatchVideoResize          | [x]         | []    |
+| BatchVideoResize          | [x]         | [x]    |

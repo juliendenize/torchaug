@@ -400,3 +400,49 @@ def test_batch_video_wrapper():
     tensor = torch.rand((6, 3, 2, 3, 16, 16))
     with pytest.raises(TypeError, match="Tensor is not a torch batch of videos."):
         transforms.BatchVideoWrapper(transform=transform)(tensor)
+
+
+def test_batch_video_resize():
+    torch.manual_seed(28)
+
+    # test if BatchVideoResize can be printed as string
+    transforms.BatchVideoResize(size=2).__repr__()
+    # test interpolation int
+    transforms.BatchVideoResize(size=2, interpolation=3).__repr__()
+
+    # test CTHW format
+    tensor = torch.rand((2, 3, 8, 16, 16))
+    torchvision_out = tv_transforms.Resize(2, antialias=True)(tensor.permute(0, 2, 1, 3, 4).reshape(2 * 8, 3, 16, 16)).reshape(2, 8, 3, 2, 2).permute(0, 2, 1, 3, 4)
+    out = transforms.BatchVideoResize(size=2, video_format="CTHW")(tensor)
+    torch.testing.assert_close(out, torchvision_out)
+
+    # test TCHW format
+    tensor = torch.rand((2, 8, 3, 16, 16))
+    torchvision_out = tv_transforms.Resize(2, antialias=True)(tensor.reshape(2 * 8, 3, 16, 16)).reshape(2, 8, 3, 2, 2)
+    out = transforms.BatchVideoResize(size=2, video_format="TCHW")(tensor)
+    torch.testing.assert_close(out, torchvision_out)
+
+
+    # test wrong video_format
+    with pytest.raises(
+        ValueError, match="video_format should be either 'CTHW' or 'TCHW'. Got ahah."
+    ):
+        transforms.BatchVideoResize(size=2, video_format="ahah")
+    
+    # test wrong tensor dimension
+    tensor = torch.rand((6, 3, 2, 3, 16, 16))
+    with pytest.raises(TypeError, match="Tensor is not a torch batch of videos."):
+        transforms.BatchVideoResize(size=2)(tensor)
+    
+    # test size wrong type
+    with pytest.raises(
+        TypeError, match="Size should be int or sequence. Got <class 'NoneType'>."
+    ):
+        transforms.BatchVideoResize(size=None)
+    
+    # test size wrong sequence size
+    with pytest.raises(
+        ValueError, match="If size is a sequence, it should have 1 or 2 values."
+    ):
+        transforms.BatchVideoResize(size=[2,3,4])
+    

@@ -783,10 +783,11 @@ class BatchVideoResize(nn.Module):
     ):
         super().__init__()
         _log_api_usage_once(self)
+
         if not isinstance(size, (int, Sequence)):
-            raise TypeError(f"Size should be int or sequence. Got {type(size)}")
+            raise TypeError(f"Size should be int or sequence. Got {type(size)}.")
         if isinstance(size, Sequence) and len(size) not in (1, 2):
-            raise ValueError("If size is a sequence, it should have 1 or 2 values")
+            raise ValueError("If size is a sequence, it should have 1 or 2 values.")
         self.size = size
         self.max_size = max_size
 
@@ -831,7 +832,7 @@ class BatchVideoResize(nn.Module):
     def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__}("
-            f"(size={self.size}, "
+            f"size={self.size}, "
             f"interpolation={self.interpolation.value}, "
             f"max_size={self.max_size}, "
             f"antialias={self.antialias}, "
