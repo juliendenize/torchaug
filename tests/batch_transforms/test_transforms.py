@@ -12,9 +12,12 @@ def test_batch_random_apply():
     torch.manual_seed(28)
 
     # Checking if BatchRandomApply can be printed as string
-    transforms.BatchRandomApply(
-        [mono_transforms.Normalize([225, 225, 225], [0.25, 0.25, 0.25])], 0.5
-    ).__repr__()
+    assert isinstance(
+        transforms.BatchRandomApply(
+            [mono_transforms.Normalize([225, 225, 225], [0.25, 0.25, 0.25])], 0.5
+        ).__repr__(),
+        str,
+    )
 
     imgs = torch.randn(4, 3, 8, 8)
     indices_to_apply = torch.tensor([2, 1])
@@ -57,8 +60,13 @@ def test_batch_random_color_jitter():
     torch.manual_seed(28)
 
     # Checking if BatchRandomColorJitter can be printed as string
-    transforms.BatchRandomColorJitter(0.5, 0.5, 0.5, 0.1, 0.5, 0).__repr__()
-    transforms.BatchRandomColorJitter(None, None, None, None, 0.5, 0).__repr__()
+    assert isinstance(
+        transforms.BatchRandomColorJitter(0.5, 0.5, 0.5, 0.1, 0.5, 0).__repr__(), str
+    )
+    assert isinstance(
+        transforms.BatchRandomColorJitter(None, None, None, None, 0.5, 0).__repr__(),
+        str,
+    )
 
     imgs = torch.randn(8, 3, 8, 8)
     indices_to_apply = torch.tensor([[1, 0], [7, 5]])
@@ -119,7 +127,9 @@ def test_batch_random_gaussian_blur():
     torch.manual_seed(28)
 
     # Checking if BatchRandomGaussianBlur can be printed as string
-    transforms.BatchRandomGaussianBlur([3, 3], [0.1, 2.0], 0.5).__repr__()
+    assert isinstance(
+        transforms.BatchRandomGaussianBlur([3, 3], [0.1, 2.0], 0.5).__repr__(), str
+    )
 
     imgs = torch.randn(4, 3, 8, 8)
     indices_to_apply = torch.tensor([2, 1])
@@ -188,7 +198,7 @@ def test_batch_random_gray_scale():
     torch.manual_seed(28)
 
     # Checking if BatchRandomGrayScale can be printed as string
-    transforms.BatchRandomGrayScale(0.5).__repr__()
+    assert isinstance(transforms.BatchRandomGrayScale(0.5).__repr__(), str)
 
     imgs = torch.randn(4, 3, 8, 8)
     indices_to_apply = torch.tensor([2, 1])
@@ -215,7 +225,7 @@ def test_batch_random_horizontal_flip():
     torch.manual_seed(28)
 
     # Checking if BatchRandomHorizontalFlip can be printed as string
-    transforms.BatchRandomHorizontalFlip(0.5).__repr__()
+    assert isinstance(transforms.BatchRandomHorizontalFlip(0.5).__repr__(), str)
 
     imgs = torch.randn(4, 3, 8, 8)
     indices_to_apply = torch.tensor([2, 1])
@@ -240,9 +250,12 @@ def test_batch_random_resized_crop():
     torch.manual_seed(28)
 
     # Checking if BatchRandomResizedCrop can be printed as string
-    transforms.BatchRandomResizedCrop(
-        4, (0.08, 1), (3 / 4, 4 / 3), num_rand_calls=2
-    ).__repr__()
+    assert isinstance(
+        transforms.BatchRandomResizedCrop(
+            4, (0.08, 1), (3 / 4, 4 / 3), num_rand_calls=2
+        ).__repr__(),
+        str,
+    )
 
     imgs = torch.randn(8, 3, 8, 8)
     indices_to_apply = torch.tensor([0, 1, 7, 5, 6, 4, 2, 3])
@@ -326,7 +339,7 @@ def test_batch_random_solarize():
     torch.manual_seed(28)
 
     # Checking if BatchRandomSolarize can be printed as string
-    transforms.BatchRandomSolarize(0.5, 0.5).__repr__()
+    assert isinstance(transforms.BatchRandomSolarize(0.5, 0.5).__repr__(), str)
 
     imgs = torch.randn(4, 3, 8, 8)
     indices_to_apply = torch.tensor([2, 1])
@@ -355,7 +368,7 @@ def test_batch_video_wrapper():
     )
 
     # test if BatchVideoWrapper can be printed as string
-    transforms.BatchVideoWrapper(transform=transform).__repr__()
+    assert isinstance(transforms.BatchVideoWrapper(transform=transform).__repr__(), str)
 
     # test CTHW format
     tensor = torch.rand((2, 3, 2, 16, 16))
@@ -406,9 +419,11 @@ def test_batch_video_resize():
     torch.manual_seed(28)
 
     # test if BatchVideoResize can be printed as string
-    transforms.BatchVideoResize(size=2).__repr__()
+    assert isinstance(transforms.BatchVideoResize(size=2).__repr__(), str)
     # test interpolation int
-    transforms.BatchVideoResize(size=2, interpolation=3).__repr__()
+    assert isinstance(
+        transforms.BatchVideoResize(size=2, interpolation=3).__repr__(), str
+    )
 
     # test CTHW format
     tensor = torch.rand((2, 3, 8, 16, 16))

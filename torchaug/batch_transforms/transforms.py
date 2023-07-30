@@ -435,12 +435,12 @@ class BatchRandomGaussianBlur(BatchRandomTransform):
 
     def __repr__(self) -> str:
         s = (
-            f"{self.__class__.__name__}(",
-            f"kernel_size={self.kernel_size}, ",
+            f"{self.__class__.__name__}("
+            f"kernel_size={self.kernel_size}, "
             f"sigma={self.sigma.tolist()}, "
             f"p={self.p}, "
-            f"inplace={self.inplace}, ",
-            f"value_check={self.value_check})",
+            f"inplace={self.inplace}, "
+            f"value_check={self.value_check})"
         )
         return s
 

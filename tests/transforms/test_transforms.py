@@ -11,7 +11,7 @@ def test_div_255():
     torch.manual_seed(28)
 
     # test if Div255 can be printed as string
-    transforms.Div255(False).__repr__()
+    assert isinstance(transforms.Div255(False).__repr__(), str)
     tensor = torch.rand((3, 16, 16))
     expected_out = tensor / 255
     torch.testing.assert_close(transforms.Div255(False)(tensor), expected_out)
@@ -24,7 +24,7 @@ def test_normalize():
     torch.manual_seed(28)
 
     # test if Normalize can be printed as string
-    transforms.Normalize((0.5,), (0.5,)).__repr__()
+    assert isinstance(transforms.Normalize((0.5,), (0.5,)).__repr__(), str)
 
     # test the optional in-place behaviour
     tensor = torch.rand((3, 16, 16))
@@ -81,7 +81,7 @@ def test_mul_255():
     torch.manual_seed(28)
 
     # test if Mul255 can be printed as string
-    transforms.Mul255(False).__repr__()
+    assert isinstance(transforms.Mul255(False).__repr__(), str)
     tensor = torch.rand((3, 16, 16))
     expected_out = tensor * 255
     torch.testing.assert_close(transforms.Mul255(False)(tensor), expected_out)
@@ -94,13 +94,18 @@ def test_random_apply():
     torch.manual_seed(28)
 
     # Checking if RandomApply can be printed as string
-    transforms.RandomApply(
-        [
-            transforms.Normalize((0.5,), (0.5,)),
-            transforms.RandomGaussianBlur((3, 3), (0.1, 2.0)),
-        ]
-    ).__repr__()
-    transforms.RandomApply(transforms.Normalize((0.5,), (0.5,))).__repr__()
+    assert isinstance(
+        transforms.RandomApply(
+            [
+                transforms.Normalize((0.5,), (0.5,)),
+                transforms.RandomGaussianBlur((3, 3), (0.1, 2.0)),
+            ]
+        ).__repr__(),
+        str,
+    )
+    assert isinstance(
+        transforms.RandomApply(transforms.Normalize((0.5,), (0.5,))).__repr__(), str
+    )
 
     tensor = torch.rand((1, 16, 16))
     torchvision_out = tv_transforms.Normalize((0.5,), (0.5,), inplace=False)(tensor)
@@ -134,7 +139,9 @@ def test_random_color_jitter():
     torch.manual_seed(28)
 
     # Checking if RandomColorJitter can be printed as string
-    transforms.RandomColorJitter(0.5, 0.3, 0.1, 0.3, 0.5).__repr__()
+    assert isinstance(
+        transforms.RandomColorJitter(0.5, 0.3, 0.1, 0.3, 0.5).__repr__(), str
+    )
 
     tensor = torch.rand((3, 16, 16))
 
@@ -165,7 +172,9 @@ def test_random_gaussian_blur():
     torch.manual_seed(28)
 
     # Checking if RandomGaussianBlur can be printed as string
-    transforms.RandomGaussianBlur((3, 3), (0.1, 2.0), 0.5).__repr__()
+    assert isinstance(
+        transforms.RandomGaussianBlur((3, 3), (0.1, 2.0), 0.5).__repr__(), str
+    )
 
     # Checking instantiation with one value kernel and sigma
     transforms.RandomGaussianBlur(3, 0.1, 0.5)
@@ -238,7 +247,7 @@ def test_random_solarize():
     torch.manual_seed(28)
 
     # Checking if RandomSolarize can be printed as string
-    transforms.RandomSolarize(0.5, 0.5).__repr__()
+    assert isinstance(transforms.RandomSolarize(0.5, 0.5).__repr__(), str)
 
     tensor = torch.rand((3, 16, 16))
 
@@ -256,7 +265,9 @@ def test_video_normalize():
     torch.manual_seed(28)
 
     # test if VideoNormalize can be printed as string
-    transforms.VideoNormalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)).__repr__()
+    assert isinstance(
+        transforms.VideoNormalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)).__repr__(), str
+    )
 
     # test the optional in-place behaviour
     tensor = torch.rand((3, 8, 16, 16))
@@ -380,7 +391,7 @@ def test_video_wrapper():
     transform = transforms.Normalize((0.5,), (0.5,), inplace=False, value_check=True)
 
     # test if VideoWrapper can be printed as string
-    transforms.VideoWrapper(transform=transform).__repr__()
+    assert isinstance(transforms.VideoWrapper(transform=transform).__repr__(), str)
 
     # test CTHW format
     tensor = torch.rand((3, 2, 16, 16))
