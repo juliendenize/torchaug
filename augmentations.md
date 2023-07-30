@@ -7,7 +7,9 @@
 
 | Augmentation       | implemented | tested |
 | ------------------ | :---------: | :----: |
+| div_255            | [x]         | [x]    |
 | gaussian_blur      | [x]         | [x]    |
+| mul_255            | [x]         | [x]    |
 | normalize          | [x]         | [x]    |
 | solarize           | [x]         | [x]    |
 
