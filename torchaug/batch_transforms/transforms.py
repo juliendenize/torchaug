@@ -11,7 +11,8 @@ import torchvision.transforms as tv_transforms
 import torchvision.transforms.functional as F_tv
 from torch import Tensor, nn
 from torchvision.transforms.functional import InterpolationMode
-from torchvision.transforms.transforms import _setup_size
+from torchvision.transforms.transforms import (_interpolation_modes_from_int,
+                                               _setup_size)
 
 import torchaug.transforms.functional as F
 from torchaug.batch_transforms._utils import _assert_batch_videos_tensor
@@ -703,10 +704,8 @@ class BatchVideoWrapper(nn.Module):
 
         if self.video_format == "CTHW":
             self.time_before_channel = False
-
         elif self.video_format == "TCHW":
             self.time_before_channel = True
-
         else:
             raise ValueError(
                 f"video_format should be either 'CTHW' or 'TCHW'. Got {self.video_format}."
@@ -740,4 +739,99 @@ class BatchVideoWrapper(nn.Module):
             f"  transform={self.transform},\n"
             f"  same_on_frames={self.same_on_frames},\n"
             f"  video_format={self.video_format})"
+        )
+
+
+class BatchVideoResize(nn.Module):
+    """Resize the input video to the given size. If the image is torch Tensor, it is expected to have [..., H, W]
+    shape, where ... means an arbitrary number of leading dimensions.
+
+    Args:
+        size (sequence or int): Desired output size. If size is a sequence like
+            (h, w), output size will be matched to this. If size is an int,
+            smaller edge of the image will be matched to this number.
+            i.e, if height > width, then image will be rescaled to
+            (size * height / width, size).
+
+            .. note::
+                In torchscript mode size as single int is not supported, use a sequence of length 1: ``[size, ]``.
+        interpolation (InterpolationMode): Desired interpolation enum defined by
+            :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
+            If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.NEAREST_EXACT``,
+            ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` are supported.
+        max_size (int, optional): The maximum allowed for the longer edge of
+            the resized image: if the longer edge of the image is greater
+            than ``max_size`` after being resized according to ``size``, then
+            the image is resized again so that the longer edge is equal to
+            ``max_size``. As a result, ``size`` might be overruled, i.e. the
+            smaller edge may be shorter than ``size``. This is only supported
+            if ``size`` is an int (or a sequence of length 1 in torchscript
+            mode).
+        antialias (bool, optional): Whether to apply antialiasing.
+            - ``True``: will apply antialiasing for bilinear or bicubic modes.
+              Other mode aren't affected. This is probably what you want to use.
+            - ``False``: will not apply antialiasing for tensors on any mode.
+        video_format (str, optional): Format of the video. Either ``CTHW`` or ``TCHW``. Defaults to "CTHW".
+    """
+
+    def __init__(
+        self,
+        size: int | list[int],
+        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        max_size: int | None = None,
+        antialias: bool = True,
+        video_format: str = "CTHW",
+    ):
+        super().__init__()
+        _log_api_usage_once(self)
+        if not isinstance(size, (int, Sequence)):
+            raise TypeError(f"Size should be int or sequence. Got {type(size)}")
+        if isinstance(size, Sequence) and len(size) not in (1, 2):
+            raise ValueError("If size is a sequence, it should have 1 or 2 values")
+        self.size = size
+        self.max_size = max_size
+
+        if isinstance(interpolation, int):
+            interpolation = _interpolation_modes_from_int(interpolation)
+
+        self.interpolation = interpolation
+        self.antialias = antialias
+        self.video_format = video_format
+
+        if self.video_format == "CTHW":
+            self.time_before_channel = False
+        elif self.video_format == "TCHW":
+            self.time_before_channel = True
+        else:
+            raise ValueError(
+                f"video_format should be either 'CTHW' or 'TCHW'. Got {self.video_format}."
+            )
+
+    def forward(self, videos: Tensor):
+        _assert_batch_videos_tensor(videos)
+
+        if self.time_before_channel:
+            b, t, c, h, w = videos.shape
+        else:
+            b, c, t, h, w = videos.shape
+            videos = videos.permute(0, 2, 1, 3, 4)
+
+        videos = videos.reshape(b * t, c, h, w)
+
+        videos = F_tv.resize(
+            videos, self.size, self.interpolation, self.max_size, self.antialias
+        )
+
+        videos = videos.reshape(b, t, *videos.shape[-3:])
+
+        return videos
+
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}("
+            f"(size={self.size}, "
+            f"interpolation={self.interpolation.value}, "
+            f"max_size={self.max_size}, "
+            f"antialias={self.antialias})"
+            f"video_format={self.video_format})"
         )
