@@ -33,6 +33,42 @@ class RandomTransform(nn.Module, ABC):
         return img
 
 
+class Div255(nn.Module):
+    def __init__(self, inplace: bool = True) -> None:
+        """Divide a tensor by 255.
+
+        Args:
+            inplace (bool, optional): Bool to make this operation in-place. Defaults True.
+        """
+        super().__init__()
+
+        self.inplace = inplace
+
+    def forward(self, tensor: Tensor) -> Tensor:
+        return F.div_255(tensor, inplace=self.inplace)
+
+    def __repr__(self):
+        return f"{__class__.__name__}(inplace={self.inplace})"
+
+
+class Mul255(nn.Module):
+    def __init__(self, inplace: bool = True) -> None:
+        """Multiply a tensor by 255.
+
+        Args:
+            inplace (bool, optional): Bool to make this operation in-place. Defaults True.
+        """
+        super().__init__()
+
+        self.inplace = inplace
+
+    def forward(self, tensor: Tensor) -> Tensor:
+        return F.mul_255(tensor, inplace=self.inplace)
+
+    def __repr__(self):
+        return f"{__class__.__name__}(inplace={self.inplace})"
+
+
 class Normalize(nn.Module):
     def __init__(
         self,
@@ -53,7 +89,7 @@ class Normalize(nn.Module):
             std (sequence): Sequence of standard deviations for each channel.
             cast_dtype (dtype, optional): If not None, scale and cast input to dtype. Expected to be a float dtype.
                 Default, None.
-            inplace (bool): Bool to make this operation in-place.
+            inplace (bool, optional): Bool to make this operation in-place. Defaults True.
             value_check (bool, optional): Bool to perform tensor value check.
                 Might cause slow down on some devices because of synchronization. Default, False.
         """
@@ -403,7 +439,7 @@ class VideoNormalize(Normalize):
         video_format(str): Dimension order of the video. Can be ``TCHW`` or ``CTHW``.
         cast_dtype (dtype, optional): If not None, scale and cast input to the dtype. Expected to be a float dtype.
             Default, None.
-        inplace (bool): Bool to make this operation in-place.
+        inplace (bool, optional): Bool to make this operation in-place. Defaults True.
         value_check (bool, optional): Bool to perform tensor value check.
             Might cause slow down on some devices because of synchronization. Default, False.
     """

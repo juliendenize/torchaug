@@ -15,6 +15,8 @@
 
 | Augmentation       | implemented | tested |
 | ------------------ | :---------: | :----: |
+| Div255             | [x]         | [x]    |
+| Mul255             | [x]         | [x]    |
 | Normalize          | [x]         | [x]    |
 | RandomApply        | [x]         | [x]    |
 | RandomColorJitter  | [x]         | [x]    |

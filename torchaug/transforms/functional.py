@@ -39,6 +39,25 @@ def _get_gaussian_kernel2d(
     return kernel2d
 
 
+def div_255(
+    tensor: Tensor,
+    inplace: bool = True,
+) -> Tensor:
+    """Divide the given tensor by 255.
+
+    Args:
+        tensor: The input tensor.
+        inplace: Whether to perform the operation inplace.
+
+    Returns:
+        Scaled tensor by dividing 255.
+    """
+    tensor = tensor if inplace else tensor.clone()
+    tensor.div_(255.0)
+
+    return tensor
+
+
 def gaussian_blur(
     img: Tensor,
     kernel_size: list[int],
@@ -159,6 +178,22 @@ def gaussian_blur(
 
     img = _cast_squeeze_out(img, need_cast, need_squeeze, out_dtype)
     return img
+
+
+def mul_255(tensor: Tensor, inplace: bool = True) -> Tensor:
+    """Multiply the given tensor by 255.
+
+    Args:
+        tensor: The input tensor.
+        inplace: Whether to perform the operation inplace.
+
+    Returns:
+        Scaled tensor by multiplying 255.
+    """
+    tensor = tensor if inplace else tensor.clone()
+    tensor.mul_(255.0)
+
+    return tensor
 
 
 def normalize(

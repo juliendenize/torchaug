@@ -6,6 +6,17 @@ from torchvision.transforms.functional import convert_image_dtype
 import torchaug.transforms.functional as F
 
 
+def test_div_255():
+    x_shape = [3, 4, 4]
+    x = torch.rand(x_shape)
+
+    out = F.div_255(x, inplace=False)
+    torch.testing.assert_close(out, x / 255)
+
+    F.div_255(x, inplace=True)
+    torch.testing.assert_close(x, out)
+
+
 def test_gaussian_blur():
     x_shape = [3, 4, 4]
     x = torch.randint(0, 255, x_shape)
@@ -127,6 +138,17 @@ def test_gaussian_blur():
         TypeError, match="Object should be a tensor. Got <class 'list'>."
     ):
         F.gaussian_blur([2, 0, 3], [3, 3], [2, 2])
+
+
+def test_mul_255():
+    x_shape = [3, 4, 4]
+    x = torch.rand(x_shape)
+
+    out = F.mul_255(x, inplace=False)
+    torch.testing.assert_close(out, x * 255)
+
+    F.mul_255(x, inplace=True)
+    torch.testing.assert_close(x, out)
 
 
 def test_normalize():

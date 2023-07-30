@@ -7,6 +7,19 @@ from torchvision.transforms.functional import convert_image_dtype
 import torchaug.transforms as transforms
 
 
+def test_div_255():
+    torch.manual_seed(28)
+
+    # test if Div255 can be printed as string
+    transforms.Div255(False).__repr__()
+    tensor = torch.rand((3, 16, 16))
+    expected_out = tensor / 255
+    torch.testing.assert_close(transforms.Div255(False)(tensor), expected_out)
+
+    transforms.Div255(True)(tensor)
+    torch.testing.assert_close(tensor, expected_out)
+
+
 def test_normalize():
     torch.manual_seed(28)
 
@@ -62,6 +75,19 @@ def test_normalize():
         transforms.Normalize((0.5,), (0.5, 0.1, 0), inplace=True, value_check=True)(
             tensor
         )
+
+
+def test_mul_255():
+    torch.manual_seed(28)
+
+    # test if Div255 can be printed as string
+    transforms.Mul255(False).__repr__()
+    tensor = torch.rand((3, 16, 16))
+    expected_out = tensor * 255
+    torch.testing.assert_close(transforms.Mul255(False)(tensor), expected_out)
+
+    transforms.Mul255(True)(tensor)
+    torch.testing.assert_close(tensor, expected_out)
 
 
 def test_random_apply():
