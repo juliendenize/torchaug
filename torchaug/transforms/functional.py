@@ -68,23 +68,22 @@ def gaussian_blur(
     means an arbitrary number of leading dimensions.
 
     Args:
-        img (Tensor): Image to be blurred
-        kernel_size (sequence of ints or int): Gaussian kernel size. Can be a sequence of integers
+        img: Image to be blurred
+        kernel_size: Gaussian kernel size. Can be a sequence of integers
             like ``(kx, ky)`` or a single integer for square kernels.
 
             .. note::
                 In torchscript mode kernel_size as single int is not supported, use a sequence of
                 length 1: ``[ksize, ]``.
-        sigma (sequence of floats or int or Tensor, optional): Gaussian kernel standard deviation. Can be a
+        sigma: Gaussian kernel standard deviation. Can be a
             sequence of floats like ``(sigma_x, sigma_y)`` or a single float to define the
             same sigma in both X/Y directions. If None, then it is computed using
             ``kernel_size`` as ``sigma = 0.3 * ((kernel_size - 1) * 0.5 - 1) + 0.8``.
-            Default, None.
-        value_check (bool, optional): Bool to perform tensor value check.
-            Might cause slow down on some devices because of synchronization. Default, False.
+        value_check: Bool to perform tensor value check.
+            Might cause slow down on some devices because of synchronization.
 
     Returns:
-        Tensor: Gaussian Blurred version of the image.
+        Gaussian Blurred version of the image.
     """
 
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
@@ -207,26 +206,22 @@ def normalize(
     """Normalize a tensor image with mean and standard deviation.
 
     .. note::
-        This transform acts out of place by default, i.e., it does not mutates the input tensor.
-
-    .. note::
         If tensor is not float, user has to set `cast_dtype` to True to raising error. The function will cast and scale the tensor
         and return a normalized float tensor.
 
-    See :class:`~torchvision.transforms.Normalize` for more details.
+    See :class:`~torchaug.transforms.Normalize` for more details.
 
     Args:
-        tensor (Tensor): Tensor image of size (C, H, W) or (B, C, H, W) to be normalized.
-        mean (sequence or Tensor): Sequence of means for each channel.
-        std (sequence or Tensor): Sequence of standard deviations for each channel.
-        cast_dtype (dtype, optional): If not None, scale and cast input to dtype. Expected to be a float dtype.
-            Default, None.
-        inplace(bool, optional): Bool to make this operation inplace.
-        value_check (bool, optional): Bool to perform tensor value check.
-            Might cause slow down on some devices because of synchronization. Default, False.
+        tensor: Tensor image of size (C, H, W) or (B, C, H, W) to be normalized.
+        mean: Sequence of means for each channel.
+        std: Sequence of standard deviations for each channel.
+        cast_dtype: If not None, scale and cast input to dtype. Expected to be a float dtype.
+        inplace: Bool to make this operation inplace.
+        value_check: Bool to perform tensor value check.
+            Might cause slow down on some devices because of synchronization.
 
     Returns:
-        Tensor: Normalized float Tensor image.
+        Normalized float Tensor image.
     """
 
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
@@ -274,14 +269,14 @@ def solarize(
     """Solarize an RGB/grayscale image by inverting all pixel values above a threshold.
 
     Args:
-        img (Tensor): Image to have its colors inverted. It is expected to be in [..., 1 or 3, H, W] format,
+        img: Image to have its colors inverted. It is expected to be in [..., 1 or 3, H, W] format,
             where ... means it can have an arbitrary number of dimensions.
             If img is PIL Image, it is expected to be in mode "L" or "RGB".
-        threshold (int, float, Tensor): All pixels equal or above this value are inverted.
-        value_check (bool, optional): Bool to perform tensor value check.
-            Might cause slow down on some devices because of synchronization. Default, False.
+        threshold: All pixels equal or above this value are inverted.
+        value_check: Bool to perform tensor value check.
+            Might cause slow down on some devices because of synchronization.
     Returns:
-        Tensor: Solarized image.
+        Solarized image.
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(solarize)

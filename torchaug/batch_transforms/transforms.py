@@ -26,6 +26,12 @@ from torchaug.utils import _log_api_usage_once
 
 
 class BatchRandomTransform(nn.Module, ABC):
+    """Abstract class to make a base class for all batch random transforms.
+
+    args:
+        p: Probability to apply the transform.
+        inplace: If True, perform inplace operation to save memory.
+    """
     def __init__(self, p: float, inplace: bool) -> None:
         super().__init__()
         self.p = p
@@ -58,9 +64,9 @@ class BatchRandomApply(BatchRandomTransform):
     """Apply randomly a list of transformations to a batch of images with a given probability.
 
     Args:
-        transforms (sequence or torch.nn.Module): list of transformations
-        p (float): probability
-        inplace (bool): If True, perform inplace operation to save memory.
+        transforms: list of transformations.
+        p: Probability to apply the transform.
+        inplace: If True, perform inplace operation to save memory.
     """
 
     def __init__(
@@ -85,10 +91,10 @@ class BatchRandomApply(BatchRandomTransform):
     def _apply_transform(self, imgs: Tensor) -> Tensor:
         """
         Args:
-            imgs (Tensor): Batch of images to transform.
+            imgs: Batch of images to transform.
 
         Returns:
-            Tensor: Transformed batch of images.
+            Transformed batch of images.
         """
         for t in self.transforms:
             imgs[:] = t(imgs)
@@ -112,27 +118,27 @@ class BatchRandomColorJitter(BatchRandomTransform):
     have [B, ..., 1 or 3, H, W] shape, where ... means an arbitrary number of dimensions.
 
     Args:
-        brightness (float or tuple of float (min, max)): How much to jitter brightness.
+        brightness: How much to jitter brightness.
             brightness_factor is chosen uniformly from [max(0, 1 - brightness), 1 + brightness]
             or the given [min, max]. Should be non negative numbers.
-        contrast (float or tuple of float (min, max)): How much to jitter contrast.
+        contrast: How much to jitter contrast.
             contrast_factor is chosen uniformly from [max(0, 1 - contrast), 1 + contrast]
             or the given [min, max]. Should be non-negative numbers.
-        saturation (float or tuple of float (min, max)): How much to jitter saturation.
+        saturation: How much to jitter saturation.
             saturation_factor is chosen uniformly from [max(0, 1 - saturation), 1 + saturation]
             or the given [min, max]. Should be non negative numbers.
-        hue (float or tuple of float (min, max)): How much to jitter hue.
+        hue: How much to jitter hue.
             hue_factor is chosen uniformly from [-hue, hue] or the given [min, max].
             Should have 0<= hue <= 0.5 or -0.5 <= min <= max <= 0.5.
             To jitter hue, the pixel values of the input image has to be non-negative for conversion to HSV space;
             thus it does not work if you normalize your image to an interval with negative values,
             or use an interpolation that generates negative values before using this function.
-        p (float): Probability to apply color jitter.
-        num_rand_calls (int): Number of random calls performed to apply augmentations at different orders on sub-batches.
+        p: Probability to apply color jitter.
+        num_rand_calls: Number of random calls performed to apply augmentations at different orders on sub-batches.
             If -1, B calls are performed. The maximum is 24 = 4!.
-        inplace (bool): If True, perform inplace operation to save memory.
-        value_check (bool, optional): Bool to perform tensor value check.
-            Might cause slow down on some devices because of synchronization or large batch size. Default, False.
+        inplace: If True, perform inplace operation to save memory.
+        value_check: Bool to perform tensor value check.
+            Might cause slow down on some devices because of synchronization or large batch size.
     """
 
     def __init__(
@@ -203,11 +209,11 @@ class BatchRandomColorJitter(BatchRandomTransform):
                 uniformly. Pass None to turn off the transformation.
             saturation (tensor (min, max), optional): The range from which the saturation_factor is chosen
                 uniformly. Pass None to turn off the transformation.
-            hue (tensor (min, max), optional): The range from which the hue_factor is chosen uniformly.
+            hue: The range from which the hue_factor is chosen uniformly.
                 Pass None to turn off the transformation.
 
         Returns:
-            tuple: The parameters used to apply the randomized transform
+            The parameters used to apply the randomized transform
             along with their random order.
         """
         b = (
@@ -242,10 +248,10 @@ class BatchRandomColorJitter(BatchRandomTransform):
     def _apply_transform(self, imgs: Tensor) -> Tensor:
         """
         Args:
-            imgs (Tensor): Input batch of images.
+            imgs: Input batch of images.
 
         Returns:
-            Tensor: Randomly color jittered batch of images.
+            Randomly color jittered batch of images.
         """
         if self.num_rand_calls == 0:
             return imgs
@@ -352,16 +358,16 @@ class BatchRandomGaussianBlur(BatchRandomTransform):
     The batch of images is expected to be of shape [B, ..., C, H, W] where ... means an arbitrary number of dimensions.
     Args:
         kernel_size (int or sequence): Size of the Gaussian kernel.
-        sigma (tensor (min, max)): Standard deviation to be used for
+        sigma: Standard deviation to be used for
             creating kernel to perform blurring. If float, sigma is fixed. If it is tuple
             of float (min, max), sigma is chosen uniformly at random to lie in the
             given range.
-        p (float): Probability to apply gaussian blur.
-        inplace (bool): If True, perform inplace operation to save memory.
-        value_check (bool, optional): Bool to perform tensor value check.
-            Might cause slow down on some devices because of synchronization or large batch size. Default, False.
+        p: Probability to apply gaussian blur.
+        inplace: If True, perform inplace operation to save memory.
+        value_check: Bool to perform tensor value check.
+            Might cause slow down on some devices because of synchronization or large batch size.
     Returns:
-        Tensor: Gaussian blurred version of the input batch of images.
+        Gaussian blurred version of the input batch of images.
     """
 
     def __init__(
@@ -409,10 +415,10 @@ class BatchRandomGaussianBlur(BatchRandomTransform):
         """Choose sigma for random gaussian blurring.
 
         Args:
-            sigma_min (tensor): Minimum standard deviation that can be chosen for blurring kernel.
-            sigma_max (tensor): Maximum standard deviation that can be chosen for blurring kernel.
+            sigma_min: Minimum standard deviation that can be chosen for blurring kernel.
+            sigma_max: Maximum standard deviation that can be chosen for blurring kernel.
         Returns:
-            tensor: Standard deviation to be passed to calculate kernel for gaussian blurring.
+            Standard deviation to be passed to calculate kernel for gaussian blurring.
         """
         dtype = sigma_min.dtype
         device = sigma_min.device
@@ -425,9 +431,9 @@ class BatchRandomGaussianBlur(BatchRandomTransform):
     def _apply_transform(self, imgs: Tensor) -> Tensor:
         """
         Args:
-            imgs (Tensor): Batch of images to be blurred.
+            imgs: Batch of images to be blurred.
         Returns:
-            Tensor: Gaussian blurred images
+            Gaussian blurred images
         """
         sigma: Tensor = self.get_params(self.sigma[0], self.sigma[1], imgs.shape[0])
         imgs = batch_gaussian_blur(imgs, self.kernel_size, sigma, self.value_check)
@@ -456,10 +462,10 @@ class BatchRandomGrayScale(BatchRandomTransform):
 
         Args:
             p: Probability of the images to be grayscaled.
-            inplace (bool): If True, perform inplace operation to save memory.
+            inplace: If True, perform inplace operation to save memory.
 
         Returns:
-            Tensor: Grayscale of the batch of images.
+            Grayscale of the batch of images.
         """
 
         super().__init__(p=p, inplace=inplace)
@@ -468,10 +474,10 @@ class BatchRandomGrayScale(BatchRandomTransform):
     def _apply_transform(self, imgs: Tensor) -> Tensor:
         """
         Args:
-            imgs (Tensor): Batch of images to be grayscaled.
+            imgs: Batch of images to be grayscaled.
 
         Returns:
-            Tensor: Grayscaled batch of images.
+            Grayscaled batch of images.
         """
         imgs = F_tv.rgb_to_grayscale(imgs, 3)
         return imgs
@@ -492,11 +498,11 @@ class BatchRandomHorizontalFlip(BatchRandomTransform):
         expected to be of shape [B, ..., C, H, W] where ... means an arbitrary number of dimensions.
 
         Args:
-            p (float): probability of the images being flipped.
-            inplace (bool): If True, perform inplace operation to save memory.
+            p: probability of the images being flipped.
+            inplace: If True, perform inplace operation to save memory.
 
         Returns:
-            Tensor: Grayscale batch of images.
+            Grayscale batch of images.
         """
         super().__init__(p=p, inplace=inplace)
         _log_api_usage_once(self)
@@ -504,10 +510,10 @@ class BatchRandomHorizontalFlip(BatchRandomTransform):
     def _apply_transform(self, imgs: Tensor) -> Tensor:
         """
         Args:
-            imgs (Tensor): Batch of images to be horizontally fliped.
+            imgs: Batch of images to be horizontally fliped.
 
         Returns:
-            Tensor: Horizontally fliped batch of images.
+            Horizontally fliped batch of images.
         """
         imgs = F_tv.hflip(imgs)
         return imgs
@@ -526,24 +532,24 @@ class BatchRandomResizedCrop(tv_transforms.RandomResizedCrop):
     size. This is popularly used to train the Inception networks.
 
     Args:
-        size (int or sequence): expected output size of the crop, for each edge. If size is an
+        size: expected output size of the crop, for each edge. If size is an
             int instead of sequence like (h, w), a square output size ``(size, size)`` is
             made. If provided a sequence of length 1, it will be interpreted as (size[0], size[0]).
 
             .. note::
                 In torchscript mode size as single int is not supported, use a sequence of length 1: ``[size, ]``.
-        scale (tuple of float): Specifies the lower and upper bounds for the random area of the crop,
+        scale: Specifies the lower and upper bounds for the random area of the crop,
             before resizing. The scale is defined with respect to the area of the original image.
-        ratio (tuple of float): lower and upper bounds for the random aspect ratio of the crop, before
+        ratio: lower and upper bounds for the random aspect ratio of the crop, before
             resizing.
-        interpolation (InterpolationMode): Desired interpolation enum defined by
-            :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
+        interpolation: Desired interpolation enum defined by
+            :class:`torchvision.transforms.InterpolationMode`.
             Only ``InterpolationMode.NEAREST``, ``InterpolationMode.NEAREST_EXACT``,
             ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` are supported.
-        antialias (bool, optional): Whether to apply antialiasing.
+        antialias: Whether to apply antialiasing.
             It only affects **tensors** with bilinear or bicubic modes and it is
             ignored otherwise.
-        num_rand_calls (int): Number of random calls performed to apply augmentations at different orders on sub-batches.
+        num_rand_calls: Number of random calls performed to apply augmentations at different orders on sub-batches.
             If -1, B calls are performed. The maximum is 24 = 4!.
     """
 
@@ -579,10 +585,10 @@ class BatchRandomResizedCrop(tv_transforms.RandomResizedCrop):
     def single_forward(self, img: Tensor) -> Tensor:
         """
         Args:
-            img (Tensor): Batch of images to be cropped and resized.
+            img: Batch of images to be cropped and resized.
 
         Returns:
-            Tensor: Cropped and resized batch of images.
+            Cropped and resized batch of images.
         """
 
         i, j, h, w = self.get_params(img, self.scale, self.ratio)
@@ -593,10 +599,10 @@ class BatchRandomResizedCrop(tv_transforms.RandomResizedCrop):
     def forward(self, imgs: Tensor) -> Tensor:
         """
         Args:
-            imgs (Tensor): Batch of images to be cropped and resized.
+            imgs: Batch of images to be cropped and resized.
 
         Returns:
-            Tensor: Randomly cropped and resized batch of images.
+            Randomly cropped and resized batch of images.
         """
 
         if self.num_rand_calls == -1:
@@ -649,15 +655,15 @@ class BatchRandomSolarize(BatchRandomTransform):
         value_check: bool = False,
     ) -> None:
         """Solarize the image randomly with a given probability by inverting all pixel values above a threshold.
-        The img it is expected to be in [..., 1 or 3, H, W] format, where ... means it can have an arbitrary number
-        of leading dimensions.
+        The img it is expected to be in [B, ..., 1 or 3, H, W] format, where ... means it can have an arbitrary number
+        of dimensions.
 
         Args:
-            threshold (float): all pixels equal or above this value are inverted.
-            p (float): probability of the image being solarized. Default value is 0.5.
-            inplace (bool): If True, perform inplace operation to save memory.
-            value_check (bool, optional): Bool to perform tensor value check.
-            Might cause slow down on some devices because of synchronization or large batch size. Default, False.
+            threshold: all pixels equal or above this value are inverted.
+            p: probability of the image being solarized.
+            inplace: If True, perform inplace operation to save memory.
+            value_check: Bool to perform tensor value check.
+            Might cause slow down on some devices because of synchronization or large batch size.
         """
 
         super().__init__(p=p, inplace=inplace)
@@ -669,10 +675,10 @@ class BatchRandomSolarize(BatchRandomTransform):
     def _apply_transform(self, imgs: Tensor) -> Tensor:
         """
         Args:
-            imgs (Tensor): Batch of images to be solarized.
+            imgs: Batch of images to be solarized.
 
         Returns:
-            Tensor: Randomly solarized batch of images.
+            Randomly solarized batch of images.
         """
         imgs = F.solarize(imgs, self.threshold, self.value_check)
         return imgs
@@ -692,11 +698,10 @@ class BatchVideoWrapper(nn.Module):
     differently. The batch of videos is expected to be in format [B, C, T, H, W] or [B, T, C, H, W].
 
     Args:
-        transform (nn.Module): The transform to wrap.
-        same_on_frames (bool, optional): If True, apply the same transform on all the frames, else it
+        transform: The transform to wrap.
+        same_on_frames: If True, apply the same transform on all the frames, else it
             flattens the batch and temporal dimensions to apply different transformations to each frame.
-            Defaults to True.
-        video_format (str, optional): Format of the video. Either ``CTHW`` or ``TCHW``. Defaults to "CTHW".
+        video_format: Format of the video. Either ``CTHW`` or ``TCHW``.
     """
 
     def __init__(
@@ -753,11 +758,11 @@ class BatchVideoWrapper(nn.Module):
 
 
 class BatchVideoResize(nn.Module):
-    """Resize the input video to the given size. If the image is torch Tensor, it is expected to have [..., H, W]
-    shape, where ... means an arbitrary number of leading dimensions.
+    """Resize the input video to the given size. The video is expected to have [B, ..., H, W]
+    shape, where ... means an arbitrary number of dimensions.
 
     Args:
-        size (sequence or int): Desired output size. If size is a sequence like
+        size: Desired output size. If size is a sequence like
             (h, w), output size will be matched to this. If size is an int,
             smaller edge of the image will be matched to this number.
             i.e, if height > width, then image will be rescaled to
@@ -765,11 +770,11 @@ class BatchVideoResize(nn.Module):
 
             .. note::
                 In torchscript mode size as single int is not supported, use a sequence of length 1: ``[size, ]``.
-        interpolation (InterpolationMode): Desired interpolation enum defined by
-            :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
+        interpolation: Desired interpolation enum defined by
+            :class:`torchvision.transforms.InterpolationMode`.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.NEAREST_EXACT``,
             ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` are supported.
-        max_size (int, optional): The maximum allowed for the longer edge of
+        max_size : The maximum allowed for the longer edge of
             the resized image: if the longer edge of the image is greater
             than ``max_size`` after being resized according to ``size``, then
             the image is resized again so that the longer edge is equal to
@@ -777,11 +782,11 @@ class BatchVideoResize(nn.Module):
             smaller edge may be shorter than ``size``. This is only supported
             if ``size`` is an int (or a sequence of length 1 in torchscript
             mode).
-        antialias (bool, optional): Whether to apply antialiasing.
+        antialias: Whether to apply antialiasing.
             - ``True``: will apply antialiasing for bilinear or bicubic modes.
               Other mode aren't affected. This is probably what you want to use.
             - ``False``: will not apply antialiasing for tensors on any mode.
-        video_format (str, optional): Format of the video. Either ``CTHW`` or ``TCHW``. Defaults to "CTHW".
+        video_format: Format of the video. Either ``CTHW`` or ``TCHW``.
     """
 
     def __init__(

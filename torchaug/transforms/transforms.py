@@ -17,6 +17,11 @@ from torchaug.utils import _log_api_usage_once
 
 
 class RandomTransform(nn.Module, ABC):
+    """Abstract class to make a base class for all random transforms.
+
+    args:
+        p: Probability to apply the transform.
+    """
     def __init__(self, p: float) -> None:
         super().__init__()
         self.p = p
@@ -38,7 +43,7 @@ class Div255(nn.Module):
         """Divide a tensor by 255.
 
         Args:
-            inplace (bool, optional): Bool to make this operation in-place. Defaults True.
+            inplace: Bool to make this operation in-place.
         """
         super().__init__()
 
@@ -56,7 +61,7 @@ class Mul255(nn.Module):
         """Multiply a tensor by 255.
 
         Args:
-            inplace (bool, optional): Bool to make this operation in-place. Defaults True.
+            inplace: Bool to make this operation in-place.
         """
         super().__init__()
 
@@ -85,13 +90,12 @@ class Normalize(nn.Module):
         ``output[channel] = (input[channel] - mean[channel]) / std[channel]``
 
         Args:
-            mean (sequence): Sequence of means for each channel.
-            std (sequence): Sequence of standard deviations for each channel.
-            cast_dtype (dtype, optional): If not None, scale and cast input to dtype. Expected to be a float dtype.
-                Default, None.
-            inplace (bool, optional): Bool to make this operation in-place. Defaults True.
-            value_check (bool, optional): Bool to perform tensor value check.
-                Might cause slow down on some devices because of synchronization. Default, False.
+            mean: Sequence of means for each channel.
+            std: Sequence of standard deviations for each channel.
+            cast_dtype: If not None, scale and cast input to dtype. Expected to be a float dtype.
+            inplace: Bool to make this operation in-place.
+            value_check: Bool to perform tensor value check.
+                Might cause slow down on some devices because of synchronization.
         """
         super().__init__()
         _log_api_usage_once(self)
@@ -135,8 +139,8 @@ class RandomApply(RandomTransform):
     """Apply randomly a list of transformations with a given probability.
 
     Args:
-        transforms (sequence or torch.nn.Module): list of transformations
-        p (float): probability
+        transforms: list of transformations
+        p: probability
     """
 
     def __init__(
@@ -157,10 +161,10 @@ class RandomApply(RandomTransform):
     def _apply_transform(self, img: Tensor) -> Tensor:
         """
         Args:
-            img (Tensor): Images to transform.
+            img: Images to transform.
 
         Returns:
-            Tensor: Transformed image.
+            Transformed image.
         """
         for t in self.transforms:
             img = t(img)
@@ -190,22 +194,22 @@ class RandomColorJitter(RandomTransform):
         [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
 
         Args:
-            brightness (float or tuple of float (min, max)): How much to jitter brightness.
+            brightness: How much to jitter brightness.
                 brightness_factor is chosen uniformly from [max(0, 1 - brightness), 1 + brightness]
                 or the given [min, max]. Should be non negative numbers.
-            contrast (float or tuple of float (min, max)): How much to jitter contrast.
+            contrast: How much to jitter contrast.
                 contrast_factor is chosen uniformly from [max(0, 1 - contrast), 1 + contrast]
                 or the given [min, max]. Should be non-negative numbers.
-            saturation (float or tuple of float (min, max)): How much to jitter saturation.
+            saturation: How much to jitter saturation.
                 saturation_factor is chosen uniformly from [max(0, 1 - saturation), 1 + saturation]
                 or the given [min, max]. Should be non negative numbers.
-            hue (float or tuple of float (min, max)): How much to jitter hue.
+            hue: How much to jitter hue.
                 hue_factor is chosen uniformly from [-hue, hue] or the given [min, max].
                 Should have 0<= hue <= 0.5 or -0.5 <= min <= max <= 0.5.
                 To jitter hue, the pixel values of the input image has to be non-negative for conversion to HSV space;
                 thus it does not work if you normalize your image to an interval with negative values,
                 or use an interpolation that generates negative values before using this function.
-            p (float): Probability to apply color jitter.
+            p: Probability to apply color jitter.
         """
         super().__init__(p=p)
         _log_api_usage_once(self)
@@ -228,18 +232,17 @@ class RandomColorJitter(RandomTransform):
         """Get the parameters for the randomized transform to be applied on image.
 
         Args:
-            brightness (tuple of float (min, max), optional): The range from which the brightness_factor is chosen
+            brightness: The range from which the brightness_factor is chosen
                 uniformly. Pass None to turn off the transformation.
-            contrast (tuple of float (min, max), optional): The range from which the contrast_factor is chosen
+            contrast: The range from which the contrast_factor is chosen
                 uniformly. Pass None to turn off the transformation.
-            saturation (tuple of float (min, max), optional): The range from which the saturation_factor is chosen
+            saturation: The range from which the saturation_factor is chosen
                 uniformly. Pass None to turn off the transformation.
-            hue (tuple of float (min, max), optional): The range from which the hue_factor is chosen uniformly.
+            hue: The range from which the hue_factor is chosen uniformly.
                 Pass None to turn off the transformation.
 
         Returns:
-            tuple: The parameters used to apply the randomized transform
-            along with their random order.
+            The parameters used to apply the randomized transform along with their random order.
         """
         fn_idx = torch.randperm(4)
 
@@ -265,10 +268,10 @@ class RandomColorJitter(RandomTransform):
     def _apply_transform(self, img: Tensor) -> Tensor:
         """
         Args:
-            img (Tensor): Input image.
+            img: Input image.
 
         Returns:
-            Tensor: Color jittered image.
+            Color jittered image.
         """
         (
             fn_idx,
@@ -307,13 +310,13 @@ class RandomGaussianBlur(RandomTransform):
 
     The image is expected to have the shape [..., C, H, W], where ... means an arbitrary number of leading dimensions.
     Args:
-        kernel_size (int or sequence): Size of the Gaussian kernel.
-        sigma (float or tuple of float (min, max)): Standard deviation to be used for
+        kernel_size: Size of the Gaussian kernel.
+        sigma: Standard deviation to be used for
             creating kernel to perform blurring. If float, sigma is fixed. If it is tuple
             of float (min, max), sigma is chosen uniformly at random to lie in the
             given range.
-        value_check (bool, optional): Bool to perform tensor value check.
-             Might cause slow down on some devices because of synchronization. Default, False.
+        value_check: Bool to perform tensor value check.
+            Might cause slow down on some devices because of synchronization.
     """
 
     def __init__(
@@ -357,10 +360,10 @@ class RandomGaussianBlur(RandomTransform):
         """Choose sigma for random gaussian blurring.
 
         Args:
-            sigma_min (float): Minimum standard deviation that can be chosen for blurring kernel.
-            sigma_max (float): Maximum standard deviation that can be chosen for blurring kernel.
+            sigma_min: Minimum standard deviation that can be chosen for blurring kernel.
+            sigma_max: Maximum standard deviation that can be chosen for blurring kernel.
         Returns:
-            float: Standard deviation to be passed to calculate kernel for gaussian blurring.
+            Standard deviation to be passed to calculate kernel for gaussian blurring.
         """
         dtype = sigma_min.dtype
         device = sigma_min.device
@@ -372,9 +375,9 @@ class RandomGaussianBlur(RandomTransform):
     def _apply_transform(self, img: Tensor) -> Tensor:
         """
         Args:
-            img (Tensor): Image to be blurred.
+            img: Image to be blurred.
         Returns:
-            Tensor: Gaussian blurred image.
+            Gaussian blurred image.
         """
         sigma: Tensor = self.get_params(self.sigma[0], self.sigma[1])
         return F.gaussian_blur(img, self.kernel_size, [sigma, sigma], self.value_check)
@@ -396,10 +399,10 @@ class RandomSolarize(RandomTransform):
         leading dimensions.
 
         Args:
-            threshold (float): all pixels equal or above this value are inverted.
-            p (float): probability of the image being solarized. Default value is 0.5.
-            value_check (bool, optional): Bool to perform tensor value check.
-                Might cause slow down on some devices because of synchronization. Default, False.
+            threshold: all pixels equal or above this value are inverted.
+            p: probability of the image being solarized.
+            value_check: Bool to perform tensor value check.
+                Might cause slow down on some devices because of synchronization.
         """
         super().__init__(p=p)
         _log_api_usage_once(self)
@@ -410,9 +413,9 @@ class RandomSolarize(RandomTransform):
     def _apply_transform(self, img: Tensor):
         """
         Args:
-            img (Tensor): Image to be solarized.
+            img: Image to be solarized.
         Returns:
-            Tensor: Solarized image.
+            Solarized image.
         """
         return F.solarize(img, self.threshold, self.value_check)
 
@@ -434,14 +437,13 @@ class VideoNormalize(Normalize):
     Videos should be in format [..., T, C, H, W] or [..., C, T, H, W] with ... 0 or 1 leading dimension.
 
     Args:
-        mean (sequence): Sequence of means for each channel.
-        std (sequence): Sequence of standard deviations for each channel.
-        video_format(str): Dimension order of the video. Can be ``TCHW`` or ``CTHW``.
-        cast_dtype (dtype, optional): If not None, scale and cast input to the dtype. Expected to be a float dtype.
-            Default, None.
-        inplace (bool, optional): Bool to make this operation in-place. Defaults True.
-        value_check (bool, optional): Bool to perform tensor value check.
-            Might cause slow down on some devices because of synchronization. Default, False.
+        mean: Sequence of means for each channel.
+        std: Sequence of standard deviations for each channel.
+        video_format: Dimension order of the video. Can be ``TCHW`` or ``CTHW``.
+        cast_dtype: If not None, scale and cast input to the dtype. Expected to be a float dtype.
+        inplace: Bool to make this operation in-place.
+        value_check: Bool to perform tensor value check.
+            Might cause slow down on some devices because of synchronization.
     """
 
     def __init__(
@@ -504,8 +506,8 @@ class VideoWrapper(nn.Module):
     handle the leading dimension differently. The video is expected to be in format [C, T, H, W] or [T, C, H, W].
 
     Args:
-        transform (nn.Module): The transform to wrap.
-        video_format (str, optional): Format of the video. Either ``CTHW`` or ``TCHW``. Defaults to "CTHW".
+        transform: The transform to wrap.
+        video_format: Format of the video. Either ``CTHW`` or ``TCHW``.
     """
 
     def __init__(self, transform: nn.Module, video_format: str = "CTHW") -> None:
