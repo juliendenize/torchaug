@@ -1,10 +1,10 @@
-**Efficient vision data augmentations for on GPU and/or batched data.**
+**Efficient vision data augmentations for CPU/GPU per-sample/batched data.**
 
 ***Under active development, subject to API change***
 
 [![PyPI python](https://img.shields.io/pypi/pyversions/torchaug)](https://pypi.org/project/torchaug)
 [![PyPI version](https://badge.fury.io/py/torchaug.svg)](https://pypi.org/project/torchaug)
-[![documentation](https://img.shields.io/badge/dynamic/json.svg?label=docs&url=https%3A%2F%2Fpypi.org%2Fpypi%2Ftorchaug%2Fjson&query=%24.info.version&colorB=brightgreen&prefix=v)](https://juliendenize.github.io/torchaug/index.html)
+[![documentation](https://img.shields.io/badge/dynamic/json.svg?label=docs&url=https%3A%2F%2Fpypi.org%2Fpypi%2Ftorchaug%2Fjson&query=%24.info.version&colorB=brightgreen)](https://juliendenize.github.io/torchaug/index.html)
 [![codecov](https://codecov.io/gh/juliendenize/torchaug/branch/main/graph/badge.svg?token=CA266XDW8D)](https://codecov.io/gh/juliendenize/torchaug)
 [![License](https://img.shields.io/badge/license-CeCILL--C-green.svg)](LICENSE)
 
@@ -14,14 +14,20 @@
 
 ## Introduction
 
-Torchvision has been implemented over Pytorch and Pillow to perform Computer Vision in the Pytorch Ecosystem. One of its core functionality is to perform Data augmentations. However because it has been implemented first for CPU and later with GPU in mind, it has several drawbacks to make it work on GPUs:
+Torchaug is a data augmentation library for the Pytorch ecosystem. It is meant to deal efficiently with tensors that are either on CPU or GPU and either per-samples or on batches.
 
-- Some CPU/GPU synchronizations cannot be avoided.
-- Batch data augmentations are not completely random, meaning that random parameters are sampled for the whole batch and not each unique component.
+It seeks to improve Torchvision performance that has been implemented over Pytorch and Pillow to, among other things, perform data augmentations. However, because it has been implemented first with per-sample CPU data augmentations in mind, it has several drawbacks to make it efficient:
 
-This library aims to remove these issues. It acts like a complementary library to Torchvision and does not use the same namespace. Still, it follows the same nomenclature as Torchvision with *functional* augmentations and *transforms* class wrappers.
+- For data augmentations on GPU, some CPU/GPU synchronizations cannot be avoided.
+- For data augmentations applied on batch, the randomness is sampled for the whole batch and not each sample.
 
-To be sure to retrieve the same data augmentations as Torchvision, it has been tested on each of its augmentations.
+Torchaug removes these issues and is meant to be used complimentary with Torchvision. It follows the same nomenclature as Torchvision with *functional* augmentations and *transforms* class wrappers. It is split into two packages:
+- **transforms** for per-sample data augmentations
+- **batch_transfroms** for batched data augmentations.
+
+More details can be found in the [documentation](https://juliendenize.github.io/torchaug/index.html).
+
+To be sure to retrieve the same data augmentations as Torchvision, it has been tested on each of its components to match Torchvision outputs.
 
 ## How to use
 
@@ -45,7 +51,7 @@ batch_transform = BatchRandomColorJitter(...)
 
 ## How to contribute
 
-Feel free to contribute to this library by making issues and/or pull requests. For each feature you implement, add tests to make sure it works.
+Feel free to contribute to this library by making issues and/or pull requests. For each feature you implement, add tests to make sure it works. Also, make sure to update the documentation. 
 
 ## LICENSE
 
