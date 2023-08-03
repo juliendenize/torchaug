@@ -1,5 +1,3 @@
 furo
 myst-parser
 sphinx
-torch >= 2.0
-torchvision >= 0.15
