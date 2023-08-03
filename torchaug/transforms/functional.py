@@ -68,7 +68,7 @@ def gaussian_blur(
     means an arbitrary number of leading dimensions.
 
     Args:
-        img: Image to be blurred
+        img: Image to be blurred.
         kernel_size: Gaussian kernel size. Can be a sequence of integers
             like ``(kx, ky)`` or a single integer for square kernels.
 
@@ -206,7 +206,8 @@ def normalize(
     """Normalize a tensor image with mean and standard deviation.
 
     .. note::
-        If tensor is not float, user has to set `cast_dtype` to True to raising error. The function will cast and scale the tensor
+        If tensor is not float, user has to set `cast_dtype` to a float ``torch.dtype``,
+        otherwise it will raise an error. The function will cast and scale the tensor
         and return a normalized float tensor.
 
     See :class:`~torchaug.transforms.Normalize` for more details.

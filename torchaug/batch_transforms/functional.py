@@ -120,7 +120,7 @@ def batch_adjust_contrast(
     Args:
         imgs: Batch of images to be adjusted. It is expected to be in [B, ..., 1 or 3, H, W] format,
             where ... means it can have an arbitrary number dimensions.
-        contrast_factor (float, Tensor): How much to adjust the contrast. Can be any
+        contrast_factor: How much to adjust the contrast. Can be any
             1 or B non-negative number. 0 gives a solid gray image, 1 gives the
             original image while 2 increases the contrast by a factor of 2.
         value_check: Bool to perform tensor value check.
@@ -303,7 +303,7 @@ def batch_gaussian_blur(
     sigma: int | float | list[int] | list[float] | Tensor | None = None,
     value_check: bool = False,
 ) -> Tensor:
-    """Performs Gaussian blurring on the batch of images by given kernel. It is expected to have [B, ..., H, W]
+    """Performs Gaussian blurring on the batch of images by given kernel. It is expected to have [B, ..., C, H, W]
     shape, where ... means an arbitrary number of dimensions.
 
     Args:

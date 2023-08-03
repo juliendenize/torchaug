@@ -7,6 +7,8 @@
 [![codecov](https://codecov.io/gh/juliendenize/torchaug/branch/main/graph/badge.svg?token=CA266XDW8D)](https://codecov.io/gh/juliendenize/torchaug)
 [![License](https://img.shields.io/badge/license-CeCILL--C-green.svg)](LICENSE)
 
+<!-- start doc -->
+
 # Torchaug
 
 ## Introduction
@@ -19,8 +21,6 @@ Torchvision has been implemented over Pytorch and Pillow to perform Computer Vis
 This library aims to remove these issues. It acts like a complementary library to Torchvision and does not use the same namespace. Still, it follows the same nomenclature as Torchvision with *functional* augmentations and *transforms* class wrappers.
 
 To be sure to retrieve the same data augmentations as Torchvision, it has been tested on each of its augmentations.
-
-See [augmentations.md](augmentations.md) for the implemented data augmentations and [speed_comparison.md](speed_comparison.md) for the speed comparison with Torchvision.
 
 ## How to use
 
@@ -49,3 +49,5 @@ Feel free to contribute to this library by making issues and/or pull requests. F
 ## LICENSE
 
 This project is under the CeCILL license 2.1.
+
+<!-- end doc -->
