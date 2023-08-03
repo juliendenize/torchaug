@@ -38,10 +38,10 @@ class BatchRandomTransform(nn.Module, ABC):
         self.inplace = inplace
 
     @abstractmethod
-    def _apply_transform(self, img: torch.Tensor):
+    def _apply_transform(self, img: Tensor):
         ...
 
-    def forward(self, imgs: torch.Tensor) -> Tensor:
+    def forward(self, imgs: Tensor) -> Tensor:
         if self.p == 0:
             return imgs
 

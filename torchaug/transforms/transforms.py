@@ -27,10 +27,10 @@ class RandomTransform(nn.Module, ABC):
         self.p = p
 
     @abstractmethod
-    def _apply_transform(self, img: torch.Tensor):
+    def _apply_transform(self, img: Tensor):
         ...
 
-    def forward(self, img: torch.Tensor):
+    def forward(self, img: Tensor):
         if self.p == 0.0:
             return img
         elif self.p == 1.0 or torch.rand(1).item() < self.p:

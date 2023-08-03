@@ -61,7 +61,7 @@ def div_255(
 def gaussian_blur(
     img: Tensor,
     kernel_size: list[int],
-    sigma: int | float | list[int] | list[float] | torch.Tensor | None = None,
+    sigma: int | float | list[int] | list[float] | Tensor | None = None,
     value_check: bool = False,
 ) -> Tensor:
     """Performs Gaussian blurring on the image by given kernel. If is expected to have [..., H, W] shape, where ...
@@ -127,7 +127,7 @@ def gaussian_blur(
         elif isinstance(sigma, (int, float)):
             s = float(sigma)
             sigma_t = torch.tensor([s, s], device=img.device)
-        elif isinstance(sigma, torch.Tensor):
+        elif isinstance(sigma, Tensor):
             sigma_t = transfer_tensor_on_device(sigma, img.device, non_blocking=True)
 
             dim_sigma = sigma_t.ndim + 1 if sigma_t.ndim == 0 else sigma_t.ndim
@@ -151,7 +151,7 @@ def gaussian_blur(
         (isinstance(sigma, (float, int)) and sigma <= 0)
         or (isinstance(sigma, (list, tuple)) and any([s <= 0 for s in sigma]))
         or (
-            isinstance(sigma, (torch.Tensor))
+            isinstance(sigma, (Tensor))
             and (value_check or is_tensor_on_cpu(sigma))
             and not torch.all(torch.gt(sigma, 0))
         )
@@ -264,7 +264,7 @@ def normalize(
 
 
 def solarize(
-    img: Tensor, threshold: int | float | torch.Tensor, value_check: bool = False
+    img: Tensor, threshold: int | float | Tensor, value_check: bool = False
 ) -> Tensor:
     """Solarize an RGB/grayscale image by inverting all pixel values above a threshold.
 
@@ -285,7 +285,7 @@ def solarize(
     _assert_image_tensor(img)
 
     if not isinstance(threshold, (int, float)) and (
-        not isinstance(threshold, torch.Tensor) or threshold.numel() > 1
+        not isinstance(threshold, Tensor) or threshold.numel() > 1
     ):
         raise TypeError("threshold should be a float or a tensor of one element.")
 

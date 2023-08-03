@@ -94,7 +94,7 @@ def batch_adjust_brightness(
         brightness_factor = torch.tensor(brightness_factor, device=imgs.device).expand(
             batch_size
         )
-    elif isinstance(brightness_factor, torch.Tensor):
+    elif isinstance(brightness_factor, Tensor):
         brightness_factor = transfer_tensor_on_device(
             brightness_factor, imgs.device, True
         )
@@ -144,7 +144,7 @@ def batch_adjust_contrast(
         contrast_factor = torch.tensor(contrast_factor, device=imgs.device).expand(
             batch_size
         )
-    elif isinstance(contrast_factor, torch.Tensor):
+    elif isinstance(contrast_factor, Tensor):
         contrast_factor = transfer_tensor_on_device(contrast_factor, imgs.device, True)
         if value_check and not torch.all(torch.ge(contrast_factor, 0)):
             raise ValueError(f"contrast_factor is not non-negative.")
@@ -216,7 +216,7 @@ def batch_adjust_hue(
         if not -0.5 <= hue_factor <= 0.5:
             raise ValueError(f"hue_factor is not between -0.5 and 0.5.")
         hue_factor = torch.tensor(hue_factor, device=imgs.device).expand(batch_size)
-    elif isinstance(hue_factor, torch.Tensor):
+    elif isinstance(hue_factor, Tensor):
         hue_factor = transfer_tensor_on_device(hue_factor, imgs.device, True)
         if value_check and not torch.all(
             torch.logical_and(torch.ge(hue_factor, -0.5), torch.le(hue_factor, 0.5))
@@ -279,7 +279,7 @@ def batch_adjust_saturation(
         saturation_factor = torch.tensor(saturation_factor, device=imgs.device).expand(
             batch_size
         )
-    elif isinstance(saturation_factor, torch.Tensor):
+    elif isinstance(saturation_factor, Tensor):
         saturation_factor = transfer_tensor_on_device(
             saturation_factor, imgs.device, True
         )
@@ -300,7 +300,7 @@ def batch_adjust_saturation(
 def batch_gaussian_blur(
     imgs: Tensor,
     kernel_size: int | list[int],
-    sigma: int | float | list[int] | list[float] | torch.Tensor | None = None,
+    sigma: int | float | list[int] | list[float] | Tensor | None = None,
     value_check: bool = False,
 ) -> Tensor:
     """Performs Gaussian blurring on the batch of images by given kernel. It is expected to have [B, ..., H, W]
@@ -372,7 +372,7 @@ def batch_gaussian_blur(
         elif isinstance(sigma, (int, float)):
             s = float(sigma)
             sigma_t = torch.tensor([[s, s]], device=imgs.device).expand((batch_size, 2))
-        elif isinstance(sigma, torch.Tensor):
+        elif isinstance(sigma, Tensor):
             sigma_t = transfer_tensor_on_device(sigma, imgs.device, non_blocking=True)
 
             dim_sigma = sigma_t.ndim
@@ -408,7 +408,7 @@ def batch_gaussian_blur(
         (isinstance(sigma, (float, int)) and sigma <= 0)
         or (isinstance(sigma, (list, tuple)) and any([s <= 0 for s in sigma]))
         or (
-            isinstance(sigma, (torch.Tensor))
+            isinstance(sigma, (Tensor))
             and value_check
             and not torch.all(torch.gt(sigma, 0))
         )
