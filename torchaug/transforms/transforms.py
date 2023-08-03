@@ -415,6 +415,7 @@ class RandomGaussianBlur(RandomTransform):
         Args:
             sigma_min: Minimum standard deviation that can be chosen for blurring kernel.
             sigma_max: Maximum standard deviation that can be chosen for blurring kernel.
+
         Returns:
             Standard deviation to be passed to calculate kernel for gaussian blurring.
         """
@@ -430,6 +431,7 @@ class RandomGaussianBlur(RandomTransform):
 
         Args:
             img: Image to be blurred.
+
         Returns:
             Gaussian blurred image.
         """
@@ -471,6 +473,7 @@ class RandomSolarize(RandomTransform):
 
         Args:
             img: Image to be solarized.
+
         Returns:
             Solarized image.
         """

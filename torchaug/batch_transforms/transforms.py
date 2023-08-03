@@ -235,9 +235,6 @@ class BatchRandomColorJitter(BatchRandomTransform):
             hue: The range from which the hue_factor is chosen uniformly.
                 Pass None to turn off the transformation.
             batch_size: The number of samples to draw.
-
-        Returns:
-            The parameters used to apply the transforms.
         """
         b = (
             None
@@ -393,9 +390,6 @@ class BatchRandomGaussianBlur(BatchRandomTransform):
         inplace: If True, perform inplace operation to save memory.
         value_check: Bool to perform tensor value check.
             Might cause slow down on some devices because of synchronization or large batch size.
-
-    Returns:
-        Gaussian blurred version of the input batch of images.
     """
 
     def __init__(
@@ -491,9 +485,6 @@ class BatchRandomGrayScale(BatchRandomTransform):
     Args:
         p: Probability of the images to be grayscaled.
         inplace: If True, perform inplace operation to save memory.
-
-    Returns:
-        Grayscale of the batch of images.
     """
 
     def __init__(
@@ -531,9 +522,6 @@ class BatchRandomHorizontalFlip(BatchRandomTransform):
     Args:
         p: probability of the images being flipped.
         inplace: If True, perform inplace operation to save memory.
-
-    Returns:
-        Grayscale batch of images.
     """
 
     def __init__(
