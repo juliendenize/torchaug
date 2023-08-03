@@ -4,6 +4,7 @@
 
 [![PyPI python](https://img.shields.io/pypi/pyversions/torchaug)](https://pypi.org/project/torchaug)
 [![PyPI version](https://badge.fury.io/py/torchaug.svg)](https://pypi.org/project/torchaug)
+[![documentation](https://img.shields.io/badge/dynamic/json.svg?label=docs&url=https%3A%2F%2Fpypi.org%2Fpypi%2Ftorchaug%2Fjson&query=%24.info.version&colorB=brightgreen&prefix=v)](https://juliendenize.github.io/torchaug/index.html)
 [![codecov](https://codecov.io/gh/juliendenize/torchaug/branch/main/graph/badge.svg?token=CA266XDW8D)](https://codecov.io/gh/juliendenize/torchaug)
 [![License](https://img.shields.io/badge/license-CeCILL--C-green.svg)](LICENSE)
 
