@@ -61,30 +61,29 @@ def div_255(
 def gaussian_blur(
     img: Tensor,
     kernel_size: list[int],
-    sigma: int | float | list[int] | list[float] | torch.Tensor | None = None,
+    sigma: int | float | list[int] | list[float] | Tensor | None = None,
     value_check: bool = False,
 ) -> Tensor:
     """Performs Gaussian blurring on the image by given kernel. If is expected to have [..., H, W] shape, where ...
     means an arbitrary number of leading dimensions.
 
     Args:
-        img (Tensor): Image to be blurred
-        kernel_size (sequence of ints or int): Gaussian kernel size. Can be a sequence of integers
+        img: Image to be blurred.
+        kernel_size: Gaussian kernel size. Can be a sequence of integers
             like ``(kx, ky)`` or a single integer for square kernels.
 
             .. note::
                 In torchscript mode kernel_size as single int is not supported, use a sequence of
                 length 1: ``[ksize, ]``.
-        sigma (sequence of floats or int or Tensor, optional): Gaussian kernel standard deviation. Can be a
+        sigma: Gaussian kernel standard deviation. Can be a
             sequence of floats like ``(sigma_x, sigma_y)`` or a single float to define the
             same sigma in both X/Y directions. If None, then it is computed using
             ``kernel_size`` as ``sigma = 0.3 * ((kernel_size - 1) * 0.5 - 1) + 0.8``.
-            Default, None.
-        value_check (bool, optional): Bool to perform tensor value check.
-            Might cause slow down on some devices because of synchronization. Default, False.
+        value_check: Bool to perform tensor value check.
+            Might cause slow down on some devices because of synchronization.
 
     Returns:
-        Tensor: Gaussian Blurred version of the image.
+        Gaussian Blurred version of the image.
     """
 
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
@@ -128,7 +127,7 @@ def gaussian_blur(
         elif isinstance(sigma, (int, float)):
             s = float(sigma)
             sigma_t = torch.tensor([s, s], device=img.device)
-        elif isinstance(sigma, torch.Tensor):
+        elif isinstance(sigma, Tensor):
             sigma_t = transfer_tensor_on_device(sigma, img.device, non_blocking=True)
 
             dim_sigma = sigma_t.ndim + 1 if sigma_t.ndim == 0 else sigma_t.ndim
@@ -152,7 +151,7 @@ def gaussian_blur(
         (isinstance(sigma, (float, int)) and sigma <= 0)
         or (isinstance(sigma, (list, tuple)) and any([s <= 0 for s in sigma]))
         or (
-            isinstance(sigma, (torch.Tensor))
+            isinstance(sigma, (Tensor))
             and (value_check or is_tensor_on_cpu(sigma))
             and not torch.all(torch.gt(sigma, 0))
         )
@@ -207,26 +206,23 @@ def normalize(
     """Normalize a tensor image with mean and standard deviation.
 
     .. note::
-        This transform acts out of place by default, i.e., it does not mutates the input tensor.
-
-    .. note::
-        If tensor is not float, user has to set `cast_dtype` to True to raising error. The function will cast and scale the tensor
+        If tensor is not float, user has to set `cast_dtype` to a float ``torch.dtype``,
+        otherwise it will raise an error. The function will cast and scale the tensor
         and return a normalized float tensor.
 
-    See :class:`~torchvision.transforms.Normalize` for more details.
+    See :class:`~torchaug.transforms.Normalize` for more details.
 
     Args:
-        tensor (Tensor): Tensor image of size (C, H, W) or (B, C, H, W) to be normalized.
-        mean (sequence or Tensor): Sequence of means for each channel.
-        std (sequence or Tensor): Sequence of standard deviations for each channel.
-        cast_dtype (dtype, optional): If not None, scale and cast input to dtype. Expected to be a float dtype.
-            Default, None.
-        inplace(bool, optional): Bool to make this operation inplace.
-        value_check (bool, optional): Bool to perform tensor value check.
-            Might cause slow down on some devices because of synchronization. Default, False.
+        tensor: Tensor image of size (C, H, W) or (B, C, H, W) to be normalized.
+        mean: Sequence of means for each channel.
+        std: Sequence of standard deviations for each channel.
+        cast_dtype: If not None, scale and cast input to dtype. Expected to be a float dtype.
+        inplace: Bool to make this operation inplace.
+        value_check: Bool to perform tensor value check.
+            Might cause slow down on some devices because of synchronization.
 
     Returns:
-        Tensor: Normalized float Tensor image.
+        Normalized float Tensor image.
     """
 
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
@@ -269,19 +265,19 @@ def normalize(
 
 
 def solarize(
-    img: Tensor, threshold: int | float | torch.Tensor, value_check: bool = False
+    img: Tensor, threshold: int | float | Tensor, value_check: bool = False
 ) -> Tensor:
     """Solarize an RGB/grayscale image by inverting all pixel values above a threshold.
 
     Args:
-        img (Tensor): Image to have its colors inverted. It is expected to be in [..., 1 or 3, H, W] format,
+        img: Image to have its colors inverted. It is expected to be in [..., 1 or 3, H, W] format,
             where ... means it can have an arbitrary number of dimensions.
             If img is PIL Image, it is expected to be in mode "L" or "RGB".
-        threshold (int, float, Tensor): All pixels equal or above this value are inverted.
-        value_check (bool, optional): Bool to perform tensor value check.
-            Might cause slow down on some devices because of synchronization. Default, False.
+        threshold: All pixels equal or above this value are inverted.
+        value_check: Bool to perform tensor value check.
+            Might cause slow down on some devices because of synchronization.
     Returns:
-        Tensor: Solarized image.
+        Solarized image.
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(solarize)
@@ -290,7 +286,7 @@ def solarize(
     _assert_image_tensor(img)
 
     if not isinstance(threshold, (int, float)) and (
-        not isinstance(threshold, torch.Tensor) or threshold.numel() > 1
+        not isinstance(threshold, Tensor) or threshold.numel() > 1
     ):
         raise TypeError("threshold should be a float or a tensor of one element.")
 

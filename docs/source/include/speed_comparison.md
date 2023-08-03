@@ -2,7 +2,9 @@
 
 ## Setting for comparison
 
-The script used for comparison is [here](./speed_script.py). Keep in mind that this script **does not test** the improvement based on eliminating the CPU/GPU synchronization by Torchaug in comparison with Torchvision, which should favor Torchaug.
+We used a [python script](../speed_script.py) that compare the speed between Torchvision and Torchaug on CPU and GPU.
+
+It **does not test** the improvement based on eliminating the CPU/GPU synchronization which should favor Torchaug in comparison with Torchvision.
 
 It was performed on **1 GPU P5000** and **6 logical cores of an Intel(R) Xeon(R) Gold 6126 CPU @ 2.60GHz**.
 

@@ -4,6 +4,7 @@ import numbers
 from typing import Any
 
 import torch
+from torch import Tensor
 
 
 def _assert_tensor(obj: Any) -> None:
@@ -12,12 +13,12 @@ def _assert_tensor(obj: Any) -> None:
     Args:
         obj (Any): The object to check.
     """
-    if not isinstance(obj, torch.Tensor):
+    if not isinstance(obj, Tensor):
         raise TypeError(f"Object should be a tensor. Got {type(obj)}.")
 
 
-def _assert_video_tensor(video: torch.Tensor) -> None:
-    if not isinstance(video, torch.Tensor) or not _is_tensor_video(video):
+def _assert_video_tensor(video: Tensor) -> None:
+    if not isinstance(video, Tensor) or not _is_tensor_video(video):
         raise TypeError("Tensor is not a torch video.")
 
 
@@ -51,15 +52,15 @@ def _check_input(
         return tuple(value)
 
 
-def _is_tensor_video(x: torch.Tensor) -> bool:
+def _is_tensor_video(x: Tensor) -> bool:
     return x.ndim == 4
 
 
-def is_tensor_on_cpu(tensor: torch.Tensor) -> bool:
+def is_tensor_on_cpu(tensor: Tensor) -> bool:
     """Check if tensor is on CPU.
 
     Args:
-        tensor (torch.Tensor): The tensor to check.
+        tensor (Tensor): The tensor to check.
 
     Returns:
         bool: True if the tensor is on CPU.
@@ -68,17 +69,17 @@ def is_tensor_on_cpu(tensor: torch.Tensor) -> bool:
 
 
 def transfer_tensor_on_device(
-    tensor: torch.Tensor, device: torch.device, non_blocking: bool = False
-) -> torch.Tensor:
+    tensor: Tensor, device: torch.device, non_blocking: bool = False
+) -> Tensor:
     """Transfer a tensor to a device.
 
     Args:
-        tensor (torch.Tensor): The tensor to transfer.
+        tensor (Tensor): The tensor to transfer.
         device (torch.device): The device to transfer on.
         non_blocking (bool, optional): Whether to perform asynchronous transfer. Useful for cuda. Defaults to False.
 
     Returns:
-        torch.Tensor: The tensor transfered on the device.
+        Tensor: The tensor transfered on the device.
     """
     if non_blocking and not tensor.device == device and device.type == "cuda":
         tensor = tensor.pin_memory(device=device)

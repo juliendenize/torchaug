@@ -68,16 +68,16 @@ def batch_adjust_brightness(
     """Adjust brightness of a batch of images.
 
     Args:
-        imgs (Tensor): Batch of images to be adjusted. It is expected to be in [B, ..., 1 or 3, H, W] format,
+        imgs: Batch of images to be adjusted. It is expected to be in [B, ..., 1 or 3, H, W] format,
             where ... means it can have an arbitrary number of dimensions.
-        brightness_factor (float, Tensor):  How much to adjust the brightness. Can be
+        brightness_factor:  How much to adjust the brightness. Can be
             any 1 or B non-negative number. 0 gives a black image, 1 gives the
             original image while 2 increases the brightness by a factor of 2.
-        value_check (bool, optional): Bool to perform tensor value check.
-            Might cause slow down on some devices because of synchronization or large batch size. Default, False.
+        value_check: Bool to perform tensor value check.
+            Might cause slow down on some devices because of synchronization or large batch size.
 
     Returns:
-        Tensor: Brightness adjusted batch of images.
+        Brightness adjusted batch of images.
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(batch_adjust_brightness)
@@ -94,7 +94,7 @@ def batch_adjust_brightness(
         brightness_factor = torch.tensor(brightness_factor, device=imgs.device).expand(
             batch_size
         )
-    elif isinstance(brightness_factor, torch.Tensor):
+    elif isinstance(brightness_factor, Tensor):
         brightness_factor = transfer_tensor_on_device(
             brightness_factor, imgs.device, True
         )
@@ -118,16 +118,16 @@ def batch_adjust_contrast(
     """Adjust contrast of a batch of images.
 
     Args:
-        imgs (Tensor): Batch of images to be adjusted. It is expected to be in [B, ..., 1 or 3, H, W] format,
+        imgs: Batch of images to be adjusted. It is expected to be in [B, ..., 1 or 3, H, W] format,
             where ... means it can have an arbitrary number dimensions.
-        contrast_factor (float, Tensor): How much to adjust the contrast. Can be any
+        contrast_factor: How much to adjust the contrast. Can be any
             1 or B non-negative number. 0 gives a solid gray image, 1 gives the
             original image while 2 increases the contrast by a factor of 2.
-        value_check (bool, optional): Bool to perform tensor value check.
-            Might cause slow down on some devices because of synchronization. Default, False.
+        value_check: Bool to perform tensor value check.
+            Might cause slow down on some devices because of synchronization.
 
     Returns:
-        Tensor: Contrast adjusted batch of images.
+        Contrast adjusted batch of images.
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(batch_adjust_contrast)
@@ -144,7 +144,7 @@ def batch_adjust_contrast(
         contrast_factor = torch.tensor(contrast_factor, device=imgs.device).expand(
             batch_size
         )
-    elif isinstance(contrast_factor, torch.Tensor):
+    elif isinstance(contrast_factor, Tensor):
         contrast_factor = transfer_tensor_on_device(contrast_factor, imgs.device, True)
         if value_check and not torch.all(torch.ge(contrast_factor, 0)):
             raise ValueError(f"contrast_factor is not non-negative.")
@@ -184,21 +184,21 @@ def batch_adjust_hue(
     .. _Hue: https://en.wikipedia.org/wiki/Hue
 
     Args:
-        imgs (Tensor): Batch of images to be adjusted. It is expected to be in [B, ..., 1 or 3, H, W] format,
+        imgs: Batch of images to be adjusted. It is expected to be in [B, ..., 1 or 3, H, W] format,
             where ... means it can have an arbitrary number of dimensions.
             Note: the pixel values of the input image has to be non-negative for conversion to HSV space;
             thus it does not work if you normalize your image to an interval with negative values,
             or use an interpolation that generates negative values before using this function.
-        hue_factor (float, Tensor):  How much to shift the hue channel. Can be 1 or B elements in
+        hue_factor:  How much to shift the hue channel. Can be 1 or B elements in
             [-0.5, 0.5]. 0.5 and -0.5 give complete reversal of hue channel in
             HSV space in positive and negative direction respectively.
             0 means no shift. Therefore, both -0.5 and 0.5 will give an image
             with complementary colors while 0 gives the original image.
-        value_check (bool, optional): Bool to perform tensor value check.
-            Might cause slow down on some devices because of synchronization or large batch size. Default, False.
+        value_check: Bool to perform tensor value check.
+            Might cause slow down on some devices because of synchronization or large batch size.
 
     Returns:
-        Tensor: Hue adjusted image.
+        Hue adjusted image.
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(batch_adjust_hue)
@@ -216,7 +216,7 @@ def batch_adjust_hue(
         if not -0.5 <= hue_factor <= 0.5:
             raise ValueError(f"hue_factor is not between -0.5 and 0.5.")
         hue_factor = torch.tensor(hue_factor, device=imgs.device).expand(batch_size)
-    elif isinstance(hue_factor, torch.Tensor):
+    elif isinstance(hue_factor, Tensor):
         hue_factor = transfer_tensor_on_device(hue_factor, imgs.device, True)
         if value_check and not torch.all(
             torch.logical_and(torch.ge(hue_factor, -0.5), torch.le(hue_factor, 0.5))
@@ -250,16 +250,16 @@ def batch_adjust_saturation(
     """Adjust color saturation of a batch of images.
 
     Args:
-        imgs (Tensor): Batch of images to be adjusted. It is expected to be in [B, ..., 1 or 3, H, W] format,
-            where ... means it can have an arbitrary number of leading dimensions.
-        saturation_factor (float, Tensor):  How much to adjust the saturation. Can be 1 or B non-negative elements. 0 will
+        imgs: Batch of images to be adjusted. It is expected to be in [B, ..., 1 or 3, H, W] format,
+            where ... means it can have an arbitrary number of dimensions.
+        saturation_factor:  How much to adjust the saturation. Can be 1 or B non-negative elements. 0 will
             give a black and white image, 1 will give the original image while
             2 will enhance the saturation by a factor of 2.
-        value_check (bool, optional): Bool to perform tensor value check.
-            Might cause slow down on some devices because of synchronization or large batch size. Default, False.
+        value_check: Bool to perform tensor value check.
+            Might cause slow down on some devices because of synchronization or large batch size.
 
     Returns:
-        Tensor: Saturation adjusted batch of images.
+        Saturation adjusted batch of images.
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(batch_adjust_saturation)
@@ -279,7 +279,7 @@ def batch_adjust_saturation(
         saturation_factor = torch.tensor(saturation_factor, device=imgs.device).expand(
             batch_size
         )
-    elif isinstance(saturation_factor, torch.Tensor):
+    elif isinstance(saturation_factor, Tensor):
         saturation_factor = transfer_tensor_on_device(
             saturation_factor, imgs.device, True
         )
@@ -300,31 +300,30 @@ def batch_adjust_saturation(
 def batch_gaussian_blur(
     imgs: Tensor,
     kernel_size: int | list[int],
-    sigma: int | float | list[int] | list[float] | torch.Tensor | None = None,
+    sigma: int | float | list[int] | list[float] | Tensor | None = None,
     value_check: bool = False,
 ) -> Tensor:
-    """Performs Gaussian blurring on the batch of images by given kernel. If is expected to have [B, ..., H, W]
-    shape, where ... means an number of dimensions.
+    """Performs Gaussian blurring on the batch of images by given kernel. It is expected to have [B, ..., C, H, W]
+    shape, where ... means an arbitrary number of dimensions.
 
     Args:
-        img (Tensor): Image to be blurred
+        img: Image to be blurred
         kernel_size (sequence of ints or int): Gaussian kernel size. Can be a sequence of integers
             like ``(kx, ky)`` or a single integer for square kernels.
 
             .. note::
                 In torchscript mode kernel_size as single int is not supported, use a sequence of
                 length 1: ``[ksize, ]``.
-        sigma (sequence of floats or ints or int or float or Tensor, optional): Gaussian kernel standard deviation.
+        sigma: Gaussian kernel standard deviation.
             Can be a sequence of floats like ``(sigma_x, sigma_y)`` or a single float to define the
             same sigma in both X/Y directions. If None, then it is computed using
             ``kernel_size`` as ``sigma = 0.3 * ((kernel_size - 1) * 0.5 - 1) + 0.8``.
             If Tensor it is expected to have [B] shape.
-            Default, None.
-        value_check (bool, optional): Bool to perform tensor value check.
-            Might cause slow down on some devices because of synchronization or large batch size. Default, False.
+        value_check: Bool to perform tensor value check.
+            Might cause slow down on some devices because of synchronization or large batch size.
 
     Returns:
-        Tensor: Gaussian Blurred version of the image.
+        Gaussian Blurred version of the image.
     """
 
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
@@ -373,7 +372,7 @@ def batch_gaussian_blur(
         elif isinstance(sigma, (int, float)):
             s = float(sigma)
             sigma_t = torch.tensor([[s, s]], device=imgs.device).expand((batch_size, 2))
-        elif isinstance(sigma, torch.Tensor):
+        elif isinstance(sigma, Tensor):
             sigma_t = transfer_tensor_on_device(sigma, imgs.device, non_blocking=True)
 
             dim_sigma = sigma_t.ndim
@@ -409,7 +408,7 @@ def batch_gaussian_blur(
         (isinstance(sigma, (float, int)) and sigma <= 0)
         or (isinstance(sigma, (list, tuple)) and any([s <= 0 for s in sigma]))
         or (
-            isinstance(sigma, (torch.Tensor))
+            isinstance(sigma, (Tensor))
             and value_check
             and not torch.all(torch.gt(sigma, 0))
         )
