@@ -449,7 +449,7 @@ def batch_gaussian_blur(
 
 
 def batch_mixup(
-    tensor_1: Tensor, tensor_2: Tensor, lam: float | Tensor, inplace: bool = True
+    tensor_1: Tensor, tensor_2: Tensor, lam: float | Tensor, inplace: bool = False
 ) -> Tensor:
     """Mix two tensors with linear interpolation.
 

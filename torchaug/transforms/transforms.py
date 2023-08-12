@@ -65,7 +65,7 @@ class Div255(nn.Module):
         inplace: Bool to make this operation in-place.
     """
 
-    def __init__(self, inplace: bool = True) -> None:
+    def __init__(self, inplace: bool = False) -> None:
         super().__init__()
         _log_api_usage_once(self)
 
@@ -101,7 +101,7 @@ class MixUp(nn.Module):
         inplace: Whether to perform the operation inplace.
     """
 
-    def __init__(self, alpha: float, inplace: bool = True) -> None:
+    def __init__(self, alpha: float, inplace: bool = False) -> None:
         super().__init__()
         _log_api_usage_once(self)
 
@@ -160,7 +160,7 @@ class Mul255(nn.Module):
         inplace: Bool to make this operation in-place.
     """
 
-    def __init__(self, inplace: bool = True) -> None:
+    def __init__(self, inplace: bool = False) -> None:
         super().__init__()
         _log_api_usage_once(self)
 

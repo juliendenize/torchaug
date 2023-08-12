@@ -41,7 +41,7 @@ def _get_gaussian_kernel2d(
 
 def div_255(
     tensor: Tensor,
-    inplace: bool = True,
+    inplace: bool = False,
 ) -> Tensor:
     """Divide the given tensor by 255.
 
@@ -180,7 +180,7 @@ def gaussian_blur(
 
 
 def mixup(
-    tensor_1: Tensor, tensor_2: Tensor, lam: float, inplace: bool = True
+    tensor_1: Tensor, tensor_2: Tensor, lam: float, inplace: bool = False
 ) -> Tensor:
     """Mix two tensors with linear interpolation.
 
@@ -214,7 +214,7 @@ def mixup(
     return tensor_1.mul_(lam).add_(tensor_2.mul_(1 - lam))
 
 
-def mul_255(tensor: Tensor, inplace: bool = True) -> Tensor:
+def mul_255(tensor: Tensor, inplace: bool = False) -> Tensor:
     """Multiply the given tensor by 255.
 
     Args:
@@ -235,7 +235,7 @@ def normalize(
     mean: list[float] | Tensor,
     std: list[float] | Tensor,
     cast_dtype: torch.dtype | None = None,
-    inplace: bool = True,
+    inplace: bool = False,
     value_check: bool = False,
 ) -> Tensor:
     """Normalize a tensor image with mean and standard deviation.
