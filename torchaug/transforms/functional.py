@@ -179,6 +179,41 @@ def gaussian_blur(
     return img
 
 
+def mixup(
+    tensor_1: Tensor, tensor_2: Tensor, lam: float, inplace: bool = True
+) -> Tensor:
+    """Mix two tensors with linear interpolation.
+
+    The tensors shoud be floats.
+
+    Args:
+        tensor_1: First tensor.
+        tensor_2: Second tensor.
+        lam: Mixing coefficient.
+        inplace: Whether to perform the operation inplace.
+
+    Returns:
+        The mixed tensor.
+    """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(mixup)
+
+    _assert_tensor(tensor_1)
+    _assert_tensor(tensor_2)
+
+    if not isinstance(lam, float):
+        raise TypeError(f"lam should be float. Got {type(lam)}.")
+
+    if not tensor_1.is_floating_point() or not tensor_2.is_floating_point():
+        raise TypeError(
+            f"Tensors should be float. Got {tensor_1.dtype} and {tensor_2.dtype}."
+        )
+
+    tensor_1 = tensor_1 if inplace else tensor_1.clone()
+    tensor_2 = tensor_2 if inplace else tensor_2.clone()
+    return tensor_1.mul_(lam).add_(tensor_2.mul_(1 - lam))
+
+
 def mul_255(tensor: Tensor, inplace: bool = True) -> Tensor:
     """Multiply the given tensor by 255.
 

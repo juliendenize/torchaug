@@ -51,7 +51,7 @@ batch_transform = BatchRandomColorJitter(...)
 
 ## How to contribute
 
-Feel free to contribute to this library by making issues and/or pull requests. For each feature you implement, add tests to make sure it works. Also, make sure to update the documentation. 
+Feel free to contribute to this library by making issues and/or pull requests. For each feature you implement, add tests to make sure it works. Also, make sure to update the documentation.
 
 ## LICENSE
 

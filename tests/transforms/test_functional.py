@@ -140,6 +140,35 @@ def test_gaussian_blur():
         F.gaussian_blur([2, 0, 3], [3, 3], [2, 2])
 
 
+def test_mixup():
+    torch.manual_seed(28)
+
+    x_shape = [3, 4, 4]
+    x_1 = torch.randn(x_shape)
+    x_2 = torch.randn(x_shape)
+
+    # Test lam float
+    out = F.mixup(x_1, x_2, 0.5, False)
+    expected_out = 0.5 * x_1 + 0.5 * x_2
+    torch.testing.assert_close(out, expected_out)
+
+    # Test lam tensor not float
+    with pytest.raises(TypeError, match="lam should be float. Got <class 'str'>."):
+        out = F.mixup(x_1, x_2, "ahah", False)
+
+    # Test tensor_2 is not float.
+    with pytest.raises(
+        TypeError, match="Tensors should be float. Got torch.float32 and torch.int32."
+    ):
+        out = F.mixup(x_1, x_2.to(torch.int32), 0.5, False)
+
+    # Test tensor_1 is not float.
+    with pytest.raises(
+        TypeError, match="Tensors should be float. Got torch.int32 and torch.float32."
+    ):
+        out = F.mixup(x_1.to(torch.int32), x_2, 0.5, False)
+
+
 def test_mul_255():
     x_shape = [3, 4, 4]
     x = torch.rand(x_shape)
@@ -241,7 +270,7 @@ def test_solarize():
     ):
         F.solarize(torch.randint(0, 255, (10, 10)), 0.5)
 
-    # Test if threshold not float or not tensor.
+    # Test if threshold not float or not tensor
     with pytest.raises(
         TypeError, match="threshold should be a float or a tensor of one element."
     ):

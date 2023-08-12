@@ -66,8 +66,8 @@ class Div255(nn.Module):
     """
 
     def __init__(self, inplace: bool = True) -> None:
-
         super().__init__()
+        _log_api_usage_once(self)
 
         self.inplace = inplace
 
@@ -86,6 +86,73 @@ class Div255(nn.Module):
         return f"{__class__.__name__}(inplace={self.inplace})"
 
 
+class MixUp(nn.Module):
+    """Mix input tensor with linear interpolation drawn according a Beta law.
+
+    The shape of the tensors is expected to be [B, ...] with ... any number of dimensions.
+    The tensor shoud be float.
+
+    .. note::
+        The tensor is rolled according its first dimension and mixed with one
+        drawn interpolation parameter for the whole tensor.
+
+    Args:
+        alpha: Parameter for the Beta law.
+        inplace: Whether to perform the operation inplace.
+    """
+
+    def __init__(self, alpha: float, inplace: bool = True) -> None:
+        super().__init__()
+        _log_api_usage_once(self)
+
+        self.alpha = alpha
+        self.inplace = inplace
+        self.mix_sampler = torch.distributions.Beta(
+            torch.tensor([alpha]), torch.tensor([alpha])
+        )
+
+    def _get_params(self) -> float:
+        """Draw the mixing coefficient.
+
+        Returns:
+            The mixing coefficient.
+        """
+        return float(self.mix_sampler.sample(()))
+
+    def forward(
+        self, tensor: Tensor, labels: Tensor | None = None
+    ) -> tuple[Tensor, Tensor | None, float]:
+        """Mix the input tensor and labels.
+
+        Args:
+            tensor: The tensor to mix.
+            labels: If not None, the labels to mix
+
+        Returns:
+            Tuple:
+            - mixed tensor.
+            - mixed labels or None.
+            - mixing coefficient.
+        """
+        lam = self._get_params()
+
+        tensor = tensor if self.inplace else tensor.clone()
+
+        if labels is None:
+            return F.mixup(tensor, tensor.roll(1, 0), lam, True), None, lam
+
+        labels = labels if self.inplace else labels.clone()
+
+        return (
+            F.mixup(tensor, tensor.roll(1, 0), lam, True),
+            F.mixup(labels, labels.roll(1, 0), lam, True),
+            lam,
+        )
+
+    def __repr__(self):
+        return f"{__class__.__name__}(alpha={self.alpha}, inplace={self.inplace})"
+
+
 class Mul255(nn.Module):
     """Multiply a tensor by 255.
 
@@ -95,6 +162,7 @@ class Mul255(nn.Module):
 
     def __init__(self, inplace: bool = True) -> None:
         super().__init__()
+        _log_api_usage_once(self)
 
         self.inplace = inplace
 

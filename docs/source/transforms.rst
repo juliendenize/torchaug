@@ -19,6 +19,7 @@ List of class wrappers of the data augmentations.
     :template: class.rst
 
     Div255
+    MixUp
     Mul255
     Normalize
     RandomApply
@@ -43,6 +44,7 @@ List of the functions to make the data augmentations.
 
     div_255
     gaussian_blur
+    mixup
     mul_255
     normalize
     solarize
