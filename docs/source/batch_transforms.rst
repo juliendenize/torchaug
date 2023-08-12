@@ -21,6 +21,7 @@ List of class wrappers of the batched data augmentations.
     :toctree: generated/
     :template: class.rst
 
+    BatchMixUp
     BatchRandomApply
     BatchRandomColorJitter
     BatchRandomGaussianBlur
@@ -36,7 +37,7 @@ List of class wrappers of the batched data augmentations.
 Functional
 ----------
 
-.. currentmodule:: torchaug.batch_transforms
+.. currentmodule:: torchaug.batch_transforms.functional
 
 List of the functions to make the batched data augmentations.
 
@@ -49,3 +50,4 @@ List of the functions to make the batched data augmentations.
     batch_adjust_hue
     batch_adjust_saturation
     batch_gaussian_blur
+    batch_mixup

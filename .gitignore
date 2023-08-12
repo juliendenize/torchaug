@@ -1,9 +1,11 @@
 **/__pycache__/*
-.vscode/*
-.pytest_cache/*
+**/_build/*
+**/build/
 **/notebooks/*
 *.egg-info
 .coverage
+.pytest_cache/*
+.vscode/*
 coverage.*
 dist/
 docs/build/*

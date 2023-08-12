@@ -496,3 +496,96 @@ def test_batch_gaussian_blur():
     # Test input without batch dimension.
     with pytest.raises(TypeError, match="Tensor is not a torch batch of images."):
         F.batch_gaussian_blur(torch.rand((4, 12, 12)), [3, 3], [2, 2])
+
+
+def test_batch_mixup():
+    torch.manual_seed(28)
+
+    x_shape = [3, 4, 4]
+    x_1 = torch.randn(x_shape)
+    x_2 = torch.randn(x_shape)
+
+    # Test lam float
+    out = F.batch_mixup(x_1, x_2, 0.5, False)
+    expected_out = 0.5 * x_1 + 0.5 * x_2
+    torch.testing.assert_close(out, expected_out)
+
+    # Test lam tensor shape (,)
+    out = F.batch_mixup(x_1, x_2, torch.tensor(0.5), False)
+    expected_out = 0.5 * x_1 + 0.5 * x_2
+    torch.testing.assert_close(out, expected_out)
+
+    # Test lam tensor shape (1)
+    out = F.batch_mixup(x_1, x_2, torch.tensor([0.5]), False)
+    expected_out = 0.5 * x_1 + 0.5 * x_2
+    torch.testing.assert_close(out, expected_out)
+
+    # Test lam tensor shape (1, 1)
+    out = F.batch_mixup(x_1, x_2, torch.tensor([[0.5]]), False)
+    expected_out = 0.5 * x_1 + 0.5 * x_2
+    torch.testing.assert_close(out, expected_out)
+
+    # Test lam tensor shape (B,)
+    lam = torch.tensor([0.5, 0.75, 0.5])
+    out = F.batch_mixup(x_1, x_2, lam, False)
+    expected_out = lam.view(3, 1, 1) * x_1 + (1 - lam).view(3, 1, 1) * x_2
+    torch.testing.assert_close(out, expected_out)
+
+    # Test lam tensor shape (B, 1)
+    lam = torch.tensor([[0.5], [0.75], [0.5]])
+    out = F.batch_mixup(x_1, x_2, lam, False)
+    expected_out = lam.view(3, 1, 1) * x_1 + (1 - lam).view(3, 1, 1) * x_2
+    torch.testing.assert_close(out, expected_out)
+
+    # Test inplace True
+    lam = torch.tensor([[0.5], [0.75], [0.5]])
+    inpt_x_1 = x_1.clone()
+    inpt_x_2 = x_2.clone()
+    out = F.batch_mixup(inpt_x_1, inpt_x_2, lam, True)
+    expected_out = lam.view(3, 1, 1) * x_1 + (1 - lam).view(3, 1, 1) * x_2
+    torch.testing.assert_close(out, expected_out)
+    torch.testing.assert_close(out, inpt_x_1)
+
+    # Test lam tensor shape (B, 1, 1)
+    lam = torch.tensor([[0.5], [0.75], [0.5]]).view(-1, 1, 1)
+    with pytest.raises(
+        ValueError,
+        match="If lam is a tensor, its dimension should be 0, 1 or 2. Got 3.",
+    ):
+        out = F.batch_mixup(x_1, x_2, lam, False)
+
+    # Test lam tensor shape (2, )
+    lam = torch.tensor([0.5, 0.75])
+    with pytest.raises(
+        ValueError,
+        match="If lam is a tensor, it should contain one or batch size elements. Got 2.",
+    ):
+        out = F.batch_mixup(x_1, x_2, lam, False)
+
+    # Test lam tensor shape (1, 2)
+    lam = torch.tensor([[0.5, 0.75]])
+    with pytest.raises(
+        ValueError,
+        match="If lam is a two dimensional tensor, its second dimension should be 1. Got 2.",
+    ):
+        out = F.batch_mixup(x_1, x_2, lam, False)
+
+    # Test lam tensor not float or tensor
+    lam = torch.tensor([[0.5, 0.75]])
+    with pytest.raises(
+        TypeError, match="lam should be either float or tensor. Got <class 'str'>."
+    ):
+        out = F.batch_mixup(x_1, x_2, "ahah", False)
+
+    # Test tensor_2 is not float
+    lam = torch.tensor([[0.5], [0.75], [0.5]]).view(-1, 1, 1)
+    with pytest.raises(
+        TypeError, match="Tensors should be float. Got torch.float32 and torch.int32."
+    ):
+        out = F.batch_mixup(x_1, x_2.to(torch.int32), lam, False)
+
+    # Test tensor_1 is not float
+    with pytest.raises(
+        TypeError, match="Tensors should be float. Got torch.int32 and torch.float32."
+    ):
+        out = F.batch_mixup(x_1.to(torch.int32), x_2, lam, False)

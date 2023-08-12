@@ -14,14 +14,10 @@ from torchvision.transforms.functional import InterpolationMode
 from torchvision.transforms.transforms import (_interpolation_modes_from_int,
                                                _setup_size)
 
+import torchaug.batch_transforms.functional as F_b
 import torchaug.transforms.functional as F
 from torchaug.batch_transforms._utils import _assert_batch_videos_tensor
-from torchaug.batch_transforms.functional import (batch_adjust_brightness,
-                                                  batch_adjust_contrast,
-                                                  batch_adjust_hue,
-                                                  batch_adjust_saturation,
-                                                  batch_gaussian_blur)
-from torchaug.transforms._utils import _check_input
+from torchaug.transforms._utils import _check_input, transfer_tensor_on_device
 from torchaug.utils import _log_api_usage_once
 
 
@@ -317,7 +313,7 @@ class BatchRandomColorJitter(BatchRandomTransform):
 
             for fn_id in fn_idx:
                 if fn_id == 0 and brightness_factor is not None:
-                    imgs_combination[:] = batch_adjust_brightness(
+                    imgs_combination[:] = F_b.batch_adjust_brightness(
                         imgs_combination,
                         brightness_factor[
                             i
@@ -327,7 +323,7 @@ class BatchRandomColorJitter(BatchRandomTransform):
                         self.value_check,
                     )
                 elif fn_id == 1 and contrast_factor is not None:
-                    imgs_combination[:] = batch_adjust_contrast(
+                    imgs_combination[:] = F_b.batch_adjust_contrast(
                         imgs_combination,
                         contrast_factor[
                             i
@@ -337,7 +333,7 @@ class BatchRandomColorJitter(BatchRandomTransform):
                         self.value_check,
                     )
                 elif fn_id == 2 and saturation_factor is not None:
-                    imgs_combination[:] = batch_adjust_saturation(
+                    imgs_combination[:] = F_b.batch_adjust_saturation(
                         imgs_combination,
                         saturation_factor[
                             i
@@ -347,7 +343,7 @@ class BatchRandomColorJitter(BatchRandomTransform):
                         self.value_check,
                     )
                 elif fn_id == 3 and hue_factor is not None:
-                    imgs_combination[:] = batch_adjust_hue(
+                    imgs_combination[:] = F_b.batch_adjust_hue(
                         imgs_combination,
                         hue_factor[
                             i
@@ -461,7 +457,7 @@ class BatchRandomGaussianBlur(BatchRandomTransform):
             Gaussian blurred images
         """
         sigma: Tensor = self.get_params(self.sigma[0], self.sigma[1], imgs.shape[0])
-        imgs = batch_gaussian_blur(imgs, self.kernel_size, sigma, self.value_check)
+        imgs = F_b.batch_gaussian_blur(imgs, self.kernel_size, sigma, self.value_check)
         return imgs
 
     def __repr__(self) -> str:
@@ -511,6 +507,73 @@ class BatchRandomGrayScale(BatchRandomTransform):
         return (
             f"{self.__class__.__name__}(" f", p={self.p}" f", inplace={self.inplace})"
         )
+
+
+class BatchMixUp(nn.Module):
+    """Mix input tensor with linear interpolation drawn according a Beta law.
+
+    The shape of the tensors is expected to be [B, ...] with ... any number of dimensions.
+    The tensor shoud be float.
+
+    .. note::
+        The tensor is rolled according its first dimension and mixed with one
+        drawn interpolation parameter per element in first dimension.
+
+    Args:
+        alpha: Parameter for the Beta law.
+        inplace: Whether to perform the operation inplace.
+    """
+
+    def __init__(self, alpha: float, inplace: bool = True) -> None:
+        super().__init__()
+        _log_api_usage_once(self)
+
+        self.alpha = alpha
+        self.inplace = inplace
+        self.mix_sampler = torch.distributions.Beta(
+            torch.tensor([alpha]), torch.tensor([alpha])
+        )
+
+    def _get_params(self, batch_size: int, device: torch.device) -> Tensor:
+        """Draw the mixing coefficients.
+
+        Returns:
+            The mixing coefficients.
+        """
+        return transfer_tensor_on_device(self.mix_sampler.sample((batch_size,)), device)
+
+    def forward(
+        self, tensor: Tensor, labels: Tensor | None = None
+    ) -> tuple[Tensor, Tensor | None, Tensor]:
+        """Mix the input tensor and labels.
+
+        Args:
+            tensor: The tensor to mix.
+            labels: If not None, the labels to mix
+
+        Returns:
+            Tuple:
+            - mixed tensor.
+            - mixed labels or None.
+            - mixing coefficients.
+        """
+        lam = self._get_params(tensor.shape[0], tensor.device)
+
+        tensor = tensor if self.inplace else tensor.clone()
+
+        if labels is None:
+            return F_b.batch_mixup(tensor, tensor.roll(1, 0), lam, True), None, lam
+
+        labels = labels if self.inplace else labels.clone()
+
+        return (
+            F_b.batch_mixup(tensor, tensor.roll(1, 0), lam, True),
+            F_b.batch_mixup(labels, labels.roll(1, 0), lam, True),
+            lam,
+        )
+
+    def __repr__(self):
+        return f"{__class__.__name__}(alpha={self.alpha}, inplace={self.inplace})"
 
 
 class BatchRandomHorizontalFlip(BatchRandomTransform):

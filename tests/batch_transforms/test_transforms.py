@@ -8,6 +8,51 @@ import torchaug.batch_transforms as transforms
 import torchaug.transforms as mono_transforms
 
 
+def test_batch_mixup():
+    torch.manual_seed(28)
+
+    # Checking if BatchMixUp can be printed as string
+    assert isinstance(
+        transforms.BatchMixUp(0.5, True).__repr__(),
+        str,
+    )
+
+    imgs = torch.randn(4, 3, 8, 8)
+    labels = torch.randint(0, 5, (4, 1)).to(torch.float)
+    inpt_imgs = imgs.clone()
+    inpt_labels = labels.clone()
+    out_imgs, out_labels, out_lam = transforms.BatchMixUp(0.5, inplace=True)(
+        inpt_imgs, inpt_labels
+    )
+
+    expected_lam = torch.tensor([[0.8844036], [0.9952562], [0.0072862], [0.0252598]])
+    expected_out_labels = expected_lam * labels + (1 - expected_lam) * labels.roll(1, 0)
+    expected_lam = expected_lam.view(4, 1, 1, 1)
+    expected_out_imgs = expected_lam * imgs + (1 - expected_lam) * imgs.roll(1, 0)
+
+    torch.testing.assert_close(out_lam, expected_lam.view(4, 1))
+    torch.testing.assert_close(out_labels, expected_out_labels)
+    torch.testing.assert_close(out_imgs, expected_out_imgs)
+    torch.testing.assert_close(out_imgs, inpt_imgs)
+    torch.testing.assert_close(out_labels, inpt_labels)
+
+    out_imgs, out_labels, out_lam = transforms.BatchMixUp(0.5, inplace=True)(
+        inpt_imgs, None
+    )
+    assert out_labels is None
+
+    out_imgs, out_labels, out_lam = transforms.BatchMixUp(0.5, inplace=False)(
+        imgs, None
+    )
+    assert out_labels is None
+
+    expected_lam = torch.tensor([[0.9992378], [0.0766915], [0.9603495], [0.9419856]])
+    torch.testing.assert_close(out_lam, expected_lam.view(4, 1))
+    expected_lam = expected_lam.view(4, 1, 1, 1)
+    expected_out_imgs = expected_lam * imgs + (1 - expected_lam) * imgs.roll(1, 0)
+    torch.testing.assert_close(out_imgs, expected_out_imgs)
+
+
 def test_batch_random_apply():
     torch.manual_seed(28)
 

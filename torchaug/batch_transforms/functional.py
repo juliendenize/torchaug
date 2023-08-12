@@ -446,3 +446,70 @@ def batch_gaussian_blur(
     imgs = imgs.reshape(b, *rest_dims, h, w)
 
     return imgs
+
+
+def batch_mixup(
+    tensor_1: Tensor, tensor_2: Tensor, lam: float | Tensor, inplace: bool = True
+) -> Tensor:
+    """Mix two tensors with linear interpolation.
+
+    The shape of the tensors is expected to be [B, ...] with ... any number of dimensions.
+    The tensors shoud be floats.
+
+    Args:
+        tensor_1: First tensor.
+        tensor_2: Second tensor.
+        lam: Mixing coefficient. If float, same coefficient is applied on whole batch. If tensor,
+            its expecting shape is [B, ...] or [...] with ... any number of dimensions.
+        inplace: Whether to perform the operation inplace.
+
+    Returns:
+        The mixed tensor.
+    """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(batch_mixup)
+
+    _assert_tensor(tensor_1)
+    _assert_tensor(tensor_2)
+
+    if not tensor_1.is_floating_point() or not tensor_2.is_floating_point():
+        raise TypeError(
+            f"Tensors should be float. Got {tensor_1.dtype} and {tensor_2.dtype}."
+        )
+
+    device = tensor_1.device
+    batch_size = tensor_1.shape[0]
+
+    if isinstance(lam, float):
+        lam = torch.tensor(lam, device=device).expand(batch_size)
+    elif isinstance(lam, Tensor):
+        lam = transfer_tensor_on_device(lam, device, True)
+        dim_lam = lam.ndim
+        if dim_lam in [0, 1]:
+            lam = lam.view(-1, 1)
+        elif dim_lam == 2:
+            if lam.shape[1] > 1:
+                raise ValueError(
+                    f"If lam is a two dimensional tensor, its second dimension should be 1. Got {lam.shape[1]}."
+                )
+        else:
+            raise ValueError(
+                f"If lam is a tensor, its dimension should be 0, 1 or 2. Got {dim_lam}."
+            )
+
+        len_lam = lam.shape[0]
+
+        if len_lam == 1:
+            lam = lam.view(1, 1).expand(batch_size, 1)
+        elif len_lam != batch_size:
+            raise ValueError(
+                f"If lam is a tensor, it should contain one or batch size elements. Got {len_lam}."
+            )
+    else:
+        raise TypeError(f"lam should be either float or tensor. Got {type(lam)}.")
+
+    lam = lam.view(-1, *[1 for _ in range(tensor_1.ndim - 1)])
+
+    tensor_1 = tensor_1 if inplace else tensor_1.clone()
+    tensor_2 = tensor_2 if inplace else tensor_2.clone()
+    return tensor_1.mul_(lam).add_(tensor_2.mul_(1 - lam))
