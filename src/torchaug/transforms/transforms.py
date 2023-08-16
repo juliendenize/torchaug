@@ -126,7 +126,7 @@ class MixUp(nn.Module):
 
         Args:
             tensor: The tensor to mix.
-            labels: If not None, the labels to mix
+            labels: If not None, the labels to mix.
 
         Returns:
             Tuple:

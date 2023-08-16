@@ -460,7 +460,7 @@ def batch_mixup(
         tensor_1: First tensor.
         tensor_2: Second tensor.
         lam: Mixing coefficient. If float, same coefficient is applied on whole batch. If tensor,
-            its expecting shape is [B, ...] or [...] with ... any number of dimensions.
+            its expecting shape is [B, 1] or [B] or [1].
         inplace: Whether to perform the operation inplace.
 
     Returns:
