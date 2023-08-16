@@ -47,7 +47,6 @@ dynamic = [
 "Source Code" = "https://github.com/juliendenize/torchaug"
 
 [tool.setuptools]
-packages = ["torchaug"]
 license-files = ["LICENSE"]
 
 [tool.setuptools.dynamic]
