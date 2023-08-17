@@ -505,7 +505,7 @@ class BatchRandomGrayScale(BatchRandomTransform):
 
     def __repr__(self) -> str:
         return (
-            f"{self.__class__.__name__}(" f", p={self.p}" f", inplace={self.inplace})"
+            f"{self.__class__.__name__}(" f"p={self.p}" f", inplace={self.inplace})"
         )
 
 
