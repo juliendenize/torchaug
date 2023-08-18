@@ -25,6 +25,10 @@ class RandomTransform(nn.Module, ABC):
 
     def __init__(self, p: float) -> None:
         super().__init__()
+
+        if not 0 <= self.p <= 1:
+            raise ValueError(f"p should be superior to 0 (included) and inferior to 1 (included). Got {p}.")
+
         self.p = p
 
     @abstractmethod

@@ -3,7 +3,7 @@ from __future__ import annotations
 import numbers
 from abc import ABC, abstractmethod
 from itertools import permutations
-from math import ceil
+from math import ceil, floor
 from typing import Sequence
 
 import torch
@@ -31,6 +31,10 @@ class BatchRandomTransform(nn.Module, ABC):
 
     def __init__(self, p: float, inplace: bool) -> None:
         super().__init__()
+
+        if not 0 <= self.p <= 1:
+            raise ValueError(f"p should be superior to 0 (included) and inferior to 1 (included). Got {p}.")
+
         self.p = p
         self.inplace = inplace
 
@@ -61,16 +65,35 @@ class BatchRandomTransform(nn.Module, ABC):
         if self.p == 0:
             return imgs
 
-        output: Tensor = imgs if self.inplace else imgs.clone()
-        batch_size = imgs.shape[0]
+        elif self.p == 1:
+            output = self.apply_transform(imgs if self.inplace else imgs.clone())
+            return output
 
-        if self.p == 1:
-            output = self.apply_transform(output)
+        batch_size = imgs.shape[0]
+        p_mul_batch_size = self.p * batch_size
+        floor_apply = floor(p_mul_batch_size)
+        ceil_apply = ceil(p_mul_batch_size)
+
+        if floor_apply == 0 or ceil_apply == 0:
+            num_apply = 1 if torch.rand(1).item() < self.p else 0
+        elif floor_apply == ceil_apply:
+            num_apply = floor_apply
         else:
-            num_apply = round(self.p * batch_size)
+            decimal = p_mul_batch_size % 1
+            num_apply = floor_apply if decimal < torch.rand(1).item() else ceil_apply
+
+        if num_apply == 0:
+            return imgs
+        elif num_apply == 1:
+            indices_do_apply = torch.randint(0, batch_size, (1,), device=imgs.device)
+        elif num_apply > 1:
             indices_do_apply = torch.randperm(batch_size, device=imgs.device)[
                 :num_apply
             ]
+
+        output: Tensor = imgs if self.inplace else imgs.clone()
+
+        if num_apply > 0:
             output[indices_do_apply] = self.apply_transform(output[indices_do_apply])
 
         return output
@@ -504,9 +527,7 @@ class BatchRandomGrayScale(BatchRandomTransform):
         return imgs
 
     def __repr__(self) -> str:
-        return (
-            f"{self.__class__.__name__}(" f"p={self.p}" f", inplace={self.inplace})"
-        )
+        return f"{self.__class__.__name__}(" f"p={self.p}" f", inplace={self.inplace})"
 
 
 class BatchMixUp(nn.Module):
