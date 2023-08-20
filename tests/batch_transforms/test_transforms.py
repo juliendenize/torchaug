@@ -1,3 +1,5 @@
+import re
+
 import pytest
 import torch
 import torchvision.transforms as tv_transforms
@@ -64,6 +66,30 @@ def test_batch_random_apply():
         str,
     )
 
+    # test p < 0 and p > 1
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "p should be superior to 0 (included) and inferior to 1 (included). Got -0.1."
+        ),
+    ):
+        transforms.BatchRandomApply(
+            [mono_transforms.Normalize([225, 225, 225], [0.25, 0.25, 0.25])],
+            -0.1,
+            inplace=False,
+        )
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "p should be superior to 0 (included) and inferior to 1 (included). Got 1.1."
+        ),
+    ):
+        transforms.BatchRandomApply(
+            [mono_transforms.Normalize([225, 225, 225], [0.25, 0.25, 0.25])],
+            1.1,
+            inplace=False,
+        )
+
     imgs = torch.randn(4, 3, 8, 8)
     indices_to_apply = torch.tensor([2, 1])
     torchvision_out = imgs.clone()
@@ -73,9 +99,22 @@ def test_batch_random_apply():
     out = transforms.BatchRandomApply(
         [mono_transforms.Normalize([225, 225, 225], [0.25, 0.25, 0.25])], 0.5
     )(imgs)
-
     # test consistency with Torchvision
     torch.testing.assert_close(out, torchvision_out)
+
+    # Test with few probability
+    imgs = torch.randn(4, 3, 8, 8)
+    out = transforms.BatchRandomApply(
+        [mono_transforms.Normalize([225, 225, 225], [0.25, 0.25, 0.25])], 0.2
+    )(imgs)
+    imgs = torch.randn(4, 3, 8, 8)
+    for i in range(4):
+        out = transforms.BatchRandomApply(
+            [mono_transforms.Normalize([225, 225, 225], [0.25, 0.25, 0.25])], 0.15
+        )(imgs)
+        out = transforms.BatchRandomApply(
+            [mono_transforms.Normalize([225, 225, 225], [0.25, 0.25, 0.25])], 0.39
+        )(imgs)
 
     # test not inplace
     transforms.BatchRandomApply(
