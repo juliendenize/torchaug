@@ -1,3 +1,5 @@
+import re
+
 import pytest
 import torch
 import torchvision.transforms as tv_transforms
@@ -145,6 +147,28 @@ def test_random_apply():
     assert isinstance(
         transforms.RandomApply(transforms.Normalize((0.5,), (0.5,))).__repr__(), str
     )
+
+    # test p < 0 and p > 1
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "p should be superior to 0 (included) and inferior to 1 (included). Got -0.1."
+        ),
+    ):
+        transforms.RandomApply(
+            [transforms.Normalize([225, 225, 225], [0.25, 0.25, 0.25])],
+            -0.1,
+        )
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "p should be superior to 0 (included) and inferior to 1 (included). Got 1.1."
+        ),
+    ):
+        transforms.RandomApply(
+            [transforms.Normalize([225, 225, 225], [0.25, 0.25, 0.25])],
+            1.1,
+        )
 
     tensor = torch.rand((1, 16, 16))
     torchvision_out = tv_transforms.Normalize((0.5,), (0.5,), inplace=False)(tensor)

@@ -32,8 +32,10 @@ class BatchRandomTransform(nn.Module, ABC):
     def __init__(self, p: float, inplace: bool) -> None:
         super().__init__()
 
-        if not 0 <= self.p <= 1:
-            raise ValueError(f"p should be superior to 0 (included) and inferior to 1 (included). Got {p}.")
+        if not 0 <= p <= 1:
+            raise ValueError(
+                f"p should be superior to 0 (included) and inferior to 1 (included). Got {p}."
+            )
 
         self.p = p
         self.inplace = inplace
