@@ -295,7 +295,7 @@ class RandomApply(RandomTransform):
 
     def __repr__(self) -> str:
         format_string = self.__class__.__name__ + "("
-        format_string += f"\n    p={self.p}"
+        format_string += f"\n    p={self.p},"
         for t in self.transforms:
             format_string += "\n"
             format_string += f"    {t}"
@@ -330,10 +330,10 @@ class RandomColorJitter(RandomTransform):
 
     def __init__(
         self,
-        brightness: float | tuple[float, float] | None = 0,
-        contrast: float | tuple[float, float] | None = 0,
-        saturation: float | tuple[float, float] | None = 0,
-        hue: float | tuple[float, float] | None = 0,
+        brightness: float | tuple[float, float] = 0,
+        contrast: float | tuple[float, float] = 0,
+        saturation: float | tuple[float, float] = 0,
+        hue: float | tuple[float, float] = 0,
         p: float = 0.0,
     ):
         super().__init__(p=p)
@@ -425,7 +425,7 @@ class RandomColorJitter(RandomTransform):
             f"brightness={self.brightness}"
             f", contrast={self.contrast}"
             f", saturation={self.saturation}"
-            f", hue={self.hue})"
+            f", hue={self.hue}"
             f", p={self.p})"
         )
         return s
@@ -692,6 +692,6 @@ class VideoWrapper(nn.Module):
     def __repr__(self):
         return (
             f"{self.__class__.__name__}(\n"
-            f"  transform={self.transform},\n"
-            f"  video_format={self.video_format})"
+            f"    transform={self.transform},\n"
+            f"    video_format={self.video_format}\n)"
         )

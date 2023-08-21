@@ -1,481 +1,578 @@
+from __future__ import annotations
+
 import re
+from typing import Any, Sequence
 
 import pytest
 import torch
-import torchvision.transforms as tv_transforms
 import torchvision.transforms.functional as F_tv
 from torchvision.transforms.functional import convert_image_dtype
 
 import torchaug.transforms as transforms
+import torchaug.transforms.functional as F
 
 
-def test_div_255():
-    torch.manual_seed(28)
+class TestDiv255:
+    def test_output_values(self):
+        tensor = torch.rand((3, 16, 16))
+        expected_out = F.div_255(tensor, False)
 
-    # test if Div255 can be printed as string
-    assert isinstance(transforms.Div255(False).__repr__(), str)
-    tensor = torch.rand((3, 16, 16))
-    expected_out = tensor / 255
-    torch.testing.assert_close(transforms.Div255(False)(tensor), expected_out)
+        torch.testing.assert_close(
+            transforms.Div255(inplace=False)(tensor), expected_out
+        )
+        transforms.Div255(inplace=True)(tensor)
 
-    transforms.Div255(True)(tensor)
-    torch.testing.assert_close(tensor, expected_out)
+        torch.testing.assert_close(tensor, expected_out)
 
-
-def test_mixup():
-    torch.manual_seed(28)
-
-    # Checking if MixUp can be printed as string
-    assert isinstance(
-        transforms.MixUp(0.5, True).__repr__(),
-        str,
-    )
-
-    imgs = torch.randn(4, 3, 8, 8)
-    labels = torch.randint(0, 5, (4, 1)).to(torch.float)
-    inpt_imgs = imgs.clone()
-    inpt_labels = labels.clone()
-    out_imgs, out_labels, out_lam = transforms.MixUp(0.5, inplace=True)(
-        inpt_imgs, inpt_labels
-    )
-
-    expected_lam = 0.8844035863876343
-    expected_out_labels = expected_lam * labels + (1 - expected_lam) * labels.roll(1, 0)
-    expected_out_imgs = expected_lam * imgs + (1 - expected_lam) * imgs.roll(1, 0)
-
-    torch.testing.assert_close(torch.tensor(out_lam), torch.tensor(expected_lam))
-    torch.testing.assert_close(out_labels, expected_out_labels)
-    torch.testing.assert_close(out_imgs, expected_out_imgs)
-    torch.testing.assert_close(out_imgs, inpt_imgs)
-    torch.testing.assert_close(out_labels, inpt_labels)
-
-    out_imgs, out_labels, out_lam = transforms.MixUp(0.5, inplace=True)(inpt_imgs, None)
-    assert out_labels is None
-
-    out_imgs, out_labels, out_lam = transforms.MixUp(0.5, inplace=False)(imgs, None)
-    assert out_labels is None
-
-    expected_lam = 0.007286167237907648
-    torch.testing.assert_close(torch.tensor(out_lam), torch.tensor(expected_lam))
-    expected_out_imgs = expected_lam * imgs + (1 - expected_lam) * imgs.roll(1, 0)
-    torch.testing.assert_close(out_imgs, expected_out_imgs)
+    def test_repr(self):
+        assert transforms.Div255(False).__repr__() == "Div255(inplace=False)"
+        assert transforms.Div255(True).__repr__() == "Div255(inplace=True)"
 
 
-def test_normalize():
-    torch.manual_seed(28)
+class TestMixup:
+    def test_output_values(self):
+        torch.manual_seed(28)
 
-    # test if Normalize can be printed as string
-    assert isinstance(transforms.Normalize((0.5,), (0.5,)).__repr__(), str)
+        imgs = torch.randn(4, 3, 8, 8)
+        labels = torch.randint(0, 5, (4, 1)).to(torch.float)
+        inpt_imgs = imgs.clone()
+        inpt_labels = labels.clone()
 
-    # test the optional in-place behaviour
-    tensor = torch.rand((3, 16, 16))
-    torchvision_out = tv_transforms.Normalize((0.5,), (0.5,), inplace=False)(tensor)
-    out = transforms.Normalize((0.5,), (0.5,), inplace=False)(tensor)
-    torch.testing.assert_close(out, torchvision_out)
-    out_inplace = transforms.Normalize((0.5,), (0.5,), inplace=True)(tensor.clone())
-    torch.testing.assert_close(out_inplace, torchvision_out)
-
-    # test value_check
-    out = transforms.Normalize((0.5,), (0.5,), inplace=False, value_check=True)(tensor)
-    torch.testing.assert_close(out, torchvision_out)
-
-    # test keep_dtype
-    int_tensor = torch.randint(1, 256, (3, 10, 10), dtype=torch.uint8)
-    out = transforms.Normalize(
-        (0.5,),
-        (0.5,),
-        inplace=False,
-        cast_dtype=torch.float32,
-    )(int_tensor)
-    torch.testing.assert_close(
-        out,
-        F_tv.normalize(
-            convert_image_dtype(int_tensor, dtype=torch.float32),
-            (0.5,),
-            (0.5,),
-            inplace=False,
-        ),
-    )
-    with pytest.raises(
-        TypeError,
-        match="Input tensor should be a float tensor or cast_dtype set to a float dtype. Got torch.uint8 and None.",
-    ):
-        transforms.Normalize((0.5,), (0.5,), inplace=False, cast_dtype=None)(int_tensor)
-    with pytest.raises(
-        ValueError,
-        match="cast_dtype should be a float dtype. Got torch.int32.",
-    ):
-        transforms.Normalize((0.5,), (0.5,), inplace=False, cast_dtype=torch.int32)(
-            int_tensor
+        # Test with labels
+        out_imgs, out_labels, out_lam = transforms.MixUp(0.5, inplace=True)(
+            inpt_imgs, inpt_labels
         )
 
-    # test wrong value_check
-    with pytest.raises(
-        ValueError, match="std contains a zero leading to division by zero."
+        expected_lam = 0.8844035863876343
+        expected_out_labels = expected_lam * labels + (1 - expected_lam) * labels.roll(
+            1, 0
+        )
+        expected_out_imgs = expected_lam * imgs + (1 - expected_lam) * imgs.roll(1, 0)
+
+        torch.testing.assert_close(torch.tensor(out_lam), torch.tensor(expected_lam))
+        torch.testing.assert_close(out_labels, expected_out_labels)
+        torch.testing.assert_close(out_imgs, expected_out_imgs)
+        torch.testing.assert_close(out_imgs, inpt_imgs)
+        torch.testing.assert_close(out_labels, inpt_labels)
+
+        # Test without labels
+        out_imgs, out_labels, out_lam = transforms.MixUp(0.5, inplace=True)(
+            inpt_imgs, None
+        )
+        assert out_labels is None
+
+        out_imgs, out_labels, out_lam = transforms.MixUp(0.5, inplace=False)(imgs, None)
+        assert out_labels is None
+
+        expected_lam = 0.007286167237907648
+        torch.testing.assert_close(torch.tensor(out_lam), torch.tensor(expected_lam))
+        expected_out_imgs = expected_lam * imgs + (1 - expected_lam) * imgs.roll(1, 0)
+        torch.testing.assert_close(out_imgs, expected_out_imgs)
+
+    @pytest.mark.parametrize(
+        "alpha,inplace,repr",
+        [
+            (0.1, False, "MixUp(alpha=0.1, inplace=False)"),
+            (0.5, True, "MixUp(alpha=0.5, inplace=True)"),
+        ],
+    )
+    def test_repr(self, alpha: float, inplace: bool, repr: str):
+        assert transforms.MixUp(alpha, inplace).__repr__() == repr
+
+
+class TestMul255:
+    def test_output_values(self):
+        tensor = torch.rand((3, 16, 16))
+        expected_out = F.mul_255(tensor, False)
+
+        torch.testing.assert_close(
+            transforms.Mul255(inplace=False)(tensor), expected_out
+        )
+        transforms.Mul255(inplace=True)(tensor)
+
+        torch.testing.assert_close(tensor, expected_out)
+
+    def test_repr(self):
+        assert transforms.Mul255(False).__repr__() == "Mul255(inplace=False)"
+        assert transforms.Mul255(True).__repr__() == "Mul255(inplace=True)"
+
+
+class TestNormalize:
+    @pytest.mark.parametrize(
+        "x,mean,std,cast_dtype,inplace,value_check",
+        [
+            (torch.rand((3, 16, 16)), (0.5,), (0.5,), None, False, False),
+            (torch.rand((3, 16, 16)), (0.5,), (0.5,), None, True, False),
+            (torch.rand((3, 16, 16)), (0.5,), (0.5,), None, False, True),
+            (
+                torch.randint(0, 255, (3, 16, 16), dtype=torch.uint8),
+                (0.5,),
+                (0.5,),
+                torch.float32,
+                False,
+                True,
+            ),
+        ],
+    )
+    def test_output_values(
+        self,
+        x: torch.Tensor,
+        mean: float | list[float],
+        std: float | list[float],
+        cast_dtype: torch.device | None,
+        inplace: bool,
+        value_check: bool,
     ):
-        transforms.Normalize((0.5,), (0.5, 0.1, 0), inplace=True, value_check=True)(
-            tensor
+        to_normalize_x = x if not inplace else x.clone()
+        out = transforms.Normalize(mean, std, cast_dtype, inplace, value_check)(
+            to_normalize_x
+        )
+        expected_out = F.normalize(x, mean, std, cast_dtype=cast_dtype, inplace=False)
+
+        torch.testing.assert_close(out, expected_out)
+
+    @pytest.mark.parametrize(
+        "mean,std,cast_dtype,inplace,value_check,repr",
+        [
+            (
+                [0.5, 0.5, 0.5],
+                [0.5, 0.5, 0.5],
+                None,
+                False,
+                True,
+                "Normalize(mean=[[[0.5]], [[0.5]], [[0.5]]], std=[[[0.5]], [[0.5]], [[0.5]]], cast_dtype=None, inplace=False, value_check=True)",
+            ),
+            (
+                0.5,
+                0.5,
+                torch.float32,
+                False,
+                True,
+                "Normalize(mean=[[[0.5]]], std=[[[0.5]]], cast_dtype=torch.float32, inplace=False, value_check=True)",
+            ),
+        ],
+    )
+    def test_repr(
+        self,
+        mean: float | list[float],
+        std: float | list[float],
+        cast_dtype: torch.device | None,
+        inplace: bool,
+        value_check: bool,
+        repr: str,
+    ):
+        assert (
+            transforms.Normalize(mean, std, cast_dtype, inplace, value_check).__repr__()
+            == repr
         )
 
 
-def test_mul_255():
-    torch.manual_seed(28)
-
-    # test if Mul255 can be printed as string
-    assert isinstance(transforms.Mul255(False).__repr__(), str)
-    tensor = torch.rand((3, 16, 16))
-    expected_out = tensor * 255
-    torch.testing.assert_close(transforms.Mul255(False)(tensor), expected_out)
-
-    transforms.Mul255(True)(tensor)
-    torch.testing.assert_close(tensor, expected_out)
-
-
-def test_random_apply():
-    torch.manual_seed(28)
-
-    # Checking if RandomApply can be printed as string
-    assert isinstance(
+class TestRandomApply:
+    @pytest.mark.parametrize(
+        "p,apply_transforms",
+        [
+            (
+                0,
+                [
+                    transforms.Normalize((0.5,), (0.5,)),
+                    transforms.RandomGaussianBlur((3, 3), (0.1, 2.0)),
+                ],
+            ),
+            (
+                0.5,
+                [
+                    transforms.Normalize((0.5,), (0.5,)),
+                    transforms.RandomGaussianBlur((3, 3), (0.1, 2.0)),
+                ],
+            ),
+            (
+                1.0,
+                [
+                    transforms.Normalize((0.5,), (0.5,)),
+                    transforms.RandomGaussianBlur((3, 3), (0.1, 2.0)),
+                ],
+            ),
+            (1.0, transforms.Normalize((0.5,), (0.5,))),
+        ],
+    )
+    def test_functional(
+        self, p: float, apply_transforms: torch.nn.Module | list[torch.nn.Module]
+    ):
+        tensor = torch.rand((1, 16, 16))
         transforms.RandomApply(
-            [
+            apply_transforms,
+            p=p,
+        )(tensor)
+
+    @pytest.mark.parametrize(
+        "p,apply_transforms,repr",
+        [
+            (
+                1.0,
                 transforms.Normalize((0.5,), (0.5,)),
-                transforms.RandomGaussianBlur((3, 3), (0.1, 2.0)),
-            ]
-        ).__repr__(),
-        str,
-    )
-    assert isinstance(
-        transforms.RandomApply(transforms.Normalize((0.5,), (0.5,))).__repr__(), str
-    )
-
-    # test p < 0 and p > 1
-    with pytest.raises(
-        ValueError,
-        match=re.escape(
-            "p should be superior to 0 (included) and inferior to 1 (included). Got -0.1."
-        ),
-    ):
-        transforms.RandomApply(
-            [transforms.Normalize([225, 225, 225], [0.25, 0.25, 0.25])],
-            -0.1,
-        )
-    with pytest.raises(
-        ValueError,
-        match=re.escape(
-            "p should be superior to 0 (included) and inferior to 1 (included). Got 1.1."
-        ),
-    ):
-        transforms.RandomApply(
-            [transforms.Normalize([225, 225, 225], [0.25, 0.25, 0.25])],
-            1.1,
-        )
-
-    tensor = torch.rand((1, 16, 16))
-    torchvision_out = tv_transforms.Normalize((0.5,), (0.5,), inplace=False)(tensor)
-
-    out_norm = transforms.RandomApply(
-        [
-            transforms.Normalize((0.5,), (0.5,)),
-            transforms.RandomGaussianBlur((3, 3), (0.1, 2.0)),
+                "RandomApply(\n    p=1.0,\n    Normalize(mean=[[[0.5]]], std=[[[0.5]]], cast_dtype=None, inplace=False, value_check=False)\n)",
+            ),
         ],
-        p=1,
-    )(tensor)
-    transforms.RandomApply(
+    )
+    def test_repr(
+        self,
+        apply_transforms: torch.nn.Module | list[torch.nn.Module],
+        p: float,
+        repr: str,
+    ):
+        assert transforms.RandomApply(apply_transforms, p).__repr__() == repr
+
+    @pytest.mark.parametrize("p, error_type", [(-0.1, ValueError), (1.1, ValueError)])
+    def test_wrong_p(self, p: float, error_type: Exception):
+        with pytest.raises(error_type):
+            transforms.RandomApply(
+                [transforms.Normalize([225, 225, 225], [0.25, 0.25, 0.25])],
+                p,
+            )
+
+
+class TestRandomColorJitter:
+    def test_functional(self):
+        torch.manual_seed(28)
+        tensor = torch.rand((3, 16, 16))
+
+        out_jittered = transforms.RandomColorJitter(0.5, 0.3, 0.1, 0.3, 1.0)(tensor)
+        transforms.RandomColorJitter(0.5, 0.3, 0.1, 0.3, 0.5)(tensor)
+        out_not_jittered = transforms.RandomColorJitter(0.5, 0.3, 0.1, 0.3, 0.0)(tensor)
+
+        brightness, contrast, saturation, hue = (
+            torch.tensor(0.8414264917373657),
+            torch.tensor(0.9322187900543213),
+            torch.tensor(0.9402793049812317),
+            torch.tensor(0.1355568766593933),
+        )
+
+        torchvision_out = F_tv.adjust_brightness(
+            F_tv.adjust_hue(
+                F_tv.adjust_contrast(
+                    F_tv.adjust_saturation(tensor, saturation), contrast
+                ),
+                hue,
+            ),
+            brightness,
+        )
+
+        torch.testing.assert_close(out_jittered, torchvision_out)
+        torch.testing.assert_close(out_not_jittered, tensor)
+
+    @pytest.mark.parametrize(
+        "brightness,contrast,saturation,hue,p,repr",
         [
-            transforms.Normalize((0.5,), (0.5,)),
-            transforms.RandomGaussianBlur((3, 3), (0.1, 2.0), p=0.5),
-        ]
-    )(tensor)
-    out_not_norm = transforms.RandomApply(
-        [
-            transforms.Normalize((0.5,), (0.5,)),
-            transforms.RandomGaussianBlur((3, 3), (0.1, 2.0), p=0),
+            (
+                0.5,
+                0.1,
+                0.2,
+                0.0,
+                0.5,
+                "RandomColorJitter(brightness=(0.5, 1.5), contrast=(0.9, 1.1), saturation=(0.8, 1.2), hue=None, p=0.5)",
+            ),
+            (
+                0.0,
+                0.1,
+                0.2,
+                0.1,
+                1.0,
+                "RandomColorJitter(brightness=None, contrast=(0.9, 1.1), saturation=(0.8, 1.2), hue=(-0.1, 0.1), p=1.0)",
+            ),
         ],
-        p=0.0,
-    )(tensor)
-
-    torch.testing.assert_close(out_not_norm, tensor)
-    torch.testing.assert_close(out_norm, torchvision_out)
-
-
-def test_random_color_jitter():
-    torch.manual_seed(28)
-
-    # Checking if RandomColorJitter can be printed as string
-    assert isinstance(
-        transforms.RandomColorJitter(0.5, 0.3, 0.1, 0.3, 0.5).__repr__(), str
     )
+    def test_repr(
+        self,
+        brightness: float | tuple[float, float] | None,
+        contrast: float | tuple[float, float] | None,
+        saturation: float | tuple[float, float] | None,
+        hue: float | tuple[float, float] | None,
+        p: float,
+        repr: str,
+    ):
+        assert (
+            transforms.RandomColorJitter(
+                brightness, contrast, saturation, hue, p
+            ).__repr__()
+            == repr
+        )
 
-    tensor = torch.rand((3, 16, 16))
 
-    out_jittered = transforms.RandomColorJitter(0.5, 0.3, 0.1, 0.3, 1.0)(tensor)
-    transforms.RandomColorJitter(0.5, 0.3, 0.1, 0.3, 0.5)(tensor)
-    out_not_jittered = transforms.RandomColorJitter(0.5, 0.3, 0.1, 0.3, 0.0)(tensor)
+class TestRandomGaussianBlur:
+    def test_functional(self):
+        torch.manual_seed(28)
+        tensor = torch.rand((3, 16, 16))
 
-    brightness, contrast, saturation, hue = (
-        torch.tensor(0.8414264917373657),
-        torch.tensor(0.9322187900543213),
-        torch.tensor(0.9402793049812317),
-        torch.tensor(0.1355568766593933),
+        out_not_blurred = transforms.RandomGaussianBlur(3, 0.1, 0.0)(tensor)
+        transforms.RandomGaussianBlur((3, 3), (0.1, 2.0), 0.5)(tensor)
+        out_blurred = transforms.RandomGaussianBlur((3, 3), (0.1, 2.0), 1.0)(tensor)
+
+        torchvision_out = F_tv.gaussian_blur(tensor, (3, 3), 0.762560)
+
+        torch.testing.assert_close(out_blurred, torchvision_out)
+        torch.testing.assert_close(out_not_blurred, tensor)
+
+    @pytest.mark.parametrize(
+        "kernel_size,sigma,p,value_check,repr",
+        [
+            (
+                3,
+                0.1,
+                0.5,
+                False,
+                r"RandomGaussianBlur\(kernel_size=\(3, 3\), sigma=\[0\.\d+, 0\.\d+\], p=0\.5, value_check=False\)",
+            ),
+            (
+                [3, 9],
+                [0.1, 0.9],
+                0.5,
+                True,
+                r"RandomGaussianBlur\(kernel_size=\[3, 9\], sigma=\[0\.\d+, 0\.\d+\], p=0\.5, value_check=True\)",
+            ),
+        ],
     )
+    def test_repr(
+        self,
+        kernel_size: int | tuple[int],
+        sigma: float | tuple[float],
+        p: float,
+        value_check: bool,
+        repr: str,
+    ):
+        assert re.match(
+            repr,
+            transforms.RandomGaussianBlur(
+                kernel_size, sigma, p, value_check
+            ).__repr__(),
+        )
 
-    torchvision_out = F_tv.adjust_brightness(
-        F_tv.adjust_hue(
-            F_tv.adjust_contrast(F_tv.adjust_saturation(tensor, saturation), contrast),
-            hue,
-        ),
-        brightness,
+    @pytest.mark.parametrize(
+        "kernel_size,sigma,error_type",
+        [
+            ((3, 3, 3), 0.1, ValueError),
+            ((3, 2), (0.1, 2.0), ValueError),
+            ((3, 0), (0.1, 2.0), ValueError),
+            ((3, 3), 0, ValueError),
+            ((3, 3), -1, ValueError),
+            ((3, 3), (2.0, 1.0), ValueError),
+            ((3, 3), (0.0, 1.0), ValueError),
+            ((3, 3), (0.1, 2.0, 3.0), ValueError),
+            ((3, 3), "ahah", ValueError),
+        ],
     )
+    def test_wrong_parameters(
+        self, kernel_size: Any, sigma: Any, error_type: Exception
+    ):
+        with pytest.raises(error_type):
+            transforms.RandomGaussianBlur(kernel_size, sigma)
 
-    torch.testing.assert_close(out_jittered, torchvision_out)
-    torch.testing.assert_close(out_not_jittered, tensor)
+
+class TestRandomSolarize:
+    def test_functional(self):
+        torch.manual_seed(28)
+
+        tensor = torch.rand((3, 16, 16))
+
+        out_not_solarized = transforms.RandomSolarize(0.5, 0.0)(tensor)
+        transforms.RandomSolarize(0.5, 0.5)(tensor)
+        out_solarized = transforms.RandomSolarize(0.5, 1.0)(tensor)
+
+        expected_out = F.solarize(tensor, 0.5)
+
+        torch.testing.assert_close(out_solarized, expected_out)
+        torch.testing.assert_close(out_not_solarized, tensor)
+
+    def test_repr(self):
+        assert re.match(
+            r"RandomSolarize\(threshold=0.\d+, p=0.5, value_check=False\)",
+            transforms.RandomSolarize(0.5, 0.5, False).__repr__(),
+        )
+        assert re.match(
+            r"RandomSolarize\(threshold=0.\d+, p=0.5, value_check=True\)",
+            transforms.RandomSolarize(0.5, 0.5, True).__repr__(),
+        )
 
 
-def test_random_gaussian_blur():
-    torch.manual_seed(28)
-
-    # Checking if RandomGaussianBlur can be printed as string
-    assert isinstance(
-        transforms.RandomGaussianBlur((3, 3), (0.1, 2.0), 0.5).__repr__(), str
+class TestVideoNormalize:
+    @pytest.mark.parametrize(
+        "x,mean,std,cast_dtype,inplace,value_check,video_format",
+        [
+            (torch.randn(2, 3, 224, 224), 0.5, 0.5, None, False, False, "TCHW"),
+            (torch.randn(3, 2, 224, 224), 0.5, 0.5, None, False, False, "CTHW"),
+            (torch.randn(2, 3, 2, 224, 224), 0.5, 0.5, None, False, False, "CTHW"),
+            (torch.randn(2, 3, 2, 224, 224), 0.5, 0.5, None, False, True, "CTHW"),
+            (torch.randn(3, 2, 224, 224), 0.5, 0.5, None, True, False, "CTHW"),
+            (
+                torch.randint(0, 256, (3, 2, 224, 224)),
+                0.5,
+                0.5,
+                torch.float32,
+                False,
+                False,
+                "CTHW",
+            ),
+        ],
     )
-
-    # Checking instantiation with one value kernel and sigma
-    transforms.RandomGaussianBlur(3, 0.1, 0.5)
-
-    tensor = torch.rand((3, 16, 16))
-
-    out_not_blurred = transforms.RandomGaussianBlur((3, 3), (0.1, 2.0), 0.0)(tensor)
-    transforms.RandomGaussianBlur((3, 3), (0.1, 2.0), 0.5)(tensor)
-    out_blurred = transforms.RandomGaussianBlur((3, 3), (0.1, 2.0), 1.0)(tensor)
-
-    torchvision_out = F_tv.gaussian_blur(tensor, (3, 3), 0.762560)
-
-    torch.testing.assert_close(out_blurred, torchvision_out)
-    torch.testing.assert_close(out_not_blurred, tensor)
-
-    # test kernel is not int or not sequence of 2 int.
-    with pytest.raises(
-        ValueError, match="Kernel size should be a tuple/list of two integers."
+    def test_functional(
+        self,
+        x: torch.Tensor,
+        mean: Sequence[float],
+        std: Sequence[float],
+        cast_dtype: torch.dtype | None,
+        inplace: bool,
+        value_check: bool,
+        video_format: str,
     ):
-        transforms.RandomGaussianBlur((3, 3, 3), (0.1, 2.0), 1.0)
+        to_normalize_x = x.clone() if inplace else x
+        out = transforms.VideoNormalize(
+            mean, std, cast_dtype, inplace, value_check, video_format
+        )(to_normalize_x)
 
-    # test kernel does not contain even or zero number.
-    with pytest.raises(
-        ValueError, match="Kernel size value should be an odd and positive number."
-    ):
-        transforms.RandomGaussianBlur((3, 2), (0.1, 2.0), 1.0)
-    with pytest.raises(
-        ValueError, match="Kernel size value should be an odd and positive number."
-    ):
-        transforms.RandomGaussianBlur((3, 0), (0.1, 2.0), 1.0)
+        if video_format == "CTHW":
+            dims = [0, 2, 1, 3, 4] if x.ndim == 5 else [1, 0, 2, 3]
+            expected_x = x.permute(dims)
+        else:
+            expected_x = x
 
-    # test sigma number is inferior or equal to 0.
-    with pytest.raises(
-        ValueError, match="If sigma is a single number, it must be positive."
-    ):
-        transforms.RandomGaussianBlur((3, 3), 0, 1.0)
-    with pytest.raises(
-        ValueError, match="If sigma is a single number, it must be positive."
-    ):
-        transforms.RandomGaussianBlur((3, 3), -1, 1.0)
+        if cast_dtype is not None:
+            expected_x = convert_image_dtype(expected_x, cast_dtype)
 
-    # test sigma sequence is in form 0 < sigma[0] < sigma[1].
-    with pytest.raises(
-        ValueError,
-        match=r"sigma values should be positive and of the form \(min, max\).",
-    ):
-        transforms.RandomGaussianBlur((3, 3), (2.0, 1.0), 1.0)
-    with pytest.raises(
-        ValueError,
-        match=r"sigma values should be positive and of the form \(min, max\).",
-    ):
-        transforms.RandomGaussianBlur((3, 3), (0.0, 1.0), 1.0)
+        expected_out = F.normalize(expected_x, mean, std, cast_dtype, False, False)
+        if video_format == "CTHW":
+            expected_out = expected_out.permute(dims)
 
-    # test sigma sequence has more than 2 elements.
-    with pytest.raises(
-        ValueError,
-        match="sigma should be a single number or a list/tuple with length 2.",
-    ):
-        transforms.RandomGaussianBlur((3, 3), (0.1, 2.0, 3.0), 1.0)
+        torch.testing.assert_close(out, expected_out)
+        if inplace:
+            torch.testing.assert_close(to_normalize_x, expected_out)
 
-    # test sigma is of wrong type.
-    with pytest.raises(
-        ValueError,
-        match="sigma should be a single number or a list/tuple with length 2.",
-    ):
-        transforms.RandomGaussianBlur((3, 3), "ahah", 1.0)
-
-
-def test_random_solarize():
-    torch.manual_seed(28)
-
-    # Checking if RandomSolarize can be printed as string
-    assert isinstance(transforms.RandomSolarize(0.5, 0.5).__repr__(), str)
-
-    tensor = torch.rand((3, 16, 16))
-
-    out_not_solarized = transforms.RandomSolarize(0.5, 0.0)(tensor)
-    transforms.RandomSolarize(0.5, 0.5)(tensor)
-    out_solarized = transforms.RandomSolarize(0.5, 1.0)(tensor)
-
-    torchvision_out = F_tv.solarize(tensor, 0.5)
-
-    torch.testing.assert_close(out_solarized, torchvision_out)
-    torch.testing.assert_close(out_not_solarized, tensor)
-
-
-def test_video_normalize():
-    torch.manual_seed(28)
-
-    # test if VideoNormalize can be printed as string
-    assert isinstance(
-        transforms.VideoNormalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)).__repr__(), str
+    @pytest.mark.parametrize(
+        "mean,std,cast_dtype,inplace,value_check,video_format,repr",
+        [
+            (
+                0.5,
+                0.5,
+                None,
+                False,
+                False,
+                "TCHW",
+                "VideoNormalize(mean=[[[0.5]]], std=[[[0.5]]], cast_dtype=None, inplace=False, value_check=False, video_format=TCHW)",
+            ),
+            (
+                0.5,
+                0.5,
+                None,
+                False,
+                False,
+                "CTHW",
+                "VideoNormalize(mean=[[[0.5]]], std=[[[0.5]]], cast_dtype=None, inplace=False, value_check=False, video_format=CTHW)",
+            ),
+            (
+                0.5,
+                0.5,
+                None,
+                False,
+                False,
+                "CTHW",
+                "VideoNormalize(mean=[[[0.5]]], std=[[[0.5]]], cast_dtype=None, inplace=False, value_check=False, video_format=CTHW)",
+            ),
+            (
+                0.5,
+                0.5,
+                None,
+                False,
+                True,
+                "CTHW",
+                "VideoNormalize(mean=[[[0.5]]], std=[[[0.5]]], cast_dtype=None, inplace=False, value_check=True, video_format=CTHW)",
+            ),
+            (
+                0.5,
+                0.5,
+                None,
+                True,
+                False,
+                "CTHW",
+                "VideoNormalize(mean=[[[0.5]]], std=[[[0.5]]], cast_dtype=None, inplace=True, value_check=False, video_format=CTHW)",
+            ),
+            (
+                0.5,
+                0.5,
+                torch.float32,
+                False,
+                False,
+                "CTHW",
+                "VideoNormalize(mean=[[[0.5]]], std=[[[0.5]]], cast_dtype=torch.float32, inplace=False, value_check=False, video_format=CTHW)",
+            ),
+        ],
     )
-
-    # test the optional in-place behaviour
-    tensor = torch.rand((3, 8, 16, 16))
-    torchvision_out = tv_transforms.Normalize(
-        (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=False
-    )(tensor.permute(1, 0, 2, 3)).permute(1, 0, 2, 3)
-    out = transforms.VideoNormalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=False)(
-        tensor
-    )
-    torch.testing.assert_close(out, torchvision_out)
-    out_inplace = transforms.VideoNormalize(
-        (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=True
-    )(tensor.clone())
-    torch.testing.assert_close(out_inplace, torchvision_out)
-
-    # test `TCHW` video_format
-    out = transforms.VideoNormalize(
-        (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=False, video_format="TCHW"
-    )(tensor.permute(1, 0, 2, 3))
-    torch.testing.assert_close(out.permute(1, 0, 2, 3), torchvision_out)
-
-    # test value_check
-    out = transforms.VideoNormalize(
-        (0.5, 0.5, 0.5),
-        (0.5, 0.5, 0.5),
-        inplace=False,
-        value_check=True,
-        video_format="CTHW",
-    )(tensor)
-    torch.testing.assert_close(out, torchvision_out)
-
-    # test keep_dtype
-    int_tensor = torch.randint(1, 256, (8, 3, 10, 10), dtype=torch.uint8)
-    out = transforms.VideoNormalize(
-        (0.5, 0.5, 0.5),
-        (0.5, 0.5, 0.5),
-        inplace=False,
-        cast_dtype=torch.float32,
-        video_format="TCHW",
-    )(int_tensor)
-    torch.testing.assert_close(
-        out,
-        F_tv.normalize(
-            convert_image_dtype(int_tensor, dtype=torch.float32),
-            (0.5, 0.5, 0.5),
-            (0.5, 0.5, 0.5),
-            inplace=False,
-        ),
-    )
-    with pytest.raises(
-        TypeError,
-        match="Input tensor should be a float tensor or cast_dtype set to a float dtype. Got torch.uint8 and None.",
+    def test_repr(
+        self,
+        mean: Sequence[float],
+        std: Sequence[float],
+        cast_dtype: torch.dtype | None,
+        inplace: bool,
+        value_check: bool,
+        video_format: str,
+        repr: str,
     ):
-        transforms.VideoNormalize(
-            (0.5, 0.5, 0.5),
-            (0.5, 0.5, 0.5),
-            inplace=False,
-            cast_dtype=None,
-            video_format="TCHW",
-        )(int_tensor)
-    with pytest.raises(
-        ValueError,
-        match="cast_dtype should be a float dtype. Got torch.int32.",
-    ):
-        transforms.VideoNormalize(
-            (0.5, 0.5, 0.5),
-            (0.5, 0.5, 0.5),
-            inplace=False,
-            cast_dtype=torch.int32,
-            video_format="TCHW",
-        )(int_tensor)
+        assert (
+            transforms.VideoNormalize(
+                mean, std, cast_dtype, inplace, value_check, video_format
+            ).__repr__()
+            == repr
+        )
 
-    # test batch video tensor
-    tensor = torch.rand((3, 10, 3, 16, 16))
-    torchvision_out = tv_transforms.Normalize(
-        (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=False
-    )(tensor)
-    out = transforms.VideoNormalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=False)(
-        tensor.permute(0, 2, 1, 3, 4)
-    ).permute(0, 2, 1, 3, 4)
-    torch.testing.assert_close(out, torchvision_out)
+    def test_wrong_format(self):
+        with pytest.raises(ValueError):
+            transforms.VideoNormalize(
+                (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=True, video_format="ahah"
+            )
 
-    # test batch `TCHW` video tensor
-    torchvision_out = tv_transforms.Normalize(
-        (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=False
-    )(tensor)
-    out = transforms.VideoNormalize(
-        (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=False, video_format="TCHW"
-    )(tensor)
-    torch.testing.assert_close(out, torchvision_out)
-
-    # test wrong video_format
-    with pytest.raises(
-        ValueError, match="video_format should be either 'CTHW' or 'TCHW'. Got ahah."
-    ):
-        transforms.VideoNormalize(
-            (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=True, video_format="ahah"
-        )(tensor)
-
-    # test wrong value_check
-    with pytest.raises(
-        ValueError, match="std contains a zero leading to division by zero."
-    ):
-        transforms.VideoNormalize(
-            (0.5,), (0.5, 0.1, 0), inplace=True, video_format="CTHW"
-        )(tensor)
-
-    # test wrong tensor dimension
-    tensor = torch.rand((6, 3, 2, 3, 16, 16))
-    with pytest.raises(
-        TypeError, match="Tensor is not a torch video or a batch of videos."
-    ):
-        transforms.VideoNormalize(
-            (0.5,), (0.5, 0.1, 0), inplace=True, video_format="CTHW"
-        )(tensor)
+    def test_wrong_tensor(self):
+        tensor = torch.rand((6, 3, 2, 3, 16, 16))
+        with pytest.raises(TypeError):
+            transforms.VideoNormalize(
+                (0.5,), (0.5, 0.1, 0), inplace=True, video_format="CTHW"
+            )(tensor)
 
 
-def test_video_wrapper():
-    torch.manual_seed(28)
+class TestVideoWrapper:
+    def test_functional(self):
+        transform = transforms.Normalize(
+            (0.5,), (0.5,), inplace=False, value_check=True
+        )
+        # test CTHW format
+        tensor = torch.rand((3, 2, 16, 16))
+        expected_out = F.normalize(tensor, (0.5,), (0.5,), inplace=False)
+        out = transforms.VideoWrapper(transform=transform)(tensor)
+        torch.testing.assert_close(out, expected_out)
 
-    transform = transforms.Normalize((0.5,), (0.5,), inplace=False, value_check=True)
+        # test TCHW format
+        expected_out = F.normalize(tensor, (0.5,), (0.5,), inplace=False)
+        out = transforms.VideoWrapper(transform=transform, video_format="TCHW")(
+            tensor.permute(1, 0, 2, 3)
+        )
+        torch.testing.assert_close(out.permute(1, 0, 2, 3), expected_out)
 
-    # test if VideoWrapper can be printed as string
-    assert isinstance(transforms.VideoWrapper(transform=transform).__repr__(), str)
+    def test_repr(self):
+        transform = transforms.Normalize(
+            (0.5,), (0.5,), inplace=False, value_check=True
+        )
+        assert (
+            transforms.VideoWrapper(transform=transform).__repr__()
+            == "VideoWrapper(\n    transform=Normalize(mean=[[[0.5]]], std=[[[0.5]]], cast_dtype=None, inplace=False, value_check=True),\n    video_format=CTHW\n)"
+        )
 
-    # test CTHW format
-    tensor = torch.rand((3, 2, 16, 16))
-    torchvision_out = tv_transforms.Normalize((0.5,), (0.5,), inplace=False)(tensor)
-    out = transforms.VideoWrapper(transform=transform)(tensor)
-    torch.testing.assert_close(out, torchvision_out)
+    def test_wrong_video_format(self):
+        transform = transforms.Normalize(
+            (0.5,), (0.5,), inplace=False, value_check=True
+        )
+        with pytest.raises(ValueError):
+            transforms.VideoWrapper(transform=transform, video_format="ahah")
 
-    # test TCHW format
-    torchvision_out = tv_transforms.Normalize((0.5,), (0.5,), inplace=False)(tensor)
-    out = transforms.VideoWrapper(transform=transform, video_format="TCHW")(
-        tensor.permute(1, 0, 2, 3)
-    )
-    torch.testing.assert_close(out.permute(1, 0, 2, 3), torchvision_out)
-
-    # test wrong video_format
-    with pytest.raises(
-        ValueError, match="video_format should be either 'CTHW' or 'TCHW'. Got ahah."
-    ):
-        transforms.VideoWrapper(transform=transform, video_format="ahah")(tensor)
-
-    # test wrong tensor dimension
-    tensor = torch.rand((6, 3, 2, 3, 16, 16))
-    with pytest.raises(TypeError, match="Tensor is not a torch video."):
-        transforms.VideoWrapper(transform=transform)(tensor)
+    def test_wrong_tensor(self):
+        transform = transforms.Normalize(
+            (0.5,), (0.5,), inplace=False, value_check=True
+        )
+        tensor = torch.rand((6, 3, 2, 3, 16, 16))
+        with pytest.raises(TypeError):
+            transforms.VideoWrapper(transform=transform)(tensor)

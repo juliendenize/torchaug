@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import re
+from typing import Any, Sequence
 
 import pytest
 import torch
@@ -7,547 +10,993 @@ import torchvision.transforms.functional as F_tv
 from torchvision.transforms.functional import InterpolationMode
 
 import torchaug.batch_transforms as transforms
+import torchaug.batch_transforms.functional as F_b
 import torchaug.transforms as mono_transforms
+import torchaug.transforms.functional as F
 
 
-def test_batch_mixup():
-    torch.manual_seed(28)
+class TestBatchMixUp:
+    def test_functional(self):
+        torch.manual_seed(28)
 
-    # Checking if BatchMixUp can be printed as string
-    assert isinstance(
-        transforms.BatchMixUp(0.5, True).__repr__(),
-        str,
-    )
-
-    imgs = torch.randn(4, 3, 8, 8)
-    labels = torch.randint(0, 5, (4, 1)).to(torch.float)
-    inpt_imgs = imgs.clone()
-    inpt_labels = labels.clone()
-    out_imgs, out_labels, out_lam = transforms.BatchMixUp(0.5, inplace=True)(
-        inpt_imgs, inpt_labels
-    )
-
-    expected_lam = torch.tensor([[0.8844036], [0.9952562], [0.0072862], [0.0252598]])
-    expected_out_labels = expected_lam * labels + (1 - expected_lam) * labels.roll(1, 0)
-    expected_lam = expected_lam.view(4, 1, 1, 1)
-    expected_out_imgs = expected_lam * imgs + (1 - expected_lam) * imgs.roll(1, 0)
-
-    torch.testing.assert_close(out_lam, expected_lam.view(4, 1))
-    torch.testing.assert_close(out_labels, expected_out_labels)
-    torch.testing.assert_close(out_imgs, expected_out_imgs)
-    torch.testing.assert_close(out_imgs, inpt_imgs)
-    torch.testing.assert_close(out_labels, inpt_labels)
-
-    out_imgs, out_labels, out_lam = transforms.BatchMixUp(0.5, inplace=True)(
-        inpt_imgs, None
-    )
-    assert out_labels is None
-
-    out_imgs, out_labels, out_lam = transforms.BatchMixUp(0.5, inplace=False)(
-        imgs, None
-    )
-    assert out_labels is None
-
-    expected_lam = torch.tensor([[0.9992378], [0.0766915], [0.9603495], [0.9419856]])
-    torch.testing.assert_close(out_lam, expected_lam.view(4, 1))
-    expected_lam = expected_lam.view(4, 1, 1, 1)
-    expected_out_imgs = expected_lam * imgs + (1 - expected_lam) * imgs.roll(1, 0)
-    torch.testing.assert_close(out_imgs, expected_out_imgs)
-
-
-def test_batch_random_apply():
-    torch.manual_seed(28)
-
-    # Checking if BatchRandomApply can be printed as string
-    assert isinstance(
-        transforms.BatchRandomApply(
-            [mono_transforms.Normalize([225, 225, 225], [0.25, 0.25, 0.25])], 0.5
-        ).__repr__(),
-        str,
-    )
-
-    # test p < 0 and p > 1
-    with pytest.raises(
-        ValueError,
-        match=re.escape(
-            "p should be superior to 0 (included) and inferior to 1 (included). Got -0.1."
-        ),
-    ):
-        transforms.BatchRandomApply(
-            [mono_transforms.Normalize([225, 225, 225], [0.25, 0.25, 0.25])],
-            -0.1,
-            inplace=False,
-        )
-    with pytest.raises(
-        ValueError,
-        match=re.escape(
-            "p should be superior to 0 (included) and inferior to 1 (included). Got 1.1."
-        ),
-    ):
-        transforms.BatchRandomApply(
-            [mono_transforms.Normalize([225, 225, 225], [0.25, 0.25, 0.25])],
-            1.1,
-            inplace=False,
+        imgs = torch.randn(4, 3, 8, 8)
+        labels = torch.randint(0, 5, (4, 1)).to(torch.float)
+        inpt_imgs = imgs.clone()
+        inpt_labels = labels.clone()
+        out_imgs, out_labels, out_lam = transforms.BatchMixUp(0.5, inplace=True)(
+            inpt_imgs, inpt_labels
         )
 
-    imgs = torch.randn(4, 3, 8, 8)
-    indices_to_apply = torch.tensor([2, 1])
-    torchvision_out = imgs.clone()
-    torchvision_out[indices_to_apply] = F_tv.normalize(
-        imgs[indices_to_apply], [225, 225, 225], [0.25, 0.25, 0.25]
-    )
-    out = transforms.BatchRandomApply(
-        [mono_transforms.Normalize([225, 225, 225], [0.25, 0.25, 0.25])], 0.5
-    )(imgs)
-    # test consistency with Torchvision
-    torch.testing.assert_close(out, torchvision_out)
+        expected_lam = torch.tensor(
+            [[0.8844036], [0.9952562], [0.0072862], [0.0252598]]
+        )
+        expected_out_labels = F_b.batch_mixup(
+            labels, labels.roll(1, 0), expected_lam, False
+        )
+        expected_out_imgs = F_b.batch_mixup(imgs, imgs.roll(1, 0), expected_lam, False)
 
-    # Test with few probability
-    imgs = torch.randn(4, 3, 8, 8)
-    out = transforms.BatchRandomApply(
-        [mono_transforms.Normalize([225, 225, 225], [0.25, 0.25, 0.25])], 0.2
-    )(imgs)
-    imgs = torch.randn(4, 3, 8, 8)
-    for i in range(4):
-        out = transforms.BatchRandomApply(
-            [mono_transforms.Normalize([225, 225, 225], [0.25, 0.25, 0.25])], 0.15
+        torch.testing.assert_close(out_lam, expected_lam.view(4, 1))
+        torch.testing.assert_close(out_labels, expected_out_labels)
+        torch.testing.assert_close(out_imgs, expected_out_imgs)
+        torch.testing.assert_close(out_imgs, inpt_imgs)
+        torch.testing.assert_close(out_labels, inpt_labels)
+
+        out_imgs, out_labels, out_lam = transforms.BatchMixUp(0.5, inplace=True)(
+            inpt_imgs, None
+        )
+        assert out_labels is None
+
+        out_imgs, out_labels, out_lam = transforms.BatchMixUp(0.5, inplace=False)(
+            imgs, None
+        )
+        assert out_labels is None
+
+        expected_lam = torch.tensor(
+            [[0.9992378], [0.0766915], [0.9603495], [0.9419856]]
+        )
+        torch.testing.assert_close(out_lam, expected_lam.view(4, 1))
+        expected_out_imgs = F_b.batch_mixup(imgs, imgs.roll(1, 0), expected_lam, False)
+        torch.testing.assert_close(out_imgs, expected_out_imgs)
+
+    def test_repr(self):
+        assert (
+            transforms.BatchMixUp(0.5, True).__repr__()
+            == "BatchMixUp(alpha=0.5, inplace=True)"
+        )
+        assert (
+            transforms.BatchMixUp(0.5, False).__repr__()
+            == "BatchMixUp(alpha=0.5, inplace=False)"
+        )
+
+
+class TestBatchRandomApply:
+    @pytest.mark.parametrize(
+        "p,apply_transforms,inplace,seed",
+        [
+            (
+                0,
+                [
+                    mono_transforms.Normalize((0.5,), (0.5,)),
+                    transforms.BatchRandomGaussianBlur((3, 3), (0.1, 2.0)),
+                ],
+                False,
+                28,
+            ),
+            (
+                0.5,
+                [
+                    mono_transforms.Normalize((0.5,), (0.5,)),
+                    transforms.BatchRandomGaussianBlur((3, 3), (0.1, 2.0)),
+                ],
+                False,
+                28,
+            ),
+            (
+                1.0,
+                [
+                    mono_transforms.Normalize((0.5,), (0.5,)),
+                    transforms.BatchRandomGaussianBlur((3, 3), (0.1, 2.0)),
+                ],
+                False,
+                28,
+            ),
+            (1.0, mono_transforms.Normalize((0.5,), (0.5,)), False, 28),
+            (1.0, mono_transforms.Normalize((0.5,), (0.5,)), True, 28),
+            (0.1, mono_transforms.Normalize((0.5,), (0.5,)), True, 28),
+            (0.3, mono_transforms.Normalize((0.5,), (0.5,)), True, 28),
+        ],
+    )
+    def test_functional(
+        self,
+        p: float,
+        apply_transforms: torch.nn.Module | list[torch.nn.Module],
+        inplace: bool,
+        seed: int,
+    ):
+        torch.manual_seed(seed)
+        imgs = torch.randn(4, 3, 8, 8)
+        transforms.BatchRandomApply(apply_transforms, p, inplace)(imgs)
+
+    @pytest.mark.parametrize(
+        "p,apply_transforms,inplace,repr",
+        [
+            (
+                1.0,
+                mono_transforms.Normalize((0.5,), (0.5,)),
+                False,
+                "BatchRandomApply(\n    p=1.0, inplace=False,\n    Normalize(mean=[[[0.5]]], std=[[[0.5]]], cast_dtype=None, inplace=False, value_check=False)\n)",
+            ),
+            (
+                1.0,
+                mono_transforms.Normalize((0.5,), (0.5,)),
+                True,
+                "BatchRandomApply(\n    p=1.0, inplace=True,\n    Normalize(mean=[[[0.5]]], std=[[[0.5]]], cast_dtype=None, inplace=False, value_check=False)\n)",
+            ),
+        ],
+    )
+    def test_repr(
+        self,
+        apply_transforms: torch.nn.Module | list[torch.nn.Module],
+        p: float,
+        inplace: bool,
+        repr: str,
+    ):
+        assert (
+            transforms.BatchRandomApply(apply_transforms, p, inplace).__repr__() == repr
+        )
+
+    @pytest.mark.parametrize("p, error_type", [(-0.1, ValueError), (1.1, ValueError)])
+    def test_wrong_p(self, p: float, error_type: Exception):
+        with pytest.raises(error_type):
+            transforms.BatchRandomApply(
+                [mono_transforms.Normalize([225, 225, 225], [0.25, 0.25, 0.25])],
+                p,
+            )
+
+
+class TestBatchRandomColorJitter:
+    def test_output_values(self):
+        torch.manual_seed(28)
+
+        imgs = torch.randn(8, 3, 8, 8)
+        indices_to_apply = torch.tensor([[1, 0], [7, 5]])
+        orders = torch.tensor([[1, 0, 2, 3], [2, 0, 1, 3]])
+        brightnesss = torch.tensor([[0.5807553, 1.0611039], [1.0105517, 0.9287435]])
+        contrasts = torch.tensor([[0.8417916, 0.9093333], [0.8968358, 1.4652505]])
+        saturations = torch.tensor([[1.2338004, 1.3543849], [0.5746976, 0.6757473]])
+        hues = torch.tensor([[0.0161706, 0.0335830], [-0.0669264, -0.0657860]])
+
+        expected_out = imgs.clone()
+
+        for indices, order, brightnesss, contrast, saturation, hue in zip(
+            indices_to_apply, orders, brightnesss, contrasts, saturations, hues
+        ):
+            for fn_id in order:
+                if fn_id == 0 and brightnesss is not None:
+                    expected_out[indices] = F_b.batch_adjust_brightness(
+                        expected_out[indices], brightnesss
+                    )
+                elif fn_id == 1 and contrast is not None:
+                    expected_out[indices] = F_b.batch_adjust_contrast(
+                        expected_out[indices], contrast
+                    )
+                elif fn_id == 2 and saturation is not None:
+                    expected_out[indices] = F_b.batch_adjust_saturation(
+                        expected_out[indices], saturation
+                    )
+                elif fn_id == 3 and hue is not None:
+                    expected_out[indices] = F_b.batch_adjust_hue(
+                        expected_out[indices], hue
+                    )
+        out = transforms.BatchRandomColorJitter(0.5, 0.5, 0.5, 0.1, 0.5, 2)(imgs)
+        torch.testing.assert_close(out, expected_out)
+
+    @pytest.mark.parametrize(
+        "brightness,contrast,saturation,hue,p,num_rand_calls,inplace,value_check",
+        [
+            (0.5, 0.5, 0.5, 0.1, 0.5, 16, False, False),
+            (0.5, 0.5, 0.5, 0.1, 0.5, 16, False, True),
+            (0.5, 0.5, 0.5, 0.1, 0.5, 16, True, False),
+            (0.0, 0.5, 0.5, 0.1, 0.5, 16, False, False),
+            (0.5, 0, 0.5, 0.1, 0.5, 16, False, False),
+            (0.5, 0.5, 0.0, 0.1, 0.5, 16, False, False),
+            (0.5, 0.5, 0.5, 0.0, 0.5, 16, False, False),
+            (0.5, 0.5, 0.5, 0.5, 0.0, 16, False, False),
+            (0.5, 0.5, 0.5, 0.5, 1.0, 16, False, False),
+            (0.5, 0.5, 0.5, 0.5, 1.0, -1, False, False),
+            (0.5, 0.5, 0.5, 0.5, 1.0, 0, False, False),
+            (0.5, 0.5, 0.5, 0.5, 1.0, 64, False, False),
+        ],
+    )
+    def test_functional(
+        self,
+        brightness: float | tuple[float, float] | None,
+        contrast: float | tuple[float, float] | None,
+        saturation: float | tuple[float, float] | None,
+        hue: float | tuple[float, float] | None,
+        p: float,
+        num_rand_calls: int,
+        inplace: bool,
+        value_check: bool,
+    ):
+        imgs = torch.randn(8, 3, 8, 8)
+        transforms.BatchRandomColorJitter(
+            brightness,
+            contrast,
+            saturation,
+            hue,
+            p,
+            num_rand_calls,
+            inplace,
+            value_check,
         )(imgs)
-        out = transforms.BatchRandomApply(
-            [mono_transforms.Normalize([225, 225, 225], [0.25, 0.25, 0.25])], 0.39
-        )(imgs)
 
-    # test not inplace
-    transforms.BatchRandomApply(
-        [mono_transforms.Normalize([225, 225, 225], [0.25, 0.25, 0.25])],
-        0.5,
-        inplace=False,
-    )(imgs)
-
-    # test p = 0. and p = 1.
-    torch.testing.assert_close(
-        transforms.BatchRandomApply(
-            [mono_transforms.Normalize([225, 225, 225], [0.25, 0.25, 0.25])], 0.0
-        )(imgs),
-        imgs,
+    @pytest.mark.parametrize(
+        "brightness,contrast,saturation,hue,p,num_rand_calls,inplace,value_check,repr",
+        [
+            (
+                0.5,
+                0.5,
+                0.5,
+                0.1,
+                0.5,
+                16,
+                False,
+                False,
+                r"BatchRandomColorJitter\(brightness=\[0\.\d+, 1\.\d+\], contrast=\[0\.\d+, 1\.\d+\], saturation=\[0\.\d+, 1\.\d+\], hue=\[-0\.\d+, 0\.\d+\], p=0.5, num_rand_calls=16, inplace=False, value_check=False\)",
+            ),
+            (
+                0.5,
+                0.5,
+                0.5,
+                0.1,
+                0.5,
+                16,
+                False,
+                True,
+                r"BatchRandomColorJitter\(brightness=\[0\.\d+, 1\.\d+\], contrast=\[0\.\d+, 1\.\d+\], saturation=\[0\.\d+, 1\.\d+\], hue=\[-0\.\d+, 0\.\d+\], p=0.5, num_rand_calls=16, inplace=False, value_check=True\)",
+            ),
+            (
+                0.5,
+                0.5,
+                0.5,
+                0.1,
+                0.5,
+                16,
+                True,
+                False,
+                r"BatchRandomColorJitter\(brightness=\[0\.\d+, 1\.\d+\], contrast=\[0\.\d+, 1\.\d+\], saturation=\[0\.\d+, 1\.\d+\], hue=\[-0\.\d+, 0\.\d+\], p=0.5, num_rand_calls=16, inplace=True, value_check=False\)",
+            ),
+            (
+                0.0,
+                0.5,
+                0.5,
+                0.1,
+                0.5,
+                16,
+                False,
+                False,
+                r"BatchRandomColorJitter\(brightness=None, contrast=\[0\.\d+, 1\.\d+\], saturation=\[0\.\d+, 1\.\d+\], hue=\[-0\.\d+, 0\.\d+\], p=0.5, num_rand_calls=16, inplace=False, value_check=False\)",
+            ),
+            (
+                0.5,
+                0,
+                0.5,
+                0.1,
+                0.5,
+                16,
+                False,
+                False,
+                r"BatchRandomColorJitter\(brightness=\[0\.\d+, 1\.\d+\], contrast=None, saturation=\[0\.\d+, 1\.\d+\], hue=\[-0\.\d+, 0\.\d+\], p=0.5, num_rand_calls=16, inplace=False, value_check=False\)",
+            ),
+            (
+                0.5,
+                0.5,
+                0.0,
+                0.1,
+                0.5,
+                16,
+                False,
+                False,
+                r"BatchRandomColorJitter\(brightness=\[0\.\d+, 1\.\d+\], contrast=\[0\.\d+, 1\.\d+\], saturation=None, hue=\[-0\.\d+, 0\.\d+\], p=0.5, num_rand_calls=16, inplace=False, value_check=False\)",
+            ),
+            (
+                0.5,
+                0.5,
+                0.5,
+                0.0,
+                0.5,
+                16,
+                False,
+                False,
+                r"BatchRandomColorJitter\(brightness=\[0\.\d+, 1\.\d+\], contrast=\[0\.\d+, 1\.\d+\], saturation=\[0\.\d+, 1\.\d+\], hue=None, p=0.5, num_rand_calls=16, inplace=False, value_check=False\)",
+            ),
+            (
+                0.5,
+                0.5,
+                0.5,
+                0.5,
+                0.0,
+                16,
+                False,
+                False,
+                r"BatchRandomColorJitter\(brightness=\[0\.\d+, 1\.\d+\], contrast=\[0\.\d+, 1\.\d+\], saturation=\[0\.\d+, 1\.\d+\], hue=\[-0\.\d+, 0\.\d+\], p=0.0, num_rand_calls=16, inplace=False, value_check=False\)",
+            ),
+            (
+                0.5,
+                0.5,
+                0.5,
+                0.5,
+                1.0,
+                16,
+                False,
+                False,
+                r"BatchRandomColorJitter\(brightness=\[0\.\d+, 1\.\d+\], contrast=\[0\.\d+, 1\.\d+\], saturation=\[0\.\d+, 1\.\d+\], hue=\[-0\.\d+, 0\.\d+\], p=1.0, num_rand_calls=16, inplace=False, value_check=False\)",
+            ),
+            (
+                0.5,
+                0.5,
+                0.5,
+                0.5,
+                1.0,
+                -1,
+                False,
+                False,
+                r"BatchRandomColorJitter\(brightness=\[0\.\d+, 1\.\d+\], contrast=\[0\.\d+, 1\.\d+\], saturation=\[0\.\d+, 1\.\d+\], hue=\[-0\.\d+, 0\.\d+\], p=1.0, num_rand_calls=-1, inplace=False, value_check=False\)",
+            ),
+            (
+                0.5,
+                0.5,
+                0.5,
+                0.5,
+                1.0,
+                64,
+                False,
+                False,
+                r"BatchRandomColorJitter\(brightness=\[0\.\d+, 1\.\d+\], contrast=\[0\.\d+, 1\.\d+\], saturation=\[0\.\d+, 1\.\d+\], hue=\[-0\.\d+, 0\.\d+\], p=1.0, num_rand_calls=64, inplace=False, value_check=False\)",
+            ),
+        ],
     )
-    torch.testing.assert_close(
-        transforms.BatchRandomApply(
-            [mono_transforms.Normalize([225, 225, 225], [0.25, 0.25, 0.25])],
-            1.0,
-            inplace=False,
-        )(imgs),
-        F_tv.normalize(imgs, [225, 225, 225], [0.25, 0.25, 0.25]),
-    )
-
-
-def test_batch_random_color_jitter():
-    torch.manual_seed(28)
-
-    # Checking if BatchRandomColorJitter can be printed as string
-    assert isinstance(
-        transforms.BatchRandomColorJitter(0.5, 0.5, 0.5, 0.1, 0.5, 0).__repr__(), str
-    )
-    assert isinstance(
-        transforms.BatchRandomColorJitter(None, None, None, None, 0.5, 0).__repr__(),
-        str,
-    )
-
-    imgs = torch.randn(8, 3, 8, 8)
-    indices_to_apply = torch.tensor([[1, 0], [7, 5]])
-    orders = torch.tensor([[1, 0, 2, 3], [2, 0, 1, 3]])
-    brightnesss = torch.tensor([[0.5807553, 1.0611039], [1.0105517, 0.9287435]])
-    contrasts = torch.tensor([[0.8417916, 0.9093333], [0.8968358, 1.4652505]])
-    saturations = torch.tensor([[1.2338004, 1.3543849], [0.5746976, 0.6757473]])
-    hues = torch.tensor([[0.0161706, 0.0335830], [-0.0669264, -0.0657860]])
-
-    torchvision_out = imgs.clone()
-
-    for indices, order, brightnesss, contrast, saturation, hue in zip(
-        indices_to_apply, orders, brightnesss, contrasts, saturations, hues
+    def test_repr(
+        self,
+        brightness: float | tuple[float, float] | None,
+        contrast: float | tuple[float, float] | None,
+        saturation: float | tuple[float, float] | None,
+        hue: float | tuple[float, float] | None,
+        p: float,
+        num_rand_calls: int,
+        inplace: bool,
+        value_check: bool,
+        repr: str,
     ):
-        for fn_id in order:
-            for i, b, c, s, h in zip(indices, brightnesss, contrast, saturation, hue):
-                if fn_id == 0 and b is not None:
-                    torchvision_out[i] = F_tv.adjust_brightness(torchvision_out[i], b)
-                elif fn_id == 1 and c is not None:
-                    torchvision_out[i] = F_tv.adjust_contrast(torchvision_out[i], c)
-                elif fn_id == 2 and s is not None:
-                    torchvision_out[i] = F_tv.adjust_saturation(torchvision_out[i], s)
-                elif fn_id == 3 and h is not None:
-                    torchvision_out[i] = F_tv.adjust_hue(torchvision_out[i], h)
-    out = transforms.BatchRandomColorJitter(0.5, 0.5, 0.5, 0.1, 0.5, 2)(imgs)
+        assert re.match(
+            repr,
+            transforms.BatchRandomColorJitter(
+                brightness,
+                contrast,
+                saturation,
+                hue,
+                p,
+                num_rand_calls,
+                inplace,
+                value_check,
+            ).__repr__(),
+        )
 
-    # test consistency with Torchvision
-    torch.testing.assert_close(out, torchvision_out)
-
-    # test different num_random calls
-    transforms.BatchRandomColorJitter(0.5, 0.5, 0.5, 0.1, 0.5, 0)(imgs)
-    transforms.BatchRandomColorJitter(0.5, 0.5, 0.5, 0.1, 0.5, -1)(imgs)
-    transforms.BatchRandomColorJitter(0.5, 0.5, 0.5, 0.1, 0.5, 16)(imgs)
-
-    # test p = 0. and p = 1.
-    torch.testing.assert_close(
-        transforms.BatchRandomColorJitter(0.5, 0.5, 0.5, 0.1, 0.0, 16)(imgs), imgs
+    @pytest.mark.parametrize(
+        "num_rand_calls, error_type", [(-10, ValueError), ("ahah", ValueError)]
     )
-    transforms.BatchRandomColorJitter(0.5, 0.5, 0.5, 0.1, 1.0, 16)(imgs)
-
-    # test not inplace
-    transforms.BatchRandomColorJitter(0.5, 0.5, 0.5, 0.1, 0.5, inplace=False)(imgs)
-
-    # test wrong num rand calls
-    with pytest.raises(
-        ValueError,
-        match="num_rand_calls attribute should be an int superior to -1, ahah given.",
-    ):
-        transforms.BatchRandomColorJitter(num_rand_calls="ahah")
-    with pytest.raises(
-        ValueError,
-        match="num_rand_calls attribute should be an int superior to -1, -2 given.",
-    ):
-        transforms.BatchRandomColorJitter(num_rand_calls=-2)
+    def test_wrong_num_rand_calls(self, num_rand_calls: Any, error_type: Exception):
+        with pytest.raises(error_type):
+            transforms.BatchRandomColorJitter(num_rand_calls=num_rand_calls)
 
 
-def test_batch_random_gaussian_blur():
-    torch.manual_seed(28)
+class TestBatchRandomGaussianBlur:
+    def test_output_values(self):
+        torch.manual_seed(28)
 
-    # Checking if BatchRandomGaussianBlur can be printed as string
-    assert isinstance(
-        transforms.BatchRandomGaussianBlur([3, 3], [0.1, 2.0], 0.5).__repr__(), str
+        imgs = torch.randn(4, 3, 8, 8)
+
+        indices_to_apply = torch.tensor([2, 1])
+        sigmas = torch.tensor([[0.7487103, 0.7487103], [0.8353596, 0.8353596]])
+
+        expected_out = imgs.clone()
+        expected_out[indices_to_apply] = F_b.batch_gaussian_blur(
+            imgs[indices_to_apply], [3, 3], sigmas
+        )
+
+        out = transforms.BatchRandomGaussianBlur([3, 3], [0.1, 2.0], 0.5)(imgs)
+
+        torch.testing.assert_close(out, expected_out)
+
+    @pytest.mark.parametrize(
+        "kernel_size,sigma,p,inplace,value_check",
+        [
+            ([3, 3], [0.1, 2.0], 0.5, False, False),
+            ([3, 3], [0.1, 2.0], 0.0, False, False),
+            ([3, 3], [0.1, 2.0], 1.0, False, False),
+            ([3, 3], [0.1, 2.0], 1.0, True, False),
+            ([3, 3], [0.1, 2.0], 1.0, True, True),
+            ([3, 3], 1.0, 1.0, True, True),
+            ([3], 1.0, 1.0, True, True),
+            (3, 1.0, 1.0, True, True),
+        ],
     )
+    def test_functional(
+        self,
+        kernel_size: int | tuple[int, int],
+        sigma: float | tuple[float, float],
+        p: float,
+        inplace: bool,
+        value_check: bool,
+    ):
+        imgs = torch.randn(4, 3, 8, 8)
+        transforms.BatchRandomGaussianBlur(kernel_size, sigma, p, inplace, value_check)(
+            imgs
+        )
 
-    imgs = torch.randn(4, 3, 8, 8)
-    indices_to_apply = torch.tensor([2, 1])
-    sigmas = [[0.7487103, 0.7487103], [0.8353596, 0.8353596]]
-    torchvision_out = imgs.clone()
-
-    for indice, sigma in zip(indices_to_apply, sigmas):
-        torchvision_out[indice] = F_tv.gaussian_blur(imgs[indice], [3, 3], sigma)
-
-    out = transforms.BatchRandomGaussianBlur([3, 3], [0.1, 2.0], 0.5)(imgs)
-
-    # test consistency with Torchvision
-    torch.testing.assert_close(out, torchvision_out)
-
-    # test not inplace
-    transforms.BatchRandomGaussianBlur([3, 3], [0.1, 2.0], 0.5, inplace=False)(imgs)
-
-    # test p = 0. and p = 1.
-    torch.testing.assert_close(
-        transforms.BatchRandomGaussianBlur([3, 3], [0.1, 2.0], 0.0)(imgs), imgs
+    @pytest.mark.parametrize(
+        "kernel_size,sigma,p,inplace,value_check,repr",
+        [
+            (
+                [3, 3],
+                [0.1, 2.0],
+                0.5,
+                False,
+                False,
+                r"BatchRandomGaussianBlur\(kernel_size=\[3, 3\], sigma=\[0\.\d+, \d\.\d+\], p=0.5, inplace=False, value_check=False\)",
+            ),
+            (
+                [3, 3],
+                [0.1, 2.0],
+                0.0,
+                False,
+                False,
+                r"BatchRandomGaussianBlur\(kernel_size=\[3, 3\], sigma=\[0\.\d+, \d\.\d+\], p=0.0, inplace=False, value_check=False\)",
+            ),
+            (
+                [3, 3],
+                [0.1, 2.0],
+                1.0,
+                False,
+                False,
+                r"BatchRandomGaussianBlur\(kernel_size=\[3, 3\], sigma=\[0\.\d+, \d\.\d+\], p=1.0, inplace=False, value_check=False\)",
+            ),
+            (
+                [3, 3],
+                [0.1, 2.0],
+                1.0,
+                True,
+                False,
+                r"BatchRandomGaussianBlur\(kernel_size=\[3, 3\], sigma=\[0\.\d+, \d\.\d+\], p=1.0, inplace=True, value_check=False\)",
+            ),
+            (
+                [3, 3],
+                [0.1, 2.0],
+                1.0,
+                True,
+                True,
+                r"BatchRandomGaussianBlur\(kernel_size=\[3, 3\], sigma=\[0\.\d+, \d\.\d+\], p=1.0, inplace=True, value_check=True\)",
+            ),
+            (
+                [3, 3],
+                1.0,
+                1.0,
+                True,
+                True,
+                r"BatchRandomGaussianBlur\(kernel_size=\[3, 3\], sigma=\[1\.\d+, 1\.\d+\], p=1.0, inplace=True, value_check=True\)",
+            ),
+            (
+                [3],
+                1.0,
+                1.0,
+                True,
+                True,
+                r"BatchRandomGaussianBlur\(kernel_size=\(3, 3\), sigma=\[1\.\d+, 1\.\d+\], p=1.0, inplace=True, value_check=True\)",
+            ),
+            (
+                3,
+                1.0,
+                1.0,
+                True,
+                True,
+                r"BatchRandomGaussianBlur\(kernel_size=\(3, 3\), sigma=\[1\.\d+, 1\.\d+\], p=1.0, inplace=True, value_check=True\)",
+            ),
+        ],
     )
-    transforms.BatchRandomGaussianBlur([3, 3], [0.1, 2.0], 1.0)(imgs)
-
-    # test various type kernel
-    transforms.BatchRandomGaussianBlur(3, [0.1, 2.0], 0.5, inplace=False)
-    transforms.BatchRandomGaussianBlur([3], [0.1, 2.0], 0.5, inplace=False)
-
-    # test various type sigma
-    transforms.BatchRandomGaussianBlur([3], 1, 0.5, inplace=False)
-    transforms.BatchRandomGaussianBlur([3], 1.0, 0.5, inplace=False)
-
-    # test wrong kernel value
-    with pytest.raises(
-        ValueError, match="Kernel size value should be an odd and positive number."
+    def test_repr(
+        self,
+        kernel_size: int | tuple[int, int],
+        sigma: float | tuple[float, float],
+        p: float,
+        inplace: bool,
+        value_check: bool,
+        repr: str,
     ):
-        transforms.BatchRandomGaussianBlur(0, [0.1, 2.0], 0.5, inplace=False)
-        transforms.BatchRandomGaussianBlur(-1, [0.1, 2.0], 0.5, inplace=False)
+        assert re.match(
+            repr,
+            transforms.BatchRandomGaussianBlur(
+                kernel_size,
+                sigma,
+                p,
+                inplace,
+                value_check,
+            ).__repr__(),
+        )
 
-    # test sigma number is inferior or equal to 0.
-    with pytest.raises(
-        ValueError, match="If sigma is a single number, it must be positive."
-    ):
-        transforms.BatchRandomGaussianBlur(3, 0, 0.5, inplace=False)
-        transforms.BatchRandomGaussianBlur(3, 0.0, 0.5, inplace=False)
-        transforms.BatchRandomGaussianBlur(3, -1, 0.5, inplace=False)
-        transforms.BatchRandomGaussianBlur(3, -1.0, 0.5, inplace=False)
-
-    # test sigma sequence wrong
-    with pytest.raises(
-        ValueError,
-        match=r"sigma values should be positive and of the form \(min, max\).",
-    ):
-        transforms.BatchRandomGaussianBlur(3, [2.0, 1.0], 0.5, inplace=False)
-        transforms.BatchRandomGaussianBlur(3, [0.0, 1.0], 0.5, inplace=False)
-
-    # test sigma wrong type
-    with pytest.raises(
-        ValueError,
-        match="sigma should be a single number or a list/tuple with length 2.",
-    ):
-        transforms.BatchRandomGaussianBlur(3, [2.0, 3.0, 4.0], 0.5, inplace=False)
-        transforms.BatchRandomGaussianBlur(3, "ahah", 0.5, inplace=False)
-
-
-def test_batch_random_gray_scale():
-    torch.manual_seed(28)
-
-    # Checking if BatchRandomGrayScale can be printed as string
-    assert isinstance(transforms.BatchRandomGrayScale(0.5).__repr__(), str)
-
-    imgs = torch.randn(4, 3, 8, 8)
-    indices_to_apply = torch.tensor([2, 1])
-
-    torchvision_out = imgs.clone()
-    torchvision_out[indices_to_apply] = F_tv.rgb_to_grayscale(imgs[indices_to_apply], 3)
-
-    out = transforms.BatchRandomGrayScale(0.5)(imgs)
-
-    # test consistency with Torchvision
-    torch.testing.assert_close(out, torchvision_out)
-
-    # test not inplace
-    transforms.BatchRandomGrayScale(0.5, inplace=False)(imgs)
-
-    # test p = 0. and p = 1.
-    torch.testing.assert_close(transforms.BatchRandomGrayScale(0.0)(imgs), imgs)
-    torch.testing.assert_close(
-        transforms.BatchRandomGrayScale(1.0)(imgs), F_tv.rgb_to_grayscale(imgs, 3)
+    @pytest.mark.parametrize(
+        "kernel_size,error_type", [(0, ValueError), (-1, ValueError)]
     )
+    def test_wrong_kernel_size(self, kernel_size: Any, error_type: Exception):
+        with pytest.raises(error_type):
+            transforms.BatchRandomGaussianBlur(
+                kernel_size, [0.1, 2.0], 0.5, inplace=False
+            )
+
+    @pytest.mark.parametrize(
+        "sigma,error_type",
+        [
+            (0, ValueError),
+            (-1, ValueError),
+            (0.0, ValueError),
+            (-1.0, ValueError),
+            ([2.0, 1.0], ValueError),
+            ([0.0, 1.0], ValueError),
+            ([2.0, 3.0, 4.0], ValueError),
+            ("ahah", ValueError),
+        ],
+    )
+    def test_wrong_sigma(self, sigma: Any, error_type: Exception):
+        with pytest.raises(error_type):
+            transforms.BatchRandomGaussianBlur(3, sigma, 0.5, inplace=False)
 
 
-def test_batch_random_horizontal_flip():
-    torch.manual_seed(28)
+class TestBatchRandomGrayScale:
+    def test_output_values(self):
+        torch.manual_seed(28)
+        imgs = torch.randn(4, 3, 8, 8)
+        indices_to_apply = torch.tensor([2, 1])
 
-    # Checking if BatchRandomHorizontalFlip can be printed as string
-    assert isinstance(transforms.BatchRandomHorizontalFlip(0.5).__repr__(), str)
+        expected_out = imgs.clone()
+        expected_out[indices_to_apply] = F_tv.rgb_to_grayscale(
+            imgs[indices_to_apply], 3
+        )
 
-    imgs = torch.randn(4, 3, 8, 8)
-    indices_to_apply = torch.tensor([2, 1])
+        out = transforms.BatchRandomGrayScale(0.5)(imgs)
+        torch.testing.assert_close(out, expected_out)
 
-    torchvision_out = imgs.clone()
-    torchvision_out[indices_to_apply] = F_tv.hflip(imgs[indices_to_apply])
+    @pytest.mark.parametrize(
+        "p,inplace", [(0.5, False), (1.0, False), (0.0, False), (0.5, True)]
+    )
+    def test_functional(self, p: float, inplace: bool):
+        imgs = torch.randn(4, 3, 8, 8)
+        transforms.BatchRandomGrayScale(p, inplace)(imgs)
 
-    out = transforms.BatchRandomHorizontalFlip(0.5)(imgs)
+    @pytest.mark.parametrize(
+        "p,inplace,repr",
+        [
+            (0.5, False, "BatchRandomGrayScale(p=0.5, inplace=False)"),
+            (1.0, False, "BatchRandomGrayScale(p=1.0, inplace=False)"),
+            (0.0, False, "BatchRandomGrayScale(p=0.0, inplace=False)"),
+            (0.5, True, "BatchRandomGrayScale(p=0.5, inplace=True)"),
+        ],
+    )
+    def test_repr(self, p: float, inplace: bool, repr: str):
+        assert transforms.BatchRandomGrayScale(p, inplace).__repr__() == repr
 
-    # test consistency with Torchvision
-    torch.testing.assert_close(out, torchvision_out)
 
-    # test not inplace
-    transforms.BatchRandomHorizontalFlip(0.5, inplace=False)(imgs)
+class TestBatchRandomHorizontalFlip:
+    def test_output_values(self):
+        torch.manual_seed(28)
+        imgs = torch.randn(4, 3, 8, 8)
+        indices_to_apply = torch.tensor([2, 1])
 
-    # test p = 0. and p = 1.
-    torch.testing.assert_close(transforms.BatchRandomHorizontalFlip(0.0)(imgs), imgs)
-    transforms.BatchRandomHorizontalFlip(1.0)(imgs)
+        expected_out = imgs.clone()
+        expected_out[indices_to_apply] = F_tv.hflip(imgs[indices_to_apply])
+
+        out = transforms.BatchRandomHorizontalFlip(0.5)(imgs)
+        torch.testing.assert_close(out, expected_out)
+
+    @pytest.mark.parametrize(
+        "p,inplace", [(0.5, False), (1.0, False), (0.0, False), (0.5, True)]
+    )
+    def test_functional(self, p: float, inplace: bool):
+        imgs = torch.randn(4, 3, 8, 8)
+        transforms.BatchRandomHorizontalFlip(p, inplace)(imgs)
+
+    @pytest.mark.parametrize(
+        "p,inplace,repr",
+        [
+            (0.5, False, "BatchRandomHorizontalFlip(p=0.5, inplace=False)"),
+            (1.0, False, "BatchRandomHorizontalFlip(p=1.0, inplace=False)"),
+            (0.0, False, "BatchRandomHorizontalFlip(p=0.0, inplace=False)"),
+            (0.5, True, "BatchRandomHorizontalFlip(p=0.5, inplace=True)"),
+        ],
+    )
+    def test_repr(self, p: float, inplace: bool, repr: str):
+        assert transforms.BatchRandomHorizontalFlip(p, inplace).__repr__() == repr
 
 
-def test_batch_random_resized_crop():
-    torch.manual_seed(28)
+class TestBatchRandomResizedCrop:
+    def test_output_values(self):
+        torch.manual_seed(28)
 
-    # Checking if BatchRandomResizedCrop can be printed as string
-    assert isinstance(
-        transforms.BatchRandomResizedCrop(
+        imgs = torch.randn(8, 3, 8, 8)
+        indices_to_apply = torch.tensor([0, 1, 7, 5, 6, 4, 2, 3])
+
+        i_s = torch.tensor([1, 1, 1, 1, 1, 1, 1, 1])
+        j_s = torch.tensor([0, 0, 0, 0, 2, 2, 2, 2])
+        h_s = torch.tensor([7, 7, 7, 7, 4, 4, 4, 4])
+        w_s = torch.tensor([8, 8, 8, 8, 4, 4, 4, 4])
+
+        expected_out = torch.empty((8, 3, 4, 4))
+
+        for idx, i, j, h, w in zip(indices_to_apply, i_s, j_s, h_s, w_s):
+            expected_out[idx] = F_tv.resized_crop(
+                imgs[idx],
+                i,
+                j,
+                h,
+                w,
+                [4, 4],
+                interpolation=InterpolationMode.BILINEAR,
+                antialias=True,
+            )
+
+        out = transforms.BatchRandomResizedCrop(
             4, (0.08, 1), (3 / 4, 4 / 3), num_rand_calls=2
-        ).__repr__(),
-        str,
+        )(imgs)
+
+        torch.testing.assert_close(out, expected_out)
+
+    @pytest.mark.parametrize(
+        "size,scale,ratio,interpolation,antialias,num_rand_calls",
+        [
+            (4, (0.08, 1), (3 / 4, 4 / 3), InterpolationMode.BILINEAR, True, -1),
+            (4, (0.08, 1), (3 / 4, 4 / 3), InterpolationMode.BILINEAR, True, 0),
+            (4, (0.08, 1), (3 / 4, 4 / 3), InterpolationMode.BILINEAR, True, 16),
+            ([4], (0.08, 1), (3 / 4, 4 / 3), InterpolationMode.BILINEAR, True, 16),
+            ([4], (0.08, 1), (3 / 4, 4 / 3), InterpolationMode.BICUBIC, False, 16),
+        ],
     )
-
-    imgs = torch.randn(8, 3, 8, 8)
-    indices_to_apply = torch.tensor([0, 1, 7, 5, 6, 4, 2, 3])
-
-    i_s = torch.tensor([1, 1, 1, 1, 1, 1, 1, 1])
-    j_s = torch.tensor([0, 0, 0, 0, 2, 2, 2, 2])
-    h_s = torch.tensor([7, 7, 7, 7, 4, 4, 4, 4])
-    w_s = torch.tensor([8, 8, 8, 8, 4, 4, 4, 4])
-
-    torchvision_out = torch.empty((8, 3, 4, 4))
-
-    for idx, i, j, h, w in zip(indices_to_apply, i_s, j_s, h_s, w_s):
-        torchvision_out[idx] = F_tv.resized_crop(
-            imgs[idx],
-            i,
-            j,
-            h,
-            w,
-            [4, 4],
-            interpolation=InterpolationMode.BILINEAR,
-            antialias=True,
-        )
-
-    out = transforms.BatchRandomResizedCrop(
-        4, (0.08, 1), (3 / 4, 4 / 3), num_rand_calls=2
-    )(imgs)
-
-    # test consistency with Torchvision
-    torch.testing.assert_close(out, torchvision_out)
-
-    # test different num rand calls
-    transforms.BatchRandomResizedCrop(4, (0.08, 1), (3 / 4, 4 / 3), num_rand_calls=-1)(
-        imgs
-    )
-    transforms.BatchRandomResizedCrop(4, (0.08, 1), (3 / 4, 4 / 3), num_rand_calls=0)(
-        imgs
-    )
-    transforms.BatchRandomResizedCrop(4, (0.08, 1), (3 / 4, 4 / 3), num_rand_calls=16)(
-        imgs
-    )
-
-    # test size as list of one int
-    transforms.BatchRandomResizedCrop(
-        [4], (0.08, 1), (3 / 4, 4 / 3), num_rand_calls=16
-    )(imgs)
-
-    # test wrong num rand calls
-    with pytest.raises(
-        ValueError,
-        match="num_rand_calls attribute should be an int superior to -1, ahah given.",
+    def test_functional(
+        self,
+        size: int | Sequence[int],
+        scale: Sequence[float],
+        ratio: Sequence[float],
+        interpolation: InterpolationMode,
+        antialias: bool,
+        num_rand_calls: int,
     ):
+        imgs = torch.randn(8, 3, 8, 8)
+
         transforms.BatchRandomResizedCrop(
-            4, (0.08, 1), (3 / 4, 4 / 3), num_rand_calls="ahah"
-        )
-    with pytest.raises(
-        ValueError,
-        match="num_rand_calls attribute should be an int superior to -1, -2 given.",
-    ):
-        transforms.BatchRandomResizedCrop(
-            4, (0.08, 1), (3 / 4, 4 / 3), num_rand_calls=-2
-        )
+            size, scale, ratio, interpolation, antialias, num_rand_calls
+        )(imgs)
 
-    # test wrong size
-    with pytest.raises(
-        TypeError,
-        match="size should be a int or a sequence of int. Got 4..",
-    ):
-        transforms.BatchRandomResizedCrop(
-            4.0, (0.08, 1), (3 / 4, 4 / 3), num_rand_calls=16
-        )
-    with pytest.raises(
-        TypeError,
-        match="size should be a int or a sequence of int. Got ahah.",
-    ):
-        transforms.BatchRandomResizedCrop(
-            "ahah", (0.08, 1), (3 / 4, 4 / 3), num_rand_calls=16
-        )
-
-
-def test_batch_random_solarize():
-    torch.manual_seed(28)
-
-    # Checking if BatchRandomSolarize can be printed as string
-    assert isinstance(transforms.BatchRandomSolarize(0.5, 0.5).__repr__(), str)
-
-    imgs = torch.randn(4, 3, 8, 8)
-    indices_to_apply = torch.tensor([2, 1])
-    torchvision_out = imgs.clone()
-    torchvision_out[indices_to_apply] = F_tv.solarize(imgs[indices_to_apply], 0.5)
-    out = transforms.BatchRandomSolarize(0.5, 0.5)(imgs)
-
-    # test consistency with Torchvision
-    torch.testing.assert_close(out, torchvision_out)
-
-    # test not inplace
-    transforms.BatchRandomSolarize(0.5, 0.5, inplace=False)(imgs)
-
-    # test p = 0. and p = 1.
-    torch.testing.assert_close(transforms.BatchRandomSolarize(0.5, 0.0)(imgs), imgs)
-    torch.testing.assert_close(
-        transforms.BatchRandomSolarize(0.5, 1.0)(imgs), F_tv.solarize(imgs, 0.5)
+    @pytest.mark.parametrize(
+        "size,scale,ratio,interpolation,antialias,num_rand_calls,repr",
+        [
+            (
+                4,
+                (0.08, 1),
+                (3 / 4, 4 / 3),
+                InterpolationMode.BILINEAR,
+                True,
+                -1,
+                "BatchRandomResizedCrop(size=(4, 4), scale=(0.08, 1), ratio=(0.75, 1.3333), interpolation=bilinear, antialias=True, num_rand_calls=-1)",
+            ),
+            (
+                4,
+                (0.08, 1),
+                (3 / 4, 4 / 3),
+                InterpolationMode.BILINEAR,
+                True,
+                0,
+                "BatchRandomResizedCrop(size=(4, 4), scale=(0.08, 1), ratio=(0.75, 1.3333), interpolation=bilinear, antialias=True, num_rand_calls=0)",
+            ),
+            (
+                4,
+                (0.08, 1),
+                (3 / 4, 4 / 3),
+                InterpolationMode.BILINEAR,
+                True,
+                16,
+                "BatchRandomResizedCrop(size=(4, 4), scale=(0.08, 1), ratio=(0.75, 1.3333), interpolation=bilinear, antialias=True, num_rand_calls=16)",
+            ),
+            (
+                [4],
+                (0.08, 1),
+                (3 / 4, 4 / 3),
+                InterpolationMode.BILINEAR,
+                True,
+                16,
+                "BatchRandomResizedCrop(size=(4, 4), scale=(0.08, 1), ratio=(0.75, 1.3333), interpolation=bilinear, antialias=True, num_rand_calls=16)",
+            ),
+            (
+                [4],
+                (0.08, 1),
+                (3 / 4, 4 / 3),
+                InterpolationMode.BICUBIC,
+                False,
+                16,
+                "BatchRandomResizedCrop(size=(4, 4), scale=(0.08, 1), ratio=(0.75, 1.3333), interpolation=bicubic, antialias=False, num_rand_calls=16)",
+            ),
+        ],
     )
+    def test_repr(
+        self,
+        size: int | Sequence[int],
+        scale: Sequence[float],
+        ratio: Sequence[float],
+        interpolation: InterpolationMode,
+        antialias: bool,
+        num_rand_calls,
+        repr: str,
+    ):
+        assert (
+            transforms.BatchRandomResizedCrop(
+                size, scale, ratio, interpolation, antialias, num_rand_calls
+            ).__repr__()
+            == repr
+        )
 
-
-def test_batch_video_wrapper():
-    torch.manual_seed(28)
-
-    transform = mono_transforms.Normalize(
-        (0.5,), (0.5,), inplace=False, value_check=True
+    @pytest.mark.parametrize(
+        "num_rand_calls,error_type", [("ahah", ValueError), (-2, ValueError)]
     )
+    def test_wrong_num_rand_calls(self, num_rand_calls: Any, error_type: Exception):
+        with pytest.raises(error_type):
+            transforms.BatchRandomResizedCrop(
+                4, (0.08, 1), (3 / 4, 4 / 3), num_rand_calls=num_rand_calls
+            )
 
-    # test if BatchVideoWrapper can be printed as string
-    assert isinstance(transforms.BatchVideoWrapper(transform=transform).__repr__(), str)
+    @pytest.mark.parametrize("size,error_type", [(4.0, TypeError), ("ahah", TypeError)])
+    def test_wrong_size(self, size: Any, error_type: Exception):
+        with pytest.raises(error_type):
+            transforms.BatchRandomResizedCrop(size, (0.08, 1), (3 / 4, 4 / 3))
 
-    # test CTHW format
-    tensor = torch.rand((2, 3, 2, 16, 16))
-    torchvision_out = tv_transforms.Normalize((0.5,), (0.5,), inplace=False)(tensor)
-    out = transforms.BatchVideoWrapper(transform=transform)(tensor)
-    torch.testing.assert_close(out, torchvision_out)
 
-    # test TCHW format
-    torchvision_out = tv_transforms.Normalize((0.5,), (0.5,), inplace=False)(tensor)
-    out = transforms.BatchVideoWrapper(transform=transform, video_format="TCHW")(
-        tensor.permute(0, 2, 1, 3, 4)
+class TestBatchRandomSolarize:
+    def test_output_values(self):
+        torch.manual_seed(28)
+        imgs = torch.randn(4, 3, 8, 8)
+        indices_to_apply = torch.tensor([2, 1])
+
+        expected_out = imgs.clone()
+        expected_out[indices_to_apply] = F.solarize(imgs[indices_to_apply], 0.5)
+
+        out = transforms.BatchRandomSolarize(0.5, 0.5)(imgs)
+        torch.testing.assert_close(out, expected_out)
+
+    @pytest.mark.parametrize(
+        "threshold,p,inplace,value_check",
+        [
+            (0.5, 0.5, False, False),
+            (0.5, 1.0, False, False),
+            (0.5, 0.0, False, False),
+            (0.5, 0.5, True, True),
+        ],
     )
-    torch.testing.assert_close(out.permute(0, 2, 1, 3, 4), torchvision_out)
+    def test_functional(
+        self, threshold: float, p: float, inplace: bool, value_check: bool
+    ):
+        imgs = torch.randn(4, 3, 8, 8)
+        transforms.BatchRandomSolarize(threshold, p, inplace, value_check)(imgs)
 
-    # test same_on_frames
-    image = torch.randn((3, 224, 224))
-    video = torch.stack([image, image])
-    batch_video = torch.stack([video, video])
-    out = transforms.BatchVideoWrapper(
-        transform=transforms.BatchRandomColorJitter(0.5, p=1.0),
-        video_format="TCHW",
-        same_on_frames=True,
-    )(batch_video)
-    torch.testing.assert_close(out[:, 0], out[:, 1])
-    with pytest.raises(AssertionError):
-        torch.testing.assert_close(out[0], out[1])
-    out = transforms.BatchVideoWrapper(
-        transform=transforms.BatchRandomColorJitter(0.5, p=1.0),
-        video_format="TCHW",
-        same_on_frames=False,
-    )(batch_video)
-    with pytest.raises(AssertionError):
+    @pytest.mark.parametrize(
+        "threshold,p,inplace,value_check,repr",
+        [
+            (
+                0.5,
+                0.5,
+                False,
+                False,
+                "BatchRandomSolarize(threshold=0.5, p=0.5, inplace=False, value_check=False)",
+            ),
+            (
+                0.5,
+                1.0,
+                False,
+                False,
+                "BatchRandomSolarize(threshold=0.5, p=1.0, inplace=False, value_check=False)",
+            ),
+            (
+                0.5,
+                0.0,
+                False,
+                False,
+                "BatchRandomSolarize(threshold=0.5, p=0.0, inplace=False, value_check=False)",
+            ),
+            (
+                0.5,
+                0.5,
+                True,
+                True,
+                "BatchRandomSolarize(threshold=0.5, p=0.5, inplace=True, value_check=True)",
+            ),
+        ],
+    )
+    def test_repr(
+        self, threshold: float, p: float, inplace: bool, value_check: bool, repr: str
+    ):
+        assert (
+            transforms.BatchRandomSolarize(
+                threshold, p, inplace, value_check
+            ).__repr__()
+            == repr
+        )
+
+
+class TestBatchVideoWrapper:
+    def test_functional(self):
+        torch.manual_seed(28)
+
+        transform = mono_transforms.Normalize(
+            (0.5,), (0.5,), inplace=False, value_check=True
+        )
+
+        # test CTHW format
+        tensor = torch.rand((2, 3, 2, 16, 16))
+        expected_out = mono_transforms.Normalize((0.5,), (0.5,), inplace=False)(tensor)
+        out = transforms.BatchVideoWrapper(transform=transform)(tensor)
+        torch.testing.assert_close(out, expected_out)
+
+        # test TCHW format
+        expected_out = mono_transforms.Normalize((0.5,), (0.5,), inplace=False)(tensor)
+        out = transforms.BatchVideoWrapper(transform=transform, video_format="TCHW")(
+            tensor.permute(0, 2, 1, 3, 4)
+        )
+        torch.testing.assert_close(out.permute(0, 2, 1, 3, 4), expected_out)
+
+        # test same_on_frames True
+        image = torch.randn((3, 224, 224))
+        video = torch.stack([image, image])
+        batch_video = torch.stack([video, video])
+        out = transforms.BatchVideoWrapper(
+            transform=transforms.BatchRandomColorJitter(0.5, p=1.0),
+            video_format="TCHW",
+            same_on_frames=True,
+        )(batch_video)
         torch.testing.assert_close(out[:, 0], out[:, 1])
+        with pytest.raises(AssertionError):
+            torch.testing.assert_close(out[0], out[1])
 
-    # test wrong video_format
-    with pytest.raises(
-        ValueError, match="video_format should be either 'CTHW' or 'TCHW'. Got ahah."
-    ):
-        transforms.BatchVideoWrapper(transform=transform, video_format="ahah")(tensor)
+        # test same_on_frames False
+        out = transforms.BatchVideoWrapper(
+            transform=transforms.BatchRandomColorJitter(0.5, p=1.0),
+            video_format="TCHW",
+            same_on_frames=False,
+        )(batch_video)
+        with pytest.raises(AssertionError):
+            torch.testing.assert_close(out[:, 0], out[:, 1])
 
-    # test wrong tensor dimension
-    tensor = torch.rand((6, 3, 2, 3, 16, 16))
-    with pytest.raises(TypeError, match="Tensor is not a torch batch of videos."):
-        transforms.BatchVideoWrapper(transform=transform)(tensor)
+        # test wrong video_format
+        with pytest.raises(
+            ValueError,
+            match="video_format should be either 'CTHW' or 'TCHW'. Got ahah.",
+        ):
+            transforms.BatchVideoWrapper(transform=transform, video_format="ahah")(
+                tensor
+            )
 
+        # test wrong tensor dimension
+        tensor = torch.rand((6, 3, 2, 3, 16, 16))
+        with pytest.raises(TypeError, match="Tensor is not a torch batch of videos."):
+            transforms.BatchVideoWrapper(transform=transform)(tensor)
 
-def test_batch_video_resize():
-    torch.manual_seed(28)
-
-    # test if BatchVideoResize can be printed as string
-    assert isinstance(transforms.BatchVideoResize(size=2).__repr__(), str)
-    # test interpolation int
-    assert isinstance(
-        transforms.BatchVideoResize(size=2, interpolation=3).__repr__(), str
-    )
-
-    # test CTHW format
-    tensor = torch.rand((2, 3, 8, 16, 16))
-    torchvision_out = (
-        tv_transforms.Resize(2, antialias=True)(
-            tensor.permute(0, 2, 1, 3, 4).reshape(2 * 8, 3, 16, 16)
+        # test if BatchVideoWrapper can be printed as string
+        assert isinstance(
+            transforms.BatchVideoWrapper(transform=transform).__repr__(), str
         )
-        .reshape(2, 8, 3, 2, 2)
-        .permute(0, 2, 1, 3, 4)
+
+    def test_repr(self):
+        transform = mono_transforms.Normalize(
+            (0.5,), (0.5,), inplace=False, value_check=True
+        )
+        assert (
+            transforms.BatchVideoWrapper(transform, False, "CTHW").__repr__()
+            == "BatchVideoWrapper(\n    transform=Normalize(mean=[[[0.5]]], std=[[[0.5]]], cast_dtype=None, inplace=False, value_check=True),\n    same_on_frames=False,\n    video_format=CTHW\n)"
+        )
+        assert (
+            transforms.BatchVideoWrapper(transform, True, "TCHW").__repr__()
+            == "BatchVideoWrapper(\n    transform=Normalize(mean=[[[0.5]]], std=[[[0.5]]], cast_dtype=None, inplace=False, value_check=True),\n    same_on_frames=True,\n    video_format=TCHW\n)"
+        )
+
+    def test_wrong_video_format(self):
+        transform = mono_transforms.Normalize(
+            (0.5,), (0.5,), inplace=False, value_check=True
+        )
+        with pytest.raises(ValueError):
+            transforms.BatchVideoWrapper(transform=transform, video_format="ahah")
+
+    def test_wrong_tensor(self):
+        transform = mono_transforms.Normalize(
+            (0.5,), (0.5,), inplace=False, value_check=True
+        )
+        tensor = torch.rand((6, 3, 2, 3, 16, 16))
+        with pytest.raises(TypeError):
+            transforms.BatchVideoWrapper(transform=transform)(tensor)
+
+
+class TestBatchVideoResize:
+    def test_functional(self):
+        # test CTHW format
+        tensor = torch.rand((2, 3, 8, 16, 16))
+        expected_out = (
+            tv_transforms.Resize(2, antialias=True)(
+                tensor.permute(0, 2, 1, 3, 4).reshape(2 * 8, 3, 16, 16)
+            )
+            .reshape(2, 8, 3, 2, 2)
+            .permute(0, 2, 1, 3, 4)
+        )
+        out = transforms.BatchVideoResize(size=2, video_format="CTHW")(tensor)
+        torch.testing.assert_close(out, expected_out)
+
+        # test TCHW format
+        tensor = torch.rand((2, 8, 3, 16, 16))
+        expected_out = tv_transforms.Resize(2, antialias=True)(
+            tensor.reshape(2 * 8, 3, 16, 16)
+        ).reshape(2, 8, 3, 2, 2)
+        out = transforms.BatchVideoResize(size=2, video_format="TCHW")(tensor)
+        torch.testing.assert_close(out, expected_out)
+
+    @pytest.mark.parametrize(
+        "size,interpolation,max_size,antialias,video_format,repr",
+        [
+            (
+                2,
+                InterpolationMode.BILINEAR,
+                None,
+                True,
+                "CTHW",
+                "BatchVideoResize(size=2, interpolation=bilinear, max_size=None, antialias=True, video_format=CTHW)",
+            ),
+            (
+                [2, 2],
+                InterpolationMode.BICUBIC,
+                224,
+                True,
+                "TCHW",
+                "BatchVideoResize(size=[2, 2], interpolation=bicubic, max_size=224, antialias=True, video_format=TCHW)",
+            ),
+            (
+                [2, 2],
+                3,
+                224,
+                True,
+                "TCHW",
+                "BatchVideoResize(size=[2, 2], interpolation=bicubic, max_size=224, antialias=True, video_format=TCHW)",
+            ),
+        ],
     )
-    out = transforms.BatchVideoResize(size=2, video_format="CTHW")(tensor)
-    torch.testing.assert_close(out, torchvision_out)
-
-    # test TCHW format
-    tensor = torch.rand((2, 8, 3, 16, 16))
-    torchvision_out = tv_transforms.Resize(2, antialias=True)(
-        tensor.reshape(2 * 8, 3, 16, 16)
-    ).reshape(2, 8, 3, 2, 2)
-    out = transforms.BatchVideoResize(size=2, video_format="TCHW")(tensor)
-    torch.testing.assert_close(out, torchvision_out)
-
-    # test wrong video_format
-    with pytest.raises(
-        ValueError, match="video_format should be either 'CTHW' or 'TCHW'. Got ahah."
+    def test_repr(
+        self,
+        size: int | list[int],
+        interpolation: InterpolationMode,
+        max_size: int | None,
+        antialias: bool,
+        video_format: str,
+        repr: str,
     ):
-        transforms.BatchVideoResize(size=2, video_format="ahah")
+        assert (
+            transforms.BatchVideoResize(
+                size, interpolation, max_size, antialias, video_format
+            ).__repr__()
+            == repr
+        )
 
-    # test wrong tensor dimension
-    tensor = torch.rand((6, 3, 2, 3, 16, 16))
-    with pytest.raises(TypeError, match="Tensor is not a torch batch of videos."):
-        transforms.BatchVideoResize(size=2)(tensor)
+    @pytest.mark.parametrize(
+        "size,error_type", [(None, TypeError), ([2, 3, 4], ValueError)]
+    )
+    def test_wrong_size(self, size: Any, error_type: Exception):
+        with pytest.raises(error_type):
+            transforms.BatchVideoResize(size)
 
-    # test size wrong type
-    with pytest.raises(
-        TypeError, match="Size should be int or sequence. Got <class 'NoneType'>."
-    ):
-        transforms.BatchVideoResize(size=None)
+    def test_wrong_video_format(self):
+        with pytest.raises(ValueError):
+            transforms.BatchVideoResize(2, video_format="ahah")
 
-    # test size wrong sequence size
-    with pytest.raises(
-        ValueError, match="If size is a sequence, it should have 1 or 2 values."
-    ):
-        transforms.BatchVideoResize(size=[2, 3, 4])
+    def test_wrong_tensor(self):
+        tensor = torch.rand((6, 3, 2, 3, 16, 16))
+        with pytest.raises(TypeError):
+            transforms.BatchVideoResize(2)(tensor)

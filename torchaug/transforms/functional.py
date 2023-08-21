@@ -275,7 +275,7 @@ def normalize(
         if not torch.tensor(0, dtype=cast_dtype).is_floating_point():
             raise ValueError(f"cast_dtype should be a float dtype. Got {cast_dtype}.")
         casted = True
-        tensor = convert_image_dtype(tensor, dtype=torch.float32)
+        tensor = convert_image_dtype(tensor, dtype=cast_dtype)
     else:
         casted = False
 
