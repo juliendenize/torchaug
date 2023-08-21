@@ -34,7 +34,7 @@ class BatchRandomTransform(nn.Module, ABC):
 
         if not 0 <= p <= 1:
             raise ValueError(
-                f"p should be superior to 0 (included) and inferior to 1 (included). Got {p}."
+                f"p should be superior or equal to 0 and inferior or equal to 1. Got {p}."
             )
 
         self.p = p
