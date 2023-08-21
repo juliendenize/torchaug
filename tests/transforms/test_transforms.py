@@ -3,7 +3,6 @@ from typing import Any, Sequence
 
 import pytest
 import torch
-import torchvision.transforms as tv_transforms
 import torchvision.transforms.functional as F_tv
 from torchvision.transforms.functional import convert_image_dtype
 
