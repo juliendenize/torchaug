@@ -330,10 +330,10 @@ class RandomColorJitter(RandomTransform):
 
     def __init__(
         self,
-        brightness: float | tuple[float, float] | None = 0,
-        contrast: float | tuple[float, float] | None = 0,
-        saturation: float | tuple[float, float] | None = 0,
-        hue: float | tuple[float, float] | None = 0,
+        brightness: float | tuple[float, float] = 0,
+        contrast: float | tuple[float, float] = 0,
+        saturation: float | tuple[float, float] = 0,
+        hue: float | tuple[float, float] = 0,
         p: float = 0.0,
     ):
         super().__init__(p=p)

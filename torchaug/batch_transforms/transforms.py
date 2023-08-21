@@ -145,12 +145,11 @@ class BatchRandomApply(BatchRandomTransform):
 
     def __repr__(self) -> str:
         format_string = self.__class__.__name__ + "("
-        format_string += f"\n    p={self.p}"
-        format_string += f"    inplace={self.inplace}"
+        format_string += f"\n    p={self.p},"
+        format_string += f" inplace={self.inplace},"
         for t in self.transforms:
             format_string += "\n"
             format_string += f"    {t}"
-        format_string += "\n"
         format_string += "\n)"
         return format_string
 
@@ -187,10 +186,10 @@ class BatchRandomColorJitter(BatchRandomTransform):
 
     def __init__(
         self,
-        brightness: float | tuple[float, float] | None = None,
-        contrast: float | tuple[float, float] | None = None,
-        saturation: float | tuple[float, float] | None = None,
-        hue: float | tuple[float, float] | None = None,
+        brightness: float | tuple[float, float] = 0,
+        contrast: float | tuple[float, float] = 0,
+        saturation: float | tuple[float, float] = 0,
+        hue: float | tuple[float, float] = 0,
         p: float = 0.5,
         num_rand_calls: int = -1,
         inplace: bool = False,
@@ -208,28 +207,28 @@ class BatchRandomColorJitter(BatchRandomTransform):
         self.num_rand_calls = num_rand_calls
         self.inplace = inplace
 
+        brightness = _check_input(brightness, "brightness")
         if brightness is not None:
-            brightness = _check_input(brightness, "brightness")
             self.register_buffer("brightness", torch.as_tensor(brightness))
         else:
             self.brightness = None
 
+        contrast = _check_input(contrast, "contrast")
         if contrast is not None:
-            contrast = _check_input(contrast, "contrast")
             self.register_buffer("contrast", torch.as_tensor(contrast))
         else:
             self.contrast = None
 
+        saturation = _check_input(saturation, "saturation")
         if saturation is not None:
-            saturation = _check_input(saturation, "saturation")
             self.register_buffer("saturation", torch.as_tensor(saturation))
         else:
             self.saturation = None
 
+        hue = _check_input(
+            hue, "hue", center=0, bound=(-0.5, 0.5), clip_first_on_zero=False
+        )
         if hue is not None:
-            hue = _check_input(
-                hue, "hue", center=0, bound=(-0.5, 0.5), clip_first_on_zero=False
-            )
             self.register_buffer("hue", torch.as_tensor(hue))
         else:
             self.hue = None
@@ -390,6 +389,7 @@ class BatchRandomColorJitter(BatchRandomTransform):
             f", saturation={self.saturation.tolist() if self.saturation is not None else None}"
             f", hue={self.hue.tolist() if self.hue is not None else None}"
             f", p={self.p}"
+            f", num_rand_calls={self.num_rand_calls}"
             f", inplace={self.inplace}"
             f", value_check={self.value_check})"
         )
@@ -673,7 +673,6 @@ class BatchRandomResizedCrop(tv_transforms.RandomResizedCrop):
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         antialias: bool = True,
         num_rand_calls: int = -1,
-        **kwargs,
     ) -> None:
         if isinstance(size, int):
             self.size = [size, size]
@@ -684,7 +683,7 @@ class BatchRandomResizedCrop(tv_transforms.RandomResizedCrop):
         ):
             raise TypeError(f"size should be a int or a sequence of int. Got {size}.")
 
-        super().__init__(size, scale, ratio, interpolation, antialias, **kwargs)
+        super().__init__(size, scale, ratio, interpolation, antialias)
         _log_api_usage_once(self)
 
         if not isinstance(num_rand_calls, int) or not num_rand_calls >= -1:
@@ -882,9 +881,9 @@ class BatchVideoWrapper(nn.Module):
     def __repr__(self):
         return (
             f"{self.__class__.__name__}(\n"
-            f"  transform={self.transform},\n"
-            f"  same_on_frames={self.same_on_frames},\n"
-            f"  video_format={self.video_format})"
+            f"    transform={self.transform},\n"
+            f"    same_on_frames={self.same_on_frames},\n"
+            f"    video_format={self.video_format}\n)"
         )
 
 
