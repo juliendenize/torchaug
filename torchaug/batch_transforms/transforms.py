@@ -76,24 +76,29 @@ class BatchRandomTransform(nn.Module, ABC):
         floor_apply = floor(p_mul_batch_size)
         ceil_apply = ceil(p_mul_batch_size)
 
+        output: Tensor = imgs if self.inplace else imgs.clone()
+
+        # If 0 < p_mul_batch_size < 1, then only one element from input is augmented 
+        # with p probability.
         if floor_apply == 0 or ceil_apply == 0:
             num_apply = 1 if torch.rand(1).item() < self.p else 0
         elif floor_apply == ceil_apply:
             num_apply = floor_apply
+        # If p_mul_batch_size is rational, then upper or lower integer p_mul_batch_size
+        # elements from input are augmented randomly depending with the decimal.
         else:
             decimal = p_mul_batch_size % 1
             num_apply = floor_apply if decimal < torch.rand(1).item() else ceil_apply
 
+        # If no augmentation return the output directly, keep consistency of inplace.
         if num_apply == 0:
-            return imgs
+            return output
         elif num_apply == 1:
             indices_do_apply = torch.randint(0, batch_size, (1,), device=imgs.device)
         elif num_apply > 1:
             indices_do_apply = torch.randperm(batch_size, device=imgs.device)[
                 :num_apply
             ]
-
-        output: Tensor = imgs if self.inplace else imgs.clone()
 
         if num_apply > 0:
             output[indices_do_apply] = self.apply_transform(output[indices_do_apply])
