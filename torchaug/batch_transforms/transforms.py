@@ -78,7 +78,7 @@ class BatchRandomTransform(nn.Module, ABC):
 
         output: Tensor = imgs if self.inplace else imgs.clone()
 
-        # If 0 < p_mul_batch_size < 1, then only one element from input is augmented 
+        # If 0 < p_mul_batch_size < 1, then only one element from input is augmented
         # with p probability.
         if floor_apply == 0 or ceil_apply == 0:
             num_apply = 1 if torch.rand(1).item() < self.p else 0
@@ -261,32 +261,16 @@ class BatchRandomColorJitter(BatchRandomTransform):
                 Pass None to turn off the transformation.
             batch_size: The number of samples to draw.
         """
-        b = (
-            None
-            if brightness is None
-            else torch.empty((batch_size,), device=brightness.device).uniform_(
-                brightness[0], brightness[1]
-            )
-        )
-        c = (
-            None
-            if contrast is None
-            else torch.empty((batch_size,), device=contrast.device).uniform_(
-                contrast[0], contrast[1]
-            )
-        )
-        s = (
-            None
-            if saturation is None
-            else torch.empty((batch_size,), device=saturation.device).uniform_(
-                saturation[0], saturation[1]
-            )
-        )
-        h = (
-            None
-            if hue is None
-            else torch.empty((batch_size,), device=hue.device).uniform_(hue[0], hue[1])
-        )
+
+        def _get_uniform_values(batch_size: int, bounds: torch.Tensor):
+            return (bounds[0] - bounds[1]) * torch.rand(
+                (batch_size,), device=bounds.device
+            ) + bounds[1]
+
+        b = None if brightness is None else _get_uniform_values(batch_size, brightness)
+        c = None if contrast is None else _get_uniform_values(batch_size, contrast)
+        s = None if saturation is None else _get_uniform_values(batch_size, saturation)
+        h = None if hue is None else _get_uniform_values(batch_size, hue)
 
         return b, c, s, h
 
@@ -342,7 +326,7 @@ class BatchRandomColorJitter(BatchRandomTransform):
 
             for fn_id in fn_idx:
                 if fn_id == 0 and brightness_factor is not None:
-                    imgs_combination[:] = F_b.batch_adjust_brightness(
+                    imgs_combination = F_b.batch_adjust_brightness(
                         imgs_combination,
                         brightness_factor[
                             i
@@ -352,7 +336,7 @@ class BatchRandomColorJitter(BatchRandomTransform):
                         self.value_check,
                     )
                 elif fn_id == 1 and contrast_factor is not None:
-                    imgs_combination[:] = F_b.batch_adjust_contrast(
+                    imgs_combination = F_b.batch_adjust_contrast(
                         imgs_combination,
                         contrast_factor[
                             i
@@ -362,7 +346,7 @@ class BatchRandomColorJitter(BatchRandomTransform):
                         self.value_check,
                     )
                 elif fn_id == 2 and saturation_factor is not None:
-                    imgs_combination[:] = F_b.batch_adjust_saturation(
+                    imgs_combination = F_b.batch_adjust_saturation(
                         imgs_combination,
                         saturation_factor[
                             i
@@ -372,7 +356,7 @@ class BatchRandomColorJitter(BatchRandomTransform):
                         self.value_check,
                     )
                 elif fn_id == 3 and hue_factor is not None:
-                    imgs_combination[:] = F_b.batch_adjust_hue(
+                    imgs_combination = F_b.batch_adjust_hue(
                         imgs_combination,
                         hue_factor[
                             i

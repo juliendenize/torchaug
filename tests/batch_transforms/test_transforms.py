@@ -161,10 +161,30 @@ class TestBatchRandomColorJitter:
         imgs = torch.randn(8, 3, 8, 8)
         indices_to_apply = torch.tensor([[1, 0], [7, 5]])
         orders = torch.tensor([[1, 0, 2, 3], [2, 0, 1, 3]])
-        brightnesss = torch.tensor([[0.5807553, 1.0611039], [1.0105517, 0.9287435]])
-        contrasts = torch.tensor([[0.8417916, 0.9093333], [0.8968358, 1.4652505]])
-        saturations = torch.tensor([[1.2338004, 1.3543849], [0.5746976, 0.6757473]])
-        hues = torch.tensor([[0.0161706, 0.0335830], [-0.0669264, -0.0657860]])
+        brightnesss = torch.tensor(
+            [
+                [1.4192447662353516, 0.9388960599899292],
+                [0.9894483685493469, 1.0712565183639526],
+            ]
+        )
+        contrasts = torch.tensor(
+            [
+                [1.1582083702087402, 1.0906667709350586],
+                [1.1031641960144043, 0.5347495079040527],
+            ]
+        )
+        saturations = torch.tensor(
+            [
+                [0.76619952917099, 0.6456150412559509],
+                [1.4253023862838745, 1.3242526054382324],
+            ]
+        )
+        hues = torch.tensor(
+            [
+                [-0.016170598566532135, -0.03358305245637894],
+                [0.06692638993263245, 0.06578600406646729],
+            ]
+        )
 
         expected_out = imgs.clone()
 
@@ -189,6 +209,7 @@ class TestBatchRandomColorJitter:
                         expected_out[indices], hue
                     )
         out = transforms.BatchRandomColorJitter(0.5, 0.5, 0.5, 0.1, 0.5, 2)(imgs)
+        print(out[0], expected_out[0])
         torch.testing.assert_close(out, expected_out)
 
     @pytest.mark.parametrize(
