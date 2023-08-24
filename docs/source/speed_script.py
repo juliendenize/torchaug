@@ -99,12 +99,12 @@ batch_torchvision_transforms = [
 ]
 
 cpu_batch_transforms = [
-    BF.BatchRandomColorJitter(0.5, 0.5, 0.5, 0.1, 0.5, 1),
-    BF.BatchRandomColorJitter(0.5, 0.5, 0.5, 0.1, 0.5, 8),
-    BF.BatchRandomColorJitter(0.5, 0.5, 0.5, 0.1, 0.5, -1),
-    BF.BatchRandomGaussianBlur([23, 23], [0.1, 2], 0.5),
-    BF.BatchRandomGrayScale(0.5),
-    BF.BatchRandomHorizontalFlip(0.5),
+    BF.BatchRandomColorJitter(0.5, 0.5, 0.5, 0.1, 0.5, 1, inplace=True),
+    BF.BatchRandomColorJitter(0.5, 0.5, 0.5, 0.1, 0.5, 8, inplace=True),
+    BF.BatchRandomColorJitter(0.5, 0.5, 0.5, 0.1, 0.5, -1, inplace=True),
+    BF.BatchRandomGaussianBlur([23, 23], [0.1, 2], 0.5, inplace=True),
+    BF.BatchRandomGrayScale(0.5, inplace=True),
+    BF.BatchRandomHorizontalFlip(0.5, inplace=True),
     BF.BatchRandomResizedCrop([224, 224], num_rand_calls=1),
     BF.BatchRandomResizedCrop([224, 224], num_rand_calls=8),
     BF.BatchRandomResizedCrop([224, 224], num_rand_calls=16),
@@ -112,12 +112,12 @@ cpu_batch_transforms = [
 ]
 
 cuda_batch_transforms = [
-    BF.BatchRandomColorJitter(0.5, 0.5, 0.5, 0.1, 0.5, 1).cuda(),
-    BF.BatchRandomColorJitter(0.5, 0.5, 0.5, 0.1, 0.5, 8).cuda(),
-    BF.BatchRandomColorJitter(0.5, 0.5, 0.5, 0.1, 0.5, -1).cuda(),
-    BF.BatchRandomGaussianBlur([23, 23], [0.1, 2], 0.5).cuda(),
-    BF.BatchRandomGrayScale(0.5).cuda(),
-    BF.BatchRandomHorizontalFlip(0.5).cuda(),
+    BF.BatchRandomColorJitter(0.5, 0.5, 0.5, 0.1, 0.5, 1, inplace=True).cuda(),
+    BF.BatchRandomColorJitter(0.5, 0.5, 0.5, 0.1, 0.5, 8, inplace=True).cuda(),
+    BF.BatchRandomColorJitter(0.5, 0.5, 0.5, 0.1, 0.5, -1, inplace=True).cuda(),
+    BF.BatchRandomGaussianBlur([23, 23], [0.1, 2], 0.5, inplace=True).cuda(),
+    BF.BatchRandomGrayScale(0.5, inplace=True).cuda(),
+    BF.BatchRandomHorizontalFlip(0.5, inplace=True).cuda(),
     BF.BatchRandomResizedCrop([224, 224], num_rand_calls=1).cuda(),
     BF.BatchRandomResizedCrop([224, 224], num_rand_calls=8).cuda(),
     BF.BatchRandomResizedCrop([224, 224], num_rand_calls=16).cuda(),
