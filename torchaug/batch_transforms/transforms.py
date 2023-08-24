@@ -26,7 +26,7 @@ class BatchRandomTransform(nn.Module, ABC):
 
     args:
         p: Probability to apply the transform.
-        inplace: If True, perform inplace operation to save memory.
+        inplace: If True, perform inplace operation to save memory and time.
     """
 
     def __init__(self, p: float, inplace: bool) -> None:
@@ -119,7 +119,7 @@ class BatchRandomApply(BatchRandomTransform):
         self,
         transforms: Sequence[nn.Module] | nn.Module,
         p: float = 0.5,
-        inplace: bool = False,
+        inplace: bool = True,
     ) -> None:
         super().__init__(p=p, inplace=inplace)
         _log_api_usage_once(self)
@@ -184,7 +184,7 @@ class BatchRandomColorJitter(BatchRandomTransform):
         p: Probability to apply color jitter.
         num_rand_calls: Number of random calls performed to apply augmentations at different orders on sub-batches.
             If -1, B calls are performed. The maximum is 24 = 4!, adjusted automatically if num_rand_calls > 24.
-        inplace: If True, perform inplace operation to save memory.
+        inplace: If True, perform inplace operation to save memory and time.
         value_check: Bool to perform tensor value check.
             Might cause slow down on some devices because of synchronization or large batch size.
     """
@@ -197,7 +197,7 @@ class BatchRandomColorJitter(BatchRandomTransform):
         hue: float | tuple[float, float] = 0,
         p: float = 0.5,
         num_rand_calls: int = -1,
-        inplace: bool = False,
+        inplace: bool = True,
         value_check: bool = False,
     ) -> None:
         super().__init__(p=p, inplace=inplace)
@@ -397,7 +397,7 @@ class BatchRandomGaussianBlur(BatchRandomTransform):
             If float, sigma is fixed. If it is tuple of float (min, max), sigma
             is chosen uniformly at random to lie in the given range.
         p: Probability to apply gaussian blur.
-        inplace: If True, perform inplace operation to save memory.
+        inplace: If True, perform inplace operation to save memory and time.
         value_check: Bool to perform tensor value check.
             Might cause slow down on some devices because of synchronization or large batch size.
     """
@@ -407,7 +407,7 @@ class BatchRandomGaussianBlur(BatchRandomTransform):
         kernel_size: int | tuple[int, int],
         sigma: float | tuple[float, float] = (0.1, 2.0),
         p: float = 0.5,
-        inplace: bool = False,
+        inplace: bool = True,
         value_check: bool = False,
     ):
         super().__init__(
@@ -494,13 +494,13 @@ class BatchRandomGrayScale(BatchRandomTransform):
 
     Args:
         p: Probability of the images to be grayscaled.
-        inplace: If True, perform inplace operation to save memory.
+        inplace: If True, perform inplace operation to save memory and time.
     """
 
     def __init__(
         self,
         p: float = 0.5,
-        inplace: bool = False,
+        inplace: bool = True,
     ):
         super().__init__(p=p, inplace=inplace)
         _log_api_usage_once(self)
@@ -536,7 +536,7 @@ class BatchMixUp(nn.Module):
         inplace: Whether to perform the operation inplace.
     """
 
-    def __init__(self, alpha: float, inplace: bool = False) -> None:
+    def __init__(self, alpha: float, inplace: bool = True) -> None:
         super().__init__()
         _log_api_usage_once(self)
 
@@ -596,13 +596,13 @@ class BatchRandomHorizontalFlip(BatchRandomTransform):
 
     Args:
         p: probability of the images being flipped.
-        inplace: If True, perform inplace operation to save memory.
+        inplace: If True, perform inplace operation to save memory and time.
     """
 
     def __init__(
         self,
         p: float = 0.5,
-        inplace: bool = False,
+        inplace: bool = True,
     ):
         super().__init__(p=p, inplace=inplace)
         _log_api_usage_once(self)
@@ -758,7 +758,7 @@ class BatchRandomSolarize(BatchRandomTransform):
     Args:
         threshold: all pixels equal or above this value are inverted.
         p: probability of the image being solarized.
-        inplace: If True, perform inplace operation to save memory.
+        inplace: If True, perform inplace operation to save memory and time.
         value_check: Bool to perform tensor value check.
             Might cause slow down on some devices because of synchronization or large batch size.
     """
@@ -767,7 +767,7 @@ class BatchRandomSolarize(BatchRandomTransform):
         self,
         threshold: float,
         p: float = 0.5,
-        inplace: bool = False,
+        inplace: bool = True,
         value_check: bool = False,
     ) -> None:
         super().__init__(p=p, inplace=inplace)
