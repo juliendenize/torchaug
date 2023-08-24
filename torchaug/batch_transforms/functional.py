@@ -53,23 +53,17 @@ def _get_batch_gaussian_kernel2d(
     return kernel2d
 
 
-def _batch_blend(
-    img1: Tensor, img2: Tensor, ratio: Tensor, inplace: bool = False
-) -> Tensor:
+def _batch_blend(img1: Tensor, img2: Tensor, ratio: Tensor) -> Tensor:
     ratio = ratio.float()
     bound = _max_value(img1.dtype)
 
     ratio = ratio.view(-1, *[1 for _ in range(img1.ndim - 1)])
 
-    if inplace:
-        return (
-            img1.mul_(ratio)
-            .add_(img2.mul_(1.0 - ratio))
-            .clamp_(0, bound)
-            .to(img1.dtype)
-        )
-    else:
-        return (ratio * img1 + (1.0 - ratio) * img2).clamp(0, bound).to(img1.dtype)
+    output = img1.mul(ratio).add_(img2.mul(1.0 - ratio)).clamp_(0, bound)
+
+    fp = img1.is_floating_point()
+
+    return output if fp else output.to(img1.dtype)
 
 
 def batch_adjust_brightness(
@@ -119,7 +113,7 @@ def batch_adjust_brightness(
     else:
         raise TypeError(f"brightness_factor should be a float or Tensor.")
 
-    return _batch_blend(imgs, torch.zeros_like(imgs), brightness_factor, True)
+    return _batch_blend(imgs, torch.zeros_like(imgs), brightness_factor)
 
 
 def batch_adjust_contrast(
@@ -174,7 +168,7 @@ def batch_adjust_contrast(
     else:
         mean = torch.mean(imgs.to(dtype), dim=(-3, -2, -1), keepdim=True)
 
-    return _batch_blend(imgs, mean, contrast_factor, True)
+    return _batch_blend(imgs, mean, contrast_factor)
 
 
 def batch_adjust_hue(
@@ -304,7 +298,7 @@ def batch_adjust_saturation(
     else:
         raise TypeError(f"saturation_factor should be a float or Tensor.")
 
-    return _batch_blend(imgs, rgb_to_grayscale(imgs), saturation_factor, True)
+    return _batch_blend(imgs, rgb_to_grayscale(imgs), saturation_factor)
 
 
 def batch_gaussian_blur(
