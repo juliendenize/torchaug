@@ -23,7 +23,7 @@ from torchaug.utils import _log_api_usage_once
 
 
 def _get_batch_gaussian_kernel1d(
-    kernel_size: int, sigma: float, dtype: torch.dtype, device: torch.device
+    kernel_size: int, sigma: Tensor, dtype: torch.dtype, device: torch.device
 ) -> Tensor:
     ksize_half = (kernel_size - 1) * 0.5
 
@@ -41,7 +41,7 @@ def _get_batch_gaussian_kernel1d(
 
 
 def _get_batch_gaussian_kernel2d(
-    kernel_size: list[int], sigma: list[float], dtype: torch.dtype, device: torch.device
+    kernel_size: list[int], sigma: Tensor, dtype: torch.dtype, device: torch.device
 ) -> Tensor:
     kernel1d_x = _get_batch_gaussian_kernel1d(
         kernel_size[0], sigma[:, 0, None], dtype, device

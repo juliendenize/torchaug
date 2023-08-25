@@ -17,7 +17,7 @@ from torchaug.transforms._utils import (_assert_tensor, is_tensor_on_cpu,
 from torchaug.utils import _log_api_usage_once
 
 
-def _hsv2rgb(img: torch.Tensor) -> torch.Tensor:
+def _hsv2rgb(img: Tensor) -> Tensor:
     # From Torchvision nlgranger pull request to speed conversion: https://github.com/pytorch/vision/pull/7754
     h, s, v = img.unbind(dim=-3)
     h6 = h.mul(6)
@@ -51,7 +51,7 @@ def _hsv2rgb(img: torch.Tensor) -> torch.Tensor:
 
 
 def _get_gaussian_kernel1d(
-    kernel_size: int, sigma: float, dtype: torch.dtype, device: torch.device
+    kernel_size: int, sigma: float | Tensor, dtype: torch.dtype, device: torch.device
 ) -> Tensor:
     ksize_half = (kernel_size - 1) * 0.5
 
@@ -65,7 +65,10 @@ def _get_gaussian_kernel1d(
 
 
 def _get_gaussian_kernel2d(
-    kernel_size: list[int], sigma: list[float], dtype: torch.dtype, device: torch.device
+    kernel_size: list[int],
+    sigma: list[float] | Tensor,
+    dtype: torch.dtype,
+    device: torch.device,
 ) -> Tensor:
     kernel1d_x = _get_gaussian_kernel1d(kernel_size[0], sigma[0], dtype, device)
     kernel1d_y = _get_gaussian_kernel1d(kernel_size[1], sigma[1], dtype, device)
