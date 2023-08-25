@@ -8,12 +8,46 @@ from torchvision.transforms._functional_tensor import (_assert_channels,
                                                        _assert_image_tensor,
                                                        _cast_squeeze_in,
                                                        _cast_squeeze_out,
-                                                       _max_value, invert)
+                                                       _max_value, _rgb2hsv,
+                                                       get_dimensions, invert)
 from torchvision.transforms.functional import convert_image_dtype
 
 from torchaug.transforms._utils import (_assert_tensor, is_tensor_on_cpu,
                                         transfer_tensor_on_device)
 from torchaug.utils import _log_api_usage_once
+
+
+def _hsv2rgb(img: torch.Tensor) -> torch.Tensor:
+    # From Torchvision nlgranger pull request to speed conversion: https://github.com/pytorch/vision/pull/7754
+    h, s, v = img.unbind(dim=-3)
+    h6 = h.mul(6)
+    i = torch.floor(h6)
+    f = h6.sub_(i)
+    i = i.to(dtype=torch.int32)
+
+    sxf = s * f
+    one_minus_s = 1.0 - s
+    q = (1.0 - sxf).mul_(v).clamp_(0.0, 1.0)
+    t = sxf.add_(one_minus_s).mul_(v).clamp_(0.0, 1.0)
+    p = one_minus_s.mul_(v).clamp_(0.0, 1.0)
+    i.remainder_(6)
+
+    vpqt = torch.stack((v, p, q, t), dim=-3)
+
+    # vpqt -> rgb mapping based on i
+    select = torch.tensor(
+        [[0, 2, 1, 1, 3, 0], [3, 0, 0, 2, 1, 1], [1, 1, 3, 0, 0, 2]], dtype=torch.long
+    )
+    select = select.to(device=img.device, non_blocking=True)
+
+    select = select[:, i]
+    if select.ndim > 3:
+        # if input.shape is (B, ..., C, H, W) then
+        # select.shape is (C, B, ...,  H, W)
+        # thus we move C axis to get (B, ..., C, H, W)
+        select = select.moveaxis(0, -3)
+
+    return vpqt.gather(-3, select)
 
 
 def _get_gaussian_kernel1d(
@@ -37,6 +71,31 @@ def _get_gaussian_kernel2d(
     kernel1d_y = _get_gaussian_kernel1d(kernel_size[1], sigma[1], dtype, device)
     kernel2d = torch.mm(kernel1d_y[:, None], kernel1d_x[None, :])
     return kernel2d
+
+
+def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
+    if not (-0.5 <= hue_factor <= 0.5):
+        raise ValueError(f"hue_factor ({hue_factor}) is not in [-0.5, 0.5].")
+
+    if not (isinstance(img, torch.Tensor)):
+        raise TypeError("Input img should be Tensor image")
+
+    _assert_image_tensor(img)
+
+    _assert_channels(img, [1, 3])
+    if get_dimensions(img)[0] == 1:  # Match PIL behaviour
+        return img
+
+    orig_dtype = img.dtype
+    img = convert_image_dtype(img, torch.float32)
+
+    img = _rgb2hsv(img)
+    h, s, v = img.unbind(dim=-3)
+    h = (h + hue_factor) % 1.0
+    img = torch.stack((h, s, v), dim=-3)
+    img_hue_adj = _hsv2rgb(img)
+
+    return convert_image_dtype(img_hue_adj, orig_dtype)
 
 
 def div_255(

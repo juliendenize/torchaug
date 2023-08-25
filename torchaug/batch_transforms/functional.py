@@ -9,8 +9,7 @@ from torch.nn.functional import pad as torch_pad
 from torchvision.transforms._functional_tensor import (_assert_image_tensor,
                                                        _cast_squeeze_in,
                                                        _cast_squeeze_out,
-                                                       _hsv2rgb, _max_value,
-                                                       _rgb2hsv,
+                                                       _max_value, _rgb2hsv,
                                                        convert_image_dtype,
                                                        rgb_to_grayscale)
 
@@ -19,6 +18,7 @@ from torchaug.batch_transforms._utils import (_assert_batch_channels,
                                               get_batched_img_dimensions)
 from torchaug.transforms._utils import (_assert_tensor,
                                         transfer_tensor_on_device)
+from torchaug.transforms.functional import _hsv2rgb
 from torchaug.utils import _log_api_usage_once
 
 
@@ -113,7 +113,13 @@ def batch_adjust_brightness(
     else:
         raise TypeError(f"brightness_factor should be a float or Tensor.")
 
-    return _batch_blend(imgs, torch.zeros_like(imgs), brightness_factor)
+    brightness_factor = brightness_factor.float()
+    bound = _max_value(imgs.dtype)
+
+    brightness_factor = brightness_factor.view(-1, *[1 for _ in range(imgs.ndim - 1)])
+
+    output = imgs.mul(brightness_factor).clamp_(0, bound)
+    return output if imgs.is_floating_point() else output.to(imgs.dtype)
 
 
 def batch_adjust_contrast(

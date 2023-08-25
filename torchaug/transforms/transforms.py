@@ -415,7 +415,7 @@ class RandomColorJitter(RandomTransform):
             elif fn_id == 2 and saturation_factor is not None:
                 img = F_tv.adjust_saturation(img, saturation_factor)
             elif fn_id == 3 and hue_factor is not None:
-                img = F_tv.adjust_hue(img, hue_factor)
+                img = F.adjust_hue(img, hue_factor)
 
         return img
 
