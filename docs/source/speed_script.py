@@ -96,11 +96,12 @@ if __name__ == "__main__":
         default=[3, 224, 224],
     )
     parser.add_argument(
-        "--batch-size",
+        "--batch-sizes",
         required=False,
-        help="Batch size for batch input.",
+        help="The batch sizes for batch input.",
         type=int,
-        default=64,
+        nargs="+",
+        default=[8, 16, 64, 128],
     )
     parser.add_argument(
         "--device", required=False, help="Device for input.", type=str, default="cpu"
@@ -113,7 +114,7 @@ if __name__ == "__main__":
     run_single: bool = args.run_single
     run_batch: bool = args.run_batch
     shape: list[int] = args.shape
-    batch_size: int = args.batch_size
+    batch_sizes: list[int] = sorted(args.batch_sizes, reverse=True)
     device = args.device
 
     print(args)
@@ -155,13 +156,13 @@ if __name__ == "__main__":
             mean_torchvision = float(results_torchvision.mean())
             std_torchvision = float(torch.std(results_torchvision))
 
-            format_torchvision = f"{mean_torchvision:.2f} +/- {std_torchvision:.2f}"
+            format_torchvision = f"{mean_torchvision:.2f}  ± {std_torchvision:.2f}"
 
             results_torchaug = time_transform(n_runs_single, input, torchaug_transform)
             mean_torchaug = float(results_torchaug.mean())
             std_torchaug = float(torch.std(results_torchaug))
 
-            format_torchaug = f"{mean_torchaug:.2f} +/- {std_torchaug:.2f}"
+            format_torchaug = f"{mean_torchaug:.2f}  ± {std_torchaug:.2f}"
 
             if mean_torchvision < mean_torchaug:
                 format_torchvision = "**" + format_torchvision + "**"
@@ -177,11 +178,12 @@ if __name__ == "__main__":
             )
 
         header = [
-            f"Transform (input {device}: {input.shape})",
-            "Torchvision (ms)",
-            "Torchaug (ms)",
+            f"Transform",
+            "Torchvision",
+            "Torchaug",
         ]
         print("\n\n")
+        print(f"Input shape {shape} on {device}.")
         print(tabulate.tabulate(rows, header, tablefmt="github"))
         print("\n\n")
 
@@ -273,10 +275,11 @@ if __name__ == "__main__":
             ),
         ]
 
-        input = torch.randn(batch_size, *shape, device=device)
-
         print("Testing batch transforms")
-        rows = []
+        rows = [["**Batch size**", ""]]
+        for batch_size in batch_sizes:
+            rows[0].extend([f"**{batch_size}**"] * 2)
+
         for (
             name,
             rand_calls,
@@ -284,45 +287,53 @@ if __name__ == "__main__":
             torchaug_transform,
         ) in batch_transforms:
             print(name, rand_calls)
+            row = [name, rand_calls]
 
-            do_tv = torchvision_transform is not None
-            if do_tv:
-                results_torchvision = time_batch_transform_tv(
-                    n_runs_batch, input, torchvision_transform
+            for batch_size in batch_sizes:
+                print("Batch size", batch_size)
+                input = torch.randn(batch_size, *shape, device=device)
+
+                do_tv = torchvision_transform is not None
+                if do_tv:
+                    results_torchvision = time_batch_transform_tv(
+                        n_runs_batch, input, torchvision_transform
+                    )
+                    mean_torchvision = float(results_torchvision.mean())
+                    std_torchvision = float(torch.std(results_torchvision))
+
+                format_torchvision = (
+                    f"{mean_torchvision:.2f}  ± {std_torchvision:.2f}" if do_tv else ""
                 )
-                mean_torchvision = float(results_torchvision.mean())
-                std_torchvision = float(torch.std(results_torchvision))
 
-            format_torchvision = (
-                f"{mean_torchvision:.2f} +/- {std_torchvision:.2f}" if do_tv else ""
-            )
+                results_torchaug = time_transform(
+                    n_runs_batch, input, torchaug_transform
+                )
+                mean_torchaug = float(results_torchaug.mean())
+                std_torchaug = float(torch.std(results_torchaug))
 
-            results_torchaug = time_transform(n_runs_batch, input, torchaug_transform)
-            mean_torchaug = float(results_torchaug.mean())
-            std_torchaug = float(torch.std(results_torchaug))
+                format_torchaug = f"{mean_torchaug:.2f}  ± {std_torchaug:.2f}"
 
-            format_torchaug = f"{mean_torchaug:.2f} +/- {std_torchaug:.2f}"
+                if do_tv and mean_torchvision < mean_torchaug:
+                    format_torchvision = "**" + format_torchvision + "**"
+                elif do_tv and mean_torchvision > mean_torchaug:
+                    format_torchaug = "**" + format_torchaug + "**"
 
-            if do_tv and mean_torchvision < mean_torchaug:
-                format_torchvision = "**" + format_torchvision + "**"
-            elif do_tv and mean_torchvision > mean_torchaug:
-                format_torchaug = "**" + format_torchaug + "**"
-
-            rows.append(
-                [
-                    name,
-                    rand_calls,
-                    format_torchvision,
-                    format_torchaug,
-                ]
-            )
+                row.extend(
+                    [
+                        format_torchvision,
+                        format_torchaug,
+                    ]
+                )
+            rows.append(row)
         header = [
-            f"Transform (input {device}: {input.shape})",
-            "num_rand_calls",
-            "Torchvision (ms)",
-            "Torchaug (ms)",
+            f"Transform",
+            "Rand Calls",
         ]
 
+        for i in range(len(batch_sizes)):
+            header.extend(["Torchvision", "Torchaug"])
+
         print("\n\n")
+        print(f"Input batch sizes {batch_sizes} with shape {shape} on {device}.")
         print(tabulate.tabulate(rows, header, tablefmt="github"))
         print("\n\n")
