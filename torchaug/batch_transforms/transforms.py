@@ -262,7 +262,7 @@ class BatchRandomColorJitter(BatchRandomTransform):
             batch_size: The number of samples to draw.
         """
 
-        def _get_uniform_values(batch_size: int, bounds: torch.Tensor):
+        def _get_uniform_values(batch_size: int, bounds: Tensor):
             return (bounds[0] - bounds[1]) * torch.rand(
                 (batch_size,), device=bounds.device
             ) + bounds[1]

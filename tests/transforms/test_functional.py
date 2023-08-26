@@ -5,6 +5,7 @@ from typing import Any
 import pytest
 import torch
 import torchvision.transforms.functional as F_tv
+from torch import Tensor
 
 import torchaug.transforms.functional as F
 
@@ -18,6 +19,72 @@ class TestDiv255:
 
         F.div_255(x, inplace=True)
         torch.testing.assert_close(x, out)
+
+
+class TestAdjustHue:
+    @pytest.mark.parametrize(
+        "hue_factor,hue_torchvision_factor",
+        [
+            (0, 0.0),
+            (0.25, 0.25),
+            (-0.25, -0.25),
+        ],
+    )
+    def test_output_values(
+        self,
+        hue_factor: float | Tensor,
+        hue_torchvision_factor: tuple[float],
+    ):
+        x = torch.randint(0, 256, (3, 2, 2), dtype=torch.uint8)
+
+        torchaug_out = F.adjust_hue(x, hue_factor)
+        torchvision_out = F_tv.adjust_hue(x, hue_torchvision_factor)
+
+        torch.testing.assert_close(torchaug_out, torchvision_out)
+
+    @pytest.mark.parametrize(
+        "hue_factor,hue_torchvision_factor",
+        [
+            (0.0, 0.0),
+            (0.25, 0.25),
+            (-0.25, -0.25),
+        ],
+    )
+    def test_output_values_one_channel(
+        self,
+        hue_factor: float | Tensor,
+        hue_torchvision_factor: tuple[float],
+    ):
+        x = torch.randint(0, 256, (1, 2, 2), dtype=torch.uint8)
+
+        torchaug_out = F.adjust_hue(x, hue_factor)
+        torchvision_out = F_tv.adjust_hue(x, hue_torchvision_factor)
+
+        torch.testing.assert_close(torchaug_out, torchvision_out)
+
+    @pytest.mark.parametrize(
+        "hue_factor,error_type",
+        [
+            (-1.0, ValueError),
+            (1.0, ValueError),
+            ("ahah", TypeError),
+        ],
+    )
+    def test_wrong_factor(self, hue_factor: Any, error_type: Exception):
+        x = torch.randint(0, 256, (3, 3, 2, 2), dtype=torch.uint8)
+        with pytest.raises(error_type):
+            F.adjust_hue(x, hue_factor)
+
+    @pytest.mark.parametrize(
+        "input_tensor,error_type",
+        [
+            ([2, 0, 3], TypeError),
+            (torch.rand((4, 12, 12)), TypeError),
+        ],
+    )
+    def test_wrong_input_tensor(self, input_tensor: Any, error_type: Exception):
+        with pytest.raises(error_type):
+            F.adjust_hue(input_tensor, torch.tensor([1.0, 0.5, 2.0]))
 
 
 class TestGaussianBlur:
@@ -40,7 +107,7 @@ class TestGaussianBlur:
     def test_output_values(
         self,
         torchaug_kernel: int | list[int],
-        torchaug_sigma: int | list[int] | float | list[float] | torch.Tensor | None,
+        torchaug_sigma: int | list[int] | float | list[float] | Tensor | None,
         torchvision_kernel: int | list[int],
         torchvision_sigma: int | list[int] | float | list[float] | None,
     ):
@@ -298,7 +365,7 @@ class TestSolarize:
         ],
     )
     def test_output_values(
-        self, x: torch.Tensor, threshold: int | float | torch.Tensor, value_check: bool
+        self, x: Tensor, threshold: int | float | Tensor, value_check: bool
     ):
         torch.testing.assert_close(
             F.solarize(x, threshold, value_check), F_tv.solarize(x, float(threshold))
@@ -324,7 +391,7 @@ class TestSolarize:
         ],
     )
     def test_wrong_threshold(
-        self, x: Any, threshold: int | float | torch.Tensor, error_type: Exception
+        self, x: Any, threshold: int | float | Tensor, error_type: Exception
     ):
         with pytest.raises(error_type):
             F.solarize(x, threshold)

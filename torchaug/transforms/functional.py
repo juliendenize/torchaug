@@ -77,11 +77,48 @@ def _get_gaussian_kernel2d(
 
 
 def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
-    if not (-0.5 <= hue_factor <= 0.5):
-        raise ValueError(f"hue_factor ({hue_factor}) is not in [-0.5, 0.5].")
+    """Adjust hue of an image.
 
-    if not (isinstance(img, torch.Tensor)):
-        raise TypeError("Input img should be Tensor image")
+    The image hue is adjusted by converting the image to HSV and
+    cyclically shifting the intensities in the hue channel (H).
+    The image is then converted back to original image mode.
+
+    `hue_factor` is the amount of shift in H channel and must be in the
+    interval `[-0.5, 0.5]`.
+
+    See `Hue`_ for more details.
+
+    .. _Hue: https://en.wikipedia.org/wiki/Hue
+
+    Args:
+        imgs: Image to be adjusted. It is expected to be in [..., 1 or 3, H, W] format,
+            where ... means it can have an arbitrary number of dimensions.
+            Note: the pixel values of the input image has to be non-negative for conversion to HSV space;
+            thus it does not work if you normalize your image to an interval with negative values,
+            or use an interpolation that generates negative values before using this function.
+        hue_factor:  How much to shift the hue channel. Can be 1 or B elements in
+            [-0.5, 0.5]. 0.5 and -0.5 give complete reversal of hue channel in
+            HSV space in positive and negative direction respectively.
+            0 means no shift. Therefore, both -0.5 and 0.5 will give an image
+            with complementary colors while 0 gives the original image.
+
+    Returns:
+        Hue adjusted image.
+    """
+
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(adjust_hue)
+
+    if not isinstance(hue_factor, float):
+        try:
+            hue_factor = float(hue_factor)
+        except ValueError:
+            raise TypeError(
+                f"hue_factor should be a float or convertible to float. Got {type(hue_factor)}."
+            )
+
+    if not (-0.5 <= hue_factor <= 0.5):
+        raise ValueError(f"hue_factor is not in [-0.5, 0.5].")
 
     _assert_image_tensor(img)
 

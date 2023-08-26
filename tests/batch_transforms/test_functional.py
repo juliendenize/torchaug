@@ -5,6 +5,7 @@ from typing import Any
 import pytest
 import torch
 import torchvision.transforms.functional as F_tv
+from torch import Tensor
 
 import torchaug.batch_transforms.functional as F
 
@@ -21,7 +22,7 @@ class TestBatchAdjustBrightness:
     )
     def test_output_values(
         self,
-        brightness_factor: float | torch.Tensor,
+        brightness_factor: float | Tensor,
         brightness_torchvision_factor: tuple[float],
     ):
         x = torch.randint(0, 256, (3, 3, 2, 2), dtype=torch.uint8)
@@ -76,7 +77,7 @@ class TestBatchAdjustContrast:
     )
     def test_output_values(
         self,
-        contrast_factor: float | torch.Tensor,
+        contrast_factor: float | Tensor,
         contrast_torchvision_factor: tuple[float],
     ):
         x = torch.randint(0, 256, (3, 3, 2, 2), dtype=torch.uint8)
@@ -99,7 +100,7 @@ class TestBatchAdjustContrast:
     )
     def test_output_values_one_channel(
         self,
-        contrast_factor: float | torch.Tensor,
+        contrast_factor: float | Tensor,
         contrast_torchvision_factor: tuple[float],
     ):
         x = torch.randint(0, 256, (3, 1, 2, 2), dtype=torch.uint8)
@@ -154,7 +155,7 @@ class TestBatchAdjustHue:
     )
     def test_output_values(
         self,
-        hue_factor: float | torch.Tensor,
+        hue_factor: float | Tensor,
         hue_torchvision_factor: tuple[float],
     ):
         x = torch.randint(0, 256, (3, 3, 2, 2), dtype=torch.uint8)
@@ -174,7 +175,7 @@ class TestBatchAdjustHue:
     )
     def test_output_values_one_channel(
         self,
-        hue_factor: float | torch.Tensor,
+        hue_factor: float | Tensor,
         hue_torchvision_factor: tuple[float],
     ):
         x = torch.randint(0, 256, (3, 1, 2, 2), dtype=torch.uint8)
@@ -226,7 +227,7 @@ class TestBatchAdjustSaturation:
     )
     def test_output_values(
         self,
-        saturation_factor: float | torch.Tensor,
+        saturation_factor: float | Tensor,
         saturation_torchvision_factor: tuple[float],
     ):
         x = torch.randint(0, 256, (3, 3, 2, 2), dtype=torch.uint8)
@@ -249,7 +250,7 @@ class TestBatchAdjustSaturation:
     )
     def test_output_values_one_channel(
         self,
-        saturation_factor: float | torch.Tensor,
+        saturation_factor: float | Tensor,
         saturation_torchvision_factor: tuple[float],
     ):
         x = torch.randint(0, 256, (3, 1, 2, 2), dtype=torch.uint8)
@@ -317,7 +318,7 @@ class TestBatchGaussianBlur:
     def test_output_values(
         self,
         torchaug_kernel: int | list[int],
-        torchaug_sigma: int | list[int] | float | list[float] | torch.Tensor | None,
+        torchaug_sigma: int | list[int] | float | list[float] | Tensor | None,
         torchvision_kernel: int | list[int],
         torchvision_sigma: int | list[int] | float | list[float] | None,
     ):
@@ -397,7 +398,7 @@ class TestBatchMixup:
             (torch.tensor([[0.25], [0.75], [1.0]]), [0.25, 0.75, 1.0]),
         ],
     )
-    def test_output_values(self, lam: float | torch.Tensor, stack_lam: list[float]):
+    def test_output_values(self, lam: float | Tensor, stack_lam: list[float]):
         x_1 = torch.randn((3, 3, 2, 2))
         x_2 = torch.randn((3, 3, 2, 2))
         stack_lam = torch.tensor(stack_lam).view(-1, 1, 1, 1)
@@ -420,7 +421,7 @@ class TestBatchMixup:
             (0.5, [0.5, 0.5, 0.5]),
         ],
     )
-    def test_inplace(self, lam: float | torch.Tensor, stack_lam: list[float]):
+    def test_inplace(self, lam: float | Tensor, stack_lam: list[float]):
         x_1 = torch.randn((3, 3, 2, 2))
         x_2 = torch.randn((3, 3, 2, 2))
         clone_x_1 = x_1.clone()

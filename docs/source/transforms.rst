@@ -42,6 +42,7 @@ List of the functions to make the data augmentations.
     :toctree: generated/
     :template: function.rst
 
+    adjust_hue
     div_255
     gaussian_blur
     mixup

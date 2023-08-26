@@ -208,7 +208,7 @@ def batch_adjust_hue(
             Might cause slow down on some devices because of synchronization or large batch size.
 
     Returns:
-        Hue adjusted image.
+        Hue adjusted batch of images.
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(batch_adjust_hue)
@@ -333,7 +333,7 @@ def batch_gaussian_blur(
             Might cause slow down on some devices because of synchronization or large batch size.
 
     Returns:
-        Gaussian Blurred version of the image.
+        Gaussian Blurred version of the batch of images.
     """
 
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():

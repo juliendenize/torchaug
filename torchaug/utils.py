@@ -7,7 +7,7 @@ import torch
 def _log_api_usage_once(obj: Any) -> None:
     # Adapted from Torchvision.
     """Logs API usage(module and name) within an organization. In a large ecosystem, it's often useful to track the
-    PyTorch and TorchAug APIs usage. This API provides the similar functionality to the logging module in the
+    PyTorch and Torchaug APIs usage. This API provides the similar functionality to the logging module in the
     Python stdlib. It can be used for debugging purpose to log which methods are used and by default it is
     inactive, unless the user manually subscribes a logger via the `SetAPIUsageLogger method.
 

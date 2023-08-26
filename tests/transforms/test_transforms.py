@@ -6,6 +6,7 @@ from typing import Any, Sequence
 import pytest
 import torch
 import torchvision.transforms.functional as F_tv
+from torch import Tensor
 from torchvision.transforms.functional import convert_image_dtype
 
 import torchaug.transforms as transforms
@@ -116,7 +117,7 @@ class TestNormalize:
     )
     def test_output_values(
         self,
-        x: torch.Tensor,
+        x: Tensor,
         mean: float | list[float],
         std: float | list[float],
         cast_dtype: torch.device | None,
@@ -415,7 +416,7 @@ class TestVideoNormalize:
     )
     def test_functional(
         self,
-        x: torch.Tensor,
+        x: Tensor,
         mean: Sequence[float],
         std: Sequence[float],
         cast_dtype: torch.dtype | None,
