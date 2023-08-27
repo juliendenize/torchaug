@@ -43,6 +43,8 @@ extensions = [
     "sphinx.ext.napoleon",
     "myst_parser",
     "sphinx.ext.viewcode",
+    "sphinx_autodoc_typehints",
+    "sphinx_autodoc_defaultargs",
     # "sphinx.ext.duration",
     # "sphinx_gallery.gen_gallery",
     # "sphinx_copybutton",
@@ -98,3 +100,17 @@ html_title = "Torchaug"
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
+html_theme_options = {
+    "source_repository": "https://github.com/juliendenize/torchaug/",
+    "source_branch": "main",
+    "source_directory": "docs/source/",
+}
+
+
+rst_prolog = (
+    """
+.. |default| raw:: html
+
+    <div class="default-value-section">"""
+    + ' <span class="default-value-label">Default:</span>'
+)
