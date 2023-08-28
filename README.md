@@ -4,7 +4,7 @@
 
 [![PyPI python](https://img.shields.io/pypi/pyversions/torchaug)](https://pypi.org/project/torchaug)
 [![PyPI version](https://badge.fury.io/py/torchaug.svg)](https://pypi.org/project/torchaug)
-[![documentation](https://img.shields.io/badge/dynamic/json.svg?label=docs&url=https%3A%2F%2Fpypi.org%2Fpypi%2Ftorchaug%2Fjson&query=%24.info.version&colorB=brightgreen)](https://juliendenize.github.io/torchaug/index.html)
+[![documentation](https://img.shields.io/badge/dynamic/json.svg?label=docs&url=https%3A%2F%2Fpypi.org%2Fpypi%2Ftorchaug%2Fjson&query=%24.info.version&colorB=brightgreen)](https://torchaug.readthedocs.io/en/stable/)
 [![codecov](https://codecov.io/gh/juliendenize/torchaug/branch/main/graph/badge.svg?token=CA266XDW8D)](https://codecov.io/gh/juliendenize/torchaug)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
@@ -25,7 +25,7 @@ Torchaug removes these issues and is meant to be used complimentary with Torchvi
 - **transforms** for per-sample data augmentations
 - **batch_transfroms** for batched data augmentations.
 
-More details can be found in the [documentation](https://juliendenize.github.io/torchaug/index.html).
+More details can be found in the [documentation](https://torchaug.readthedocs.io/en/stable/).
 
 To be sure to retrieve the same data augmentations as Torchvision, it has been tested on each of its components to match Torchvision outputs.
 

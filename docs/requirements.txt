@@ -3,3 +3,5 @@ myst-parser
 sphinx
 sphinx_autodoc_typehints
 sphinx_autodoc_defaultargs
+torch >= 2.0
+torchvision >= 0.15

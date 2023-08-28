@@ -85,10 +85,6 @@ exclude_patterns = []
 # The version info for the project
 version = f"{torchaug.__version__}"
 
-smv_tag_whitelist = r"^v\d+\.\d+$"  # Include tags like "v2.1"
-smv_branch_whitelist = r"^(main).*$"  # Include all branches except "main"
-
-
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
