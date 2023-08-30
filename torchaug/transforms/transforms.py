@@ -72,14 +72,20 @@ class Wrapper(nn.Module):
 
     .. note::
 
-        Transforms and their submodules are iterated over.
+            Iterates through transforms and their submodules.
 
-        If ``inplace`` attribute is found, it is set to ``True``,
-        ``inplace`` is handled at the wrapper level.
+            - If ``inplace`` attribute is found, it is set to ``True``,
+              ``inplace`` is handled at the wrapper level.
+
+
+    .. note::
+        If a transform makes a copy, the resulting tensor will not share the same
+        underlying storage even if ``inplace`` is set to ``True``.
 
     Args:
         transforms: A list of transform modules.
-        inplace: Whether to perform the transforms inplace.
+        inplace: Whether to perform the transforms inplace. If a transform makes a copy,
+            the resulting tensor will not share the same underlying storage.
     """
 
     def __init__(
@@ -121,10 +127,10 @@ class Wrapper(nn.Module):
         """
         _assert_tensor(tensor)
 
-        tensor = tensor if self.inplace else tensor.clone()
+        output = tensor if self.inplace else tensor.clone()
 
         for transform in self.transforms:
-            output: Tensor = transform(tensor)
+            output: Tensor = transform(output)
 
         return output
 
@@ -170,10 +176,15 @@ class ImageWrapper(Wrapper):
 
     .. note::
 
-        Transforms and their submodules are iterated over.
+            Iterates through transforms and their submodules.
 
-        If ``inplace`` attribute is found, it is set to ``True``,
-        ``inplace`` is handled at the wrapper level.
+            - If ``inplace`` attribute is found, it is set to ``True``,
+              ``inplace`` is handled at the wrapper level.
+
+
+    .. note::
+        If a transform makes a copy, the resulting tensor will not share the same
+        underlying storage even if ``inplace`` is set to ``True``.
 
     Args:
         transforms: A list of transform modules.
@@ -761,17 +772,26 @@ class VideoWrapper(Wrapper):
 
     .. note::
 
-        Transforms and their submodules are iterated over.
+            Iterates through transforms and their submodules:
 
-        If ``inplace`` attribute is found, it is set to ``True``,
-        ``inplace`` is handled at the wrapper level.
+            - If ``inplace`` attribute is found, it is set to ``True``,
+              ``inplace`` is handled at the wrapper level.
 
-        If ``video_format`` attribute is found, it is set to ``TCHW``,
-        ``video_format`` is handled at the wrapper level.
+            - If ``video_format`` attribute is found, it is set to ``TCHW``,
+              ``video_format`` is handled at the wrapper level.
+
+
+    .. note::
+        If ``video_format`` is ``CTHW``, a copy might occur even if ``inplace`` is set to ``True``.
+
+    .. note::
+        If a transform makes a copy, the resulting tensor will not share the same
+        underlying storage even if ``inplace`` is set to ``True``.
+
 
     Args:
         transforms: A list of transform modules.
-        inplace: Whether to perform the transforms inplace. If ``video_format`` is ``CTHW``, a copy might occur.
+        inplace: Whether to perform the transforms inplace.
         video_format: Format of the video. Either ``CTHW`` or ``TCHW``.
     """
 

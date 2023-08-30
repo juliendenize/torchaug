@@ -801,8 +801,25 @@ class TestWrapper:
         expected_out = (
             transforms.Normalize((0.5,), (0.5,), inplace=False)(tensor) * 255.0
         )
-        out = transforms.Wrapper(transform)(tensor)
+        out = transforms.Wrapper(transform, inplace=False)(tensor)
         torch.testing.assert_close(out, expected_out)
+        with pytest.raises(AssertionError):
+            torch.testing.assert_close(out, tensor)
+
+        torch.manual_seed(28)
+
+        transform = (
+            transforms.Normalize((0.5,), (0.5,), inplace=False, value_check=True),
+            transforms.Mul255(),
+        )
+
+        tensor = torch.rand((3, 2, 16, 16))
+        expected_out = (
+            transforms.Normalize((0.5,), (0.5,), inplace=False)(tensor) * 255.0
+        )
+        out = transforms.Wrapper(transform, inplace=True)(tensor)
+        torch.testing.assert_close(out, expected_out)
+        torch.testing.assert_close(out, tensor)
 
     @pytest.mark.parametrize(
         "list_transforms,inplace",
