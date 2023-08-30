@@ -283,7 +283,7 @@ def mixup(
 ) -> Tensor:
     """Mix two tensors with linear interpolation.
 
-    The tensors shoud be floats.
+    The tensors should be floats.
 
     Args:
         tensor_1: First tensor.

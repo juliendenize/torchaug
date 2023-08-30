@@ -1,10 +1,18 @@
 from __future__ import annotations
 
 import numbers
-from typing import Any
+from typing import Any, Sequence
 
 import torch
-from torch import Tensor
+from torch import Tensor, nn
+
+
+def _assert_module_or_list_of_modules(collection: Any):
+    if not isinstance(collection, nn.Module) and (
+        not isinstance(collection, Sequence)
+        or not all([isinstance(obj, nn.Module) for obj in collection])
+    ):
+        raise TypeError("collection should be a module or a list of modules.")
 
 
 def _assert_tensor(obj: Any) -> None:
@@ -79,7 +87,7 @@ def transfer_tensor_on_device(
         non_blocking (bool, optional): Whether to perform asynchronous transfer. Useful for cuda. Defaults to False.
 
     Returns:
-        Tensor: The tensor transfered on the device.
+        Tensor: The tensor transferred on the device.
     """
     if non_blocking and not tensor.device == device and device.type == "cuda":
         tensor = tensor.pin_memory(device=device)

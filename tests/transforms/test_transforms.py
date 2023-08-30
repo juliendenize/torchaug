@@ -6,7 +6,7 @@ from typing import Any, Sequence
 import pytest
 import torch
 import torchvision.transforms.functional as F_tv
-from torch import Tensor
+from torch import Tensor, nn
 from torchvision.transforms.functional import convert_image_dtype
 
 import torchaug.transforms as transforms
@@ -28,6 +28,101 @@ class TestDiv255:
     def test_repr(self):
         assert transforms.Div255(False).__repr__() == "Div255(inplace=False)"
         assert transforms.Div255(True).__repr__() == "Div255(inplace=True)"
+
+
+class TestImageWrapper:
+    def test_output_values(self):
+        torch.manual_seed(28)
+
+        transform = (
+            transforms.Normalize((0.5,), (0.5,), inplace=False, value_check=True),
+            transforms.Mul255(),
+        )
+
+        tensor = torch.rand((3, 2, 16, 16))
+        expected_out = (
+            transforms.Normalize((0.5,), (0.5,), inplace=False)(tensor) * 255.0
+        )
+        out = transforms.ImageWrapper(transform)(tensor)
+        torch.testing.assert_close(out, expected_out)
+
+    @pytest.mark.parametrize(
+        "list_transforms,inplace",
+        [
+            (
+                transforms.Normalize((0.5,), (0.5,), inplace=False, value_check=True),
+                False,
+            ),
+            (
+                [
+                    transforms.Normalize(
+                        (0.5,), (0.5,), inplace=False, value_check=True
+                    ),
+                    transforms.Div255(inplace=False),
+                ],
+                True,
+            ),
+        ],
+    )
+    def test_functional(
+        self, list_transforms: nn.Module | Sequence[nn.Module], inplace: bool
+    ):
+        torch.manual_seed(28)
+
+        tensor = torch.rand((2, 3, 16, 16))
+
+        input_tensor = tensor.clone() if inplace else tensor
+
+        wrapper = transforms.ImageWrapper(list_transforms, inplace)
+
+        if not isinstance(list_transforms, Sequence):
+            list_transforms = [list_transforms]
+
+        for transform in list_transforms:
+            if hasattr(transform, "inplace"):
+                assert transform.inplace
+
+        output = wrapper(input_tensor)
+
+        if inplace:
+            torch.testing.assert_close(output, input_tensor)
+
+    @pytest.mark.parametrize(
+        "list_transforms,inplace,repr",
+        [
+            (
+                transforms.Normalize((0.5,), (0.5,), inplace=False, value_check=True),
+                False,
+                "ImageWrapper(\n    inplace=False,\n    transforms=ModuleList(\n      (0): Normalize(mean=[[[0.5]]], std=[[[0.5]]], cast_dtype=None, inplace=True, value_check=True)\n    )\n)",
+            ),
+            (
+                [
+                    transforms.Normalize(
+                        (0.5,), (0.5,), inplace=False, value_check=True
+                    ),
+                    transforms.Div255(inplace=False),
+                ],
+                True,
+                "ImageWrapper(\n    inplace=True,\n    transforms=ModuleList(\n      (0): Normalize(mean=[[[0.5]]], std=[[[0.5]]], cast_dtype=None, inplace=True, value_check=True)\n      (1): Div255(inplace=True)\n    )\n)",
+            ),
+        ],
+    )
+    def test_repr(
+        self, list_transforms: nn.Module | Sequence[nn.Module], inplace: bool, repr: str
+    ):
+        assert transforms.ImageWrapper(list_transforms, inplace).__repr__() == repr
+
+    def test_wrong_tensor(self):
+        transform = transforms.Normalize(
+            (0.5,), (0.5,), inplace=False, value_check=True
+        )
+        tensor = torch.rand(16)
+        with pytest.raises(TypeError):
+            transforms.ImageWrapper(transform)(tensor)
+
+    def test_wrong_transforms(self):
+        with pytest.raises(TypeError):
+            transforms.ImageWrapper("ahah")
 
 
 class TestMixup:
@@ -211,7 +306,7 @@ class TestRandomApply:
             (
                 1.0,
                 transforms.Normalize((0.5,), (0.5,)),
-                "RandomApply(\n    p=1.0,\n    Normalize(mean=[[[0.5]]], std=[[[0.5]]], cast_dtype=None, inplace=False, value_check=False)\n)",
+                "RandomApply(\n    p=1.0,\n    transforms=ModuleList(\n      (0): Normalize(mean=[[[0.5]]], std=[[[0.5]]], cast_dtype=None, inplace=False, value_check=False)\n    )\n)",
             ),
         ],
     )
@@ -537,38 +632,148 @@ class TestVideoNormalize:
 
 
 class TestVideoWrapper:
-    def test_functional(self):
-        transform = transforms.Normalize(
-            (0.5,), (0.5,), inplace=False, value_check=True
+    def test_output_values(self):
+        torch.manual_seed(28)
+
+        transform = (
+            transforms.Normalize((0.5,), (0.5,), inplace=False, value_check=True),
+            transforms.Mul255(),
         )
+
         # test CTHW format
         tensor = torch.rand((3, 2, 16, 16))
-        expected_out = F.normalize(tensor, (0.5,), (0.5,), inplace=False)
-        out = transforms.VideoWrapper(transform=transform)(tensor)
+        expected_out = (
+            transforms.Normalize((0.5,), (0.5,), inplace=False)(tensor) * 255.0
+        )
+        out = transforms.VideoWrapper(transform)(tensor)
         torch.testing.assert_close(out, expected_out)
 
         # test TCHW format
-        expected_out = F.normalize(tensor, (0.5,), (0.5,), inplace=False)
-        out = transforms.VideoWrapper(transform=transform, video_format="TCHW")(
+        expected_out = (
+            transforms.Normalize((0.5,), (0.5,), inplace=False)(tensor) * 255.0
+        )
+        out = transforms.VideoWrapper(transform, video_format="TCHW")(
             tensor.permute(1, 0, 2, 3)
         )
         torch.testing.assert_close(out.permute(1, 0, 2, 3), expected_out)
 
-    def test_repr(self):
-        transform = transforms.Normalize(
-            (0.5,), (0.5,), inplace=False, value_check=True
-        )
-        assert (
-            transforms.VideoWrapper(transform=transform).__repr__()
-            == "VideoWrapper(\n    transform=Normalize(mean=[[[0.5]]], std=[[[0.5]]], cast_dtype=None, inplace=False, value_check=True),\n    video_format=CTHW\n)"
-        )
+    @pytest.mark.parametrize(
+        "list_transforms,inplace,video_format",
+        [
+            (
+                transforms.VideoNormalize(
+                    (0.5,), (0.5,), inplace=False, value_check=True, video_format="CTHW"
+                ),
+                False,
+                "CTHW",
+            ),
+            (
+                transforms.VideoNormalize(
+                    (0.5,), (0.5,), inplace=False, value_check=True, video_format="TCHW"
+                ),
+                True,
+                "CTHW",
+            ),
+            (
+                [
+                    transforms.VideoNormalize(
+                        (0.5,),
+                        (0.5,),
+                        inplace=False,
+                        value_check=True,
+                        video_format="CTHW",
+                    ),
+                    transforms.Div255(inplace=False),
+                ],
+                False,
+                "CTHW",
+            ),
+            (
+                [
+                    transforms.VideoNormalize(
+                        (0.5,),
+                        (0.5,),
+                        inplace=True,
+                        value_check=True,
+                        video_format="CTHW",
+                    ),
+                    transforms.Div255(inplace=False),
+                ],
+                True,
+                "TCHW",
+            ),
+        ],
+    )
+    def test_functional(
+        self,
+        list_transforms: nn.Module | Sequence[nn.Module],
+        inplace: bool,
+        video_format: str,
+    ):
+        torch.manual_seed(28)
 
-    def test_wrong_video_format(self):
-        transform = transforms.Normalize(
-            (0.5,), (0.5,), inplace=False, value_check=True
+        if video_format == "CTHW":
+            tensor = torch.rand((3, 2, 16, 16))
+        else:
+            tensor = torch.rand((2, 3, 16, 16))
+
+        input_tensor = tensor.clone() if inplace else tensor
+
+        wrapper = transforms.VideoWrapper(list_transforms, inplace, video_format)
+
+        if not isinstance(list_transforms, Sequence):
+            list_transforms = [list_transforms]
+
+        for transform in list_transforms:
+            if hasattr(transform, "inplace"):
+                assert transform.inplace
+            if hasattr(transform, "video_format"):
+                assert transform.video_format == "TCHW"
+
+        output = wrapper(input_tensor)
+
+        if inplace and not video_format == "CTHW":
+            torch.testing.assert_close(output, input_tensor)
+
+    @pytest.mark.parametrize(
+        "list_transforms,inplace,video_format,repr",
+        [
+            (
+                transforms.VideoNormalize(
+                    (0.5,), (0.5,), inplace=False, value_check=True, video_format="CTHW"
+                ),
+                False,
+                "TCHW",
+                "VideoWrapper(\n    inplace=False,\n    video_format=TCHW,\n    transforms=ModuleList(\n      (0): VideoNormalize(mean=[[[0.5]]], std=[[[0.5]]], cast_dtype=None, inplace=True, value_check=True, video_format=TCHW)\n    )\n)",
+            ),
+            (
+                [
+                    transforms.VideoNormalize(
+                        (0.5,),
+                        (0.5,),
+                        inplace=False,
+                        value_check=True,
+                        video_format="TCHW",
+                    ),
+                    transforms.Div255(inplace=False),
+                ],
+                False,
+                "CTHW",
+                "VideoWrapper(\n    inplace=False,\n    video_format=CTHW,\n    transforms=ModuleList(\n      (0): VideoNormalize(mean=[[[0.5]]], std=[[[0.5]]], cast_dtype=None, inplace=True, value_check=True, video_format=TCHW)\n      (1): Div255(inplace=True)\n    )\n)",
+            ),
+        ],
+    )
+    def test_repr(
+        self,
+        list_transforms: nn.Module | Sequence[nn.Module],
+        inplace: bool,
+        video_format: str,
+        repr: str,
+    ):
+        assert (
+            transforms.VideoWrapper(list_transforms, inplace, video_format).__repr__()
+            == repr
         )
-        with pytest.raises(ValueError):
-            transforms.VideoWrapper(transform=transform, video_format="ahah")
 
     def test_wrong_tensor(self):
         transform = transforms.Normalize(
@@ -576,4 +781,110 @@ class TestVideoWrapper:
         )
         tensor = torch.rand((6, 3, 2, 3, 16, 16))
         with pytest.raises(TypeError):
-            transforms.VideoWrapper(transform=transform)(tensor)
+            transforms.VideoWrapper(transform)(tensor)
+
+    def test_wrong_transforms(self):
+        with pytest.raises(TypeError):
+            transforms.VideoWrapper("ahah")
+
+
+class TestWrapper:
+    def test_output_values(self):
+        torch.manual_seed(28)
+
+        transform = (
+            transforms.Normalize((0.5,), (0.5,), inplace=False, value_check=True),
+            transforms.Mul255(),
+        )
+
+        tensor = torch.rand((3, 2, 16, 16))
+        expected_out = (
+            transforms.Normalize((0.5,), (0.5,), inplace=False)(tensor) * 255.0
+        )
+        out = transforms.Wrapper(transform)(tensor)
+        torch.testing.assert_close(out, expected_out)
+
+    @pytest.mark.parametrize(
+        "list_transforms,inplace",
+        [
+            (
+                transforms.Normalize((0.5,), (0.5,), inplace=False, value_check=True),
+                False,
+            ),
+            (
+                [
+                    transforms.Normalize(
+                        (0.5,), (0.5,), inplace=False, value_check=True
+                    ),
+                    transforms.Div255(inplace=False),
+                ],
+                True,
+            ),
+        ],
+    )
+    def test_functional(
+        self, list_transforms: nn.Module | Sequence[nn.Module], inplace: bool
+    ):
+        torch.manual_seed(28)
+
+        tensor = torch.rand((2, 3, 16, 16))
+
+        input_tensor = tensor.clone() if inplace else tensor
+
+        wrapper = transforms.Wrapper(list_transforms, inplace)
+
+        if not isinstance(list_transforms, Sequence):
+            list_transforms = [list_transforms]
+
+        for transform in list_transforms:
+            if hasattr(transform, "inplace"):
+                assert transform.inplace
+
+        output = wrapper(input_tensor)
+
+        if inplace:
+            torch.testing.assert_close(output, input_tensor)
+
+    @pytest.mark.parametrize(
+        "list_transforms,inplace,repr",
+        [
+            (
+                transforms.Normalize((0.5,), (0.5,), inplace=False, value_check=True),
+                False,
+                "Wrapper(\n    inplace=False,\n    transforms=ModuleList(\n      (0): Normalize(mean=[[[0.5]]], std=[[[0.5]]], cast_dtype=None, inplace=True, value_check=True)\n    )\n)",
+            ),
+            (
+                [
+                    transforms.Normalize(
+                        (0.5,), (0.5,), inplace=False, value_check=True
+                    ),
+                    transforms.Div255(inplace=False),
+                ],
+                True,
+                "Wrapper(\n    inplace=True,\n    transforms=ModuleList(\n      (0): Normalize(mean=[[[0.5]]], std=[[[0.5]]], cast_dtype=None, inplace=True, value_check=True)\n      (1): Div255(inplace=True)\n    )\n)",
+            ),
+        ],
+    )
+    def test_repr(
+        self, list_transforms: nn.Module | Sequence[nn.Module], inplace: bool, repr: str
+    ):
+        assert transforms.Wrapper(list_transforms, inplace).__repr__() == repr
+
+    def test_wrong_input(self):
+        transform = transforms.Normalize(
+            (0.5,), (0.5,), inplace=False, value_check=True
+        )
+        tensor = "ahah"
+        with pytest.raises(TypeError):
+            transforms.Wrapper(transform)(tensor)
+
+    def test_wrong_transforms(self):
+        with pytest.raises(TypeError):
+            transforms.Wrapper("ahah")
+
+    def test_wrong_video_format(self):
+        transform = transforms.Normalize(
+            (0.5,), (0.5,), inplace=False, value_check=True
+        )
+        with pytest.raises(ValueError):
+            transforms.VideoWrapper(transform, video_format="ahah")

@@ -7,12 +7,15 @@ from typing import Sequence
 import torch
 import torchvision.transforms.functional as F_tv
 from torch import Tensor, nn
+from torchvision.transforms._functional_tensor import _assert_image_tensor
 from torchvision.transforms.transforms import _setup_size
 
 import torchaug.transforms.functional as F
 from torchaug.batch_transforms._utils import \
     _assert_video_or_batch_videos_tensor
-from torchaug.transforms._utils import _assert_video_tensor, _check_input
+from torchaug.transforms._utils import (_assert_module_or_list_of_modules,
+                                        _assert_tensor, _assert_video_tensor,
+                                        _check_input)
 from torchaug.utils import _log_api_usage_once
 
 
@@ -38,7 +41,7 @@ class RandomTransform(nn.Module, ABC):
         """Function to perform transformation on the image.
 
         .. note::
-            Should be overriden by subclasses.
+            Should be overridden by subclasses.
 
         Args:
             img: Image to transform.
@@ -62,6 +65,76 @@ class RandomTransform(nn.Module, ABC):
         elif self.p == 1.0 or torch.rand(1).item() < self.p:
             return self.apply_transform(img)
         return img
+
+
+class Wrapper(nn.Module):
+    """Wrap transforms to handle tensor data.
+
+    .. note::
+
+        Transforms and their submodules are iterated over.
+
+        If ``inplace`` attribute is found, it is set to ``True``,
+        ``inplace`` is handled at the wrapper level.
+
+    Args:
+        transforms: A list of transform modules.
+        inplace: Whether to perform the transforms inplace.
+    """
+
+    def __init__(
+        self, transforms: list[nn.Module] | nn.Module, inplace: bool = False
+    ) -> None:
+        super().__init__()
+
+        _assert_module_or_list_of_modules(transforms)
+
+        if isinstance(transforms, nn.Module):
+            transforms = [transforms]
+
+        self._prepare_transforms(transforms)
+        self.transforms = nn.ModuleList(transforms)
+
+        self.inplace = inplace
+
+    @staticmethod
+    def _prepare_transform(transform: nn.Module):
+        if hasattr(transform, "inplace"):
+            transform.inplace = True
+
+    @staticmethod
+    def _prepare_transforms(transforms: list[nn.Module]):
+        for transform in transforms:
+            Wrapper._prepare_transform(transform)
+            Wrapper._prepare_transforms(list(transform.modules())[1:])
+
+    def forward(self, tensor: torch.Tensor) -> Tensor:
+        """Apply :attr:`~transforms` on the tensor.
+
+        If :attr:`~inplace` is ``True``, clone the tensor.
+
+        Args:
+            tensor: The tensor to transform.
+
+        Returns:
+            The transformed tensor.
+        """
+        _assert_tensor(tensor)
+
+        tensor = tensor if self.inplace else tensor.clone()
+
+        for transform in self.transforms:
+            output: Tensor = transform(tensor)
+
+        return output
+
+    def __repr__(self):
+        transforms_repr = str(self.transforms).replace("\n", "\n    ")
+        return (
+            f"{self.__class__.__name__}(\n"
+            f"    inplace={self.inplace},\n"
+            f"    transforms={transforms_repr}\n)"
+        )
 
 
 class Div255(nn.Module):
@@ -92,11 +165,49 @@ class Div255(nn.Module):
         return f"{__class__.__name__}(inplace={self.inplace})"
 
 
+class ImageWrapper(Wrapper):
+    """Wrap transforms to handle image data.
+
+    .. note::
+
+        Transforms and their submodules are iterated over.
+
+        If ``inplace`` attribute is found, it is set to ``True``,
+        ``inplace`` is handled at the wrapper level.
+
+    Args:
+        transforms: A list of transform modules.
+        inplace: Whether to perform the transforms inplace.
+    """
+
+    def __init__(
+        self, transforms: Sequence[nn.Module] | nn.Module, inplace: bool = False
+    ) -> None:
+        super().__init__(transforms=transforms, inplace=inplace)
+
+    def forward(self, img: torch.Tensor) -> Tensor:
+        """Apply :attr:`~transforms` on the image.
+
+        Call :meth:`Wrapper.forward`.
+
+        Args:
+            image: The image to transform.
+
+        Returns:
+            The transformed image.
+        """
+        _assert_image_tensor(img)
+
+        output = super().forward(img)
+
+        return output
+
+
 class MixUp(nn.Module):
     """Mix input tensor with linear interpolation drawn according a Beta law.
 
     The shape of the tensors is expected to be [B, ...] with ... any number of dimensions.
-    The tensor shoud be float.
+    The tensor should be float.
 
     .. note::
         The tensor is rolled according its first dimension and mixed with one
@@ -272,14 +383,12 @@ class RandomApply(RandomTransform):
         super().__init__(p=p)
         _log_api_usage_once(self)
 
-        if not isinstance(transforms, nn.Module) and not isinstance(
-            transforms, nn.ModuleList
-        ):
-            transforms = nn.ModuleList(transforms)
-        elif not isinstance(transforms, nn.ModuleList):
-            transforms = nn.ModuleList([transforms])
+        _assert_module_or_list_of_modules(transforms)
 
-        self.transforms = transforms
+        if isinstance(transforms, nn.Module):
+            transforms = [transforms]
+
+        self.transforms = nn.ModuleList(transforms)
 
     def apply_transform(self, img: Tensor) -> Tensor:
         """
@@ -294,13 +403,13 @@ class RandomApply(RandomTransform):
         return img
 
     def __repr__(self) -> str:
-        format_string = self.__class__.__name__ + "("
-        format_string += f"\n    p={self.p},"
-        for t in self.transforms:
-            format_string += "\n"
-            format_string += f"    {t}"
-        format_string += "\n)"
-        return format_string
+        transforms_repr = str(self.transforms).replace("\n", "\n    ")
+        return (
+            f"{self.__class__.__name__}("
+            f"\n    p={self.p},"
+            f"\n    transforms={transforms_repr}"
+            f"\n)"
+        )
 
 
 class RandomColorJitter(RandomTransform):
@@ -643,20 +752,38 @@ class VideoNormalize(Normalize):
         )
 
 
-class VideoWrapper(nn.Module):
-    """Wrap a transform to handle video data. If the frames should be augmented differently, the transform must
-    handle the leading dimension differently. The video is expected to be in format [C, T, H, W] or [T, C, H, W].
+class VideoWrapper(Wrapper):
+    """Wrap transforms to handle video data.
+
+    If the frames should be augmented differently, the transform must
+    handle the leading dimension differently. The video is expected to
+    be in format [C, T, H, W] or [T, C, H, W].
+
+    .. note::
+
+        Transforms and their submodules are iterated over.
+
+        If ``inplace`` attribute is found, it is set to ``True``,
+        ``inplace`` is handled at the wrapper level.
+
+        If ``video_format`` attribute is found, it is set to ``TCHW``,
+        ``video_format`` is handled at the wrapper level.
 
     Args:
-        transform: The transform to wrap.
+        transforms: A list of transform modules.
+        inplace: Whether to perform the transforms inplace. If ``video_format`` is ``CTHW``, a copy might occur.
         video_format: Format of the video. Either ``CTHW`` or ``TCHW``.
     """
 
-    def __init__(self, transform: nn.Module, video_format: str = "CTHW") -> None:
-        super().__init__()
+    def __init__(
+        self,
+        transforms: Sequence[nn.Module] | nn.Module,
+        inplace: bool = False,
+        video_format: str = "CTHW",
+    ) -> None:
+        super().__init__(transforms=transforms, inplace=inplace)
         _log_api_usage_once(self)
 
-        self.transform = transform
         self.video_format = video_format
 
         if self.video_format == "CTHW":
@@ -668,8 +795,23 @@ class VideoWrapper(nn.Module):
                 f"video_format should be either 'CTHW' or 'TCHW'. Got {self.video_format}."
             )
 
+    @staticmethod
+    def _prepare_transform(transform: nn.Module):
+        Wrapper._prepare_transform(transform)
+
+        if hasattr(transform, "video_format"):
+            transform.video_format = "TCHW"
+
+    @staticmethod
+    def _prepare_transforms(transforms: list[nn.Module]):
+        for transform in transforms:
+            VideoWrapper._prepare_transform(transform)
+            VideoWrapper._prepare_transforms(list(transform.modules())[1:])
+
     def forward(self, video: Tensor) -> Tensor:
-        """Apply :attr:`~transform` on the video.
+        """Apply :attr:`~transforms` on the video.
+
+        Call :meth:`Wrapper.forward`.
 
         Args:
             video: The video to transform.
@@ -682,16 +824,18 @@ class VideoWrapper(nn.Module):
         if not self.time_before_channel:
             video = video.permute(1, 0, 2, 3)
 
-        video = self.transform(video)
+        output = super().forward(video)
 
         if not self.time_before_channel:
-            video = video.permute(1, 0, 2, 3)
+            output = output.permute(1, 0, 2, 3)
 
-        return video
+        return output
 
     def __repr__(self):
+        transforms_repr = str(self.transforms).replace("\n", "\n    ")
         return (
             f"{self.__class__.__name__}(\n"
-            f"    transform={self.transform},\n"
-            f"    video_format={self.video_format}\n)"
+            f"    inplace={self.inplace},\n"
+            f"    video_format={self.video_format},\n"
+            f"    transforms={transforms_repr}\n)"
         )

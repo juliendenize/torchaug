@@ -11,10 +11,24 @@ In this section are defined the classes and functions to transform a batch of im
 
 .. note:: Some transforms rely on Torchvision functional.
 
+
+Wrappers
+--------
+
+List of wrappers of the data augmentations.
+
+.. autosummary::
+    :toctree: generated/
+    :template: class.rst
+
+    BatchImageWrapper
+    BatchVideoWrapper
+
+
 Transforms
 ----------
 
-List of class wrappers of the batched data augmentations.
+List of the batched data augmentations.
 
 
 .. autosummary::
@@ -30,7 +44,6 @@ List of class wrappers of the batched data augmentations.
     BatchRandomResizedCrop
     BatchRandomSolarize
     BatchRandomTransform
-    BatchVideoWrapper
     BatchVideoResize
 
 

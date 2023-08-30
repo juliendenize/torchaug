@@ -464,7 +464,7 @@ def batch_mixup(
     """Mix two tensors with linear interpolation.
 
     The shape of the tensors is expected to be [B, ...] with ... any number of dimensions.
-    The tensors shoud be floats.
+    The tensors should be floats.
 
     Args:
         tensor_1: First tensor.

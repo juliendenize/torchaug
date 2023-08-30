@@ -16,8 +16,12 @@ from torchvision.transforms.transforms import (_interpolation_modes_from_int,
 
 import torchaug.batch_transforms.functional as F_b
 import torchaug.transforms.functional as F
-from torchaug.batch_transforms._utils import _assert_batch_videos_tensor
-from torchaug.transforms._utils import _check_input, transfer_tensor_on_device
+from torchaug.batch_transforms._utils import (_assert_batch_images_tensor,
+                                              _assert_batch_videos_tensor)
+from torchaug.transforms._utils import (_assert_module_or_list_of_modules,
+                                        _check_input,
+                                        transfer_tensor_on_device)
+from torchaug.transforms.transforms import Wrapper
 from torchaug.utils import _log_api_usage_once
 
 
@@ -45,7 +49,7 @@ class BatchRandomTransform(nn.Module, ABC):
         """Function to perform transformation on the batch of images.
 
         .. note::
-            Should be overriden by subclasses.
+            Should be overridden by subclasses.
 
         Args:
             imgs: Batch of images to transform.
@@ -106,6 +110,47 @@ class BatchRandomTransform(nn.Module, ABC):
         return output
 
 
+class BatchImageWrapper(Wrapper):
+    """Wrap transforms to handle image data.
+
+    .. note::
+
+        Transforms and their submodules are iterated over.
+
+        If ``inplace`` attribute is found, it is set to ``True``,
+        ``inplace`` is handled at the wrapper level.
+
+    Args:
+        transforms: A list of transform modules.
+        inplace: Whether to perform the transforms inplace.
+    """
+
+    def __init__(
+        self, transforms: Sequence[nn.Module] | nn.Module, inplace: bool = False
+    ) -> None:
+        super().__init__(transforms, inplace=inplace)
+
+    def forward(self, imgs: torch.Tensor) -> Tensor:
+        """Apply :attr:`~transforms` on the batch of images.
+
+        Call :meth:`torchaug.transforms.Wrapper.forward`.
+
+        .. note:: If :attr:`~same_on_frames` is ``False``, the batch and frames
+            dimensions are merged.
+
+        Args:
+            imgs: The batch of images to transform.
+
+        Returns:
+            The transformed images.
+        """
+        _assert_batch_images_tensor(imgs)
+
+        output = super().forward(imgs)
+
+        return output
+
+
 class BatchRandomApply(BatchRandomTransform):
     """Apply randomly a list of transformations to a batch of images with a given probability.
 
@@ -117,21 +162,20 @@ class BatchRandomApply(BatchRandomTransform):
 
     def __init__(
         self,
-        transforms: Sequence[nn.Module] | nn.Module,
+        transforms: list[nn.Module] | nn.Module,
         p: float = 0.5,
         inplace: bool = True,
     ) -> None:
         super().__init__(p=p, inplace=inplace)
         _log_api_usage_once(self)
 
-        if not isinstance(transforms, nn.Module) and not isinstance(
-            transforms, nn.ModuleList
-        ):
-            transforms = nn.ModuleList(transforms)
-        elif not isinstance(transforms, nn.ModuleList):
-            transforms = nn.ModuleList([transforms])
+        _assert_module_or_list_of_modules(transforms)
 
-        self.transforms = transforms
+        if isinstance(transforms, nn.Module):
+            transforms = [transforms]
+
+        self.transforms = nn.ModuleList(transforms)
+
         self.inplace = inplace
 
     def apply_transform(self, imgs: Tensor) -> Tensor:
@@ -149,14 +193,14 @@ class BatchRandomApply(BatchRandomTransform):
         return imgs
 
     def __repr__(self) -> str:
-        format_string = self.__class__.__name__ + "("
-        format_string += f"\n    p={self.p},"
-        format_string += f" inplace={self.inplace},"
-        for t in self.transforms:
-            format_string += "\n"
-            format_string += f"    {t}"
-        format_string += "\n)"
-        return format_string
+        transforms_repr = str(self.transforms).replace("\n", "\n    ")
+        return (
+            f"{self.__class__.__name__}("
+            f"\n    p={self.p},"
+            f"\n    inplace={self.inplace},"
+            f"\n    transforms={transforms_repr}"
+            f"\n)"
+        )
 
 
 class BatchRandomColorJitter(BatchRandomTransform):
@@ -525,7 +569,7 @@ class BatchMixUp(nn.Module):
     """Mix input tensor with linear interpolation drawn according a Beta law.
 
     The shape of the tensors is expected to be [B, ...] with ... any number of dimensions.
-    The tensor shoud be float.
+    The tensor should be float.
 
     .. note::
         The tensor is rolled according its first dimension and mixed with one
@@ -683,7 +727,7 @@ class BatchRandomResizedCrop(tv_transforms.RandomResizedCrop):
         self.num_rand_calls = num_rand_calls
 
     def single_forward(self, imgs: Tensor) -> Tensor:
-        """Peform a random resized crop of same scale and shape for the batch of images.
+        """Perform a random resized crop of same scale and shape for the batch of images.
 
         Args:
             img: Batch of images to be cropped and resized.
@@ -798,15 +842,26 @@ class BatchRandomSolarize(BatchRandomTransform):
         )
 
 
-class BatchVideoWrapper(nn.Module):
-    """Wrap a transform to handle batched video data.
+class BatchVideoWrapper(Wrapper):
+    """Wrap transforms to handle batched video data.
 
-    The transform is expected to handle the leading dimension differently.
+    The transforms are expected to handle the leading dimension differently.
 
     The batch of videos is expected to be in format [B, C, T, H, W] or [B, T, C, H, W].
 
+    .. note::
+
+        Transforms and their submodules are iterated over.
+
+        If ``inplace`` attribute is found, it is set to ``True``,
+        ``inplace`` is handled at the wrapper level.
+
+        If ``video_format`` attribute is found, it is set to ``TCHW``,
+        ``video_format`` is handled at the wrapper level.
+
     Args:
-        transform: The transform to wrap.
+        transforms: A list of transform modules.
+        inplace: Whether to perform the transforms inplace. If ``video_format`` is ``CTHW``, a copy might occur.
         same_on_frames: If True, apply the same transform on all the frames, else it
             flattens the batch and temporal dimensions to apply different transformations to each frame.
         video_format: Format of the video. Either ``CTHW`` or ``TCHW``.
@@ -814,14 +869,14 @@ class BatchVideoWrapper(nn.Module):
 
     def __init__(
         self,
-        transform: nn.Module,
+        transforms: Sequence[nn.Module] | nn.Module,
+        inplace: bool = False,
         same_on_frames: bool = True,
         video_format: str = "CTHW",
     ) -> None:
-        super().__init__()
+        super().__init__(transforms=transforms, inplace=inplace)
         _log_api_usage_once(self)
 
-        self.transform = transform
         self.video_format = video_format
         self.same_on_frames = same_on_frames
 
@@ -834,8 +889,23 @@ class BatchVideoWrapper(nn.Module):
                 f"video_format should be either 'CTHW' or 'TCHW'. Got {self.video_format}."
             )
 
+    @staticmethod
+    def _prepare_transform(transform: nn.Module):
+        Wrapper._prepare_transform(transform)
+
+        if hasattr(transform, "video_format"):
+            transform.video_format = "TCHW"
+
+    @staticmethod
+    def _prepare_transforms(transforms: list[nn.Module]):
+        for transform in transforms:
+            BatchVideoWrapper._prepare_transform(transform)
+            BatchVideoWrapper._prepare_transforms(list(transform.modules())[1:])
+
     def forward(self, videos: Tensor):
-        """Apply :attr:`~transform` on the batch of videos.
+        """Apply :attr:`~transforms` on the batch of videos.
+
+        Call :meth:`torchaug.transforms.Wrapper.forward`.
 
         .. note:: If :attr:`~same_on_frames` is ``False``, the batch and frames
             dimensions are merged.
@@ -857,22 +927,24 @@ class BatchVideoWrapper(nn.Module):
         if not self.same_on_frames:
             videos = videos.reshape(b * t, c, h, w)
 
-        videos = self.transform(videos)
+        output = super().forward(videos)
 
         if not self.same_on_frames:
-            videos = videos.reshape(b, t, *videos.shape[-3:])
+            output = output.reshape(b, t, *videos.shape[-3:])
 
         if not self.time_before_channel:
-            videos = videos.permute(0, 2, 1, 3, 4)
+            output = output.permute(0, 2, 1, 3, 4)
 
-        return videos
+        return output
 
     def __repr__(self):
+        transforms_repr = str(self.transforms).replace("\n", "\n    ")
         return (
             f"{self.__class__.__name__}(\n"
-            f"    transform={self.transform},\n"
+            f"    inplace={self.inplace},\n"
             f"    same_on_frames={self.same_on_frames},\n"
-            f"    video_format={self.video_format}\n)"
+            f"    video_format={self.video_format},\n"
+            f"    transforms={transforms_repr}\n)"
         )
 
 

@@ -9,10 +9,23 @@ In this section are defined the classes and functions to transform an image or v
 
 .. note:: Some transforms rely on Torchvision functional.
 
+Wrappers
+--------
+
+List of wrappers of the data augmentations.
+
+.. autosummary::
+    :toctree: generated/
+    :template: class.rst
+
+    Wrapper
+    ImageWrapper
+    VideoWrapper
+
 Transforms
 ----------
 
-List of class wrappers of the data augmentations.
+List of the data augmentations.
 
 .. autosummary::
     :toctree: generated/
@@ -28,7 +41,6 @@ List of class wrappers of the data augmentations.
     RandomSolarize
     RandomTransform
     VideoNormalize
-    VideoWrapper
 
 
 Functional

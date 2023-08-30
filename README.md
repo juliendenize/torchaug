@@ -39,14 +39,28 @@ To be sure to retrieve the same data augmentations as Torchvision, it has been t
 pip install torchaug
 ```
 
-2. Import data augmentations either from `torchaug.transforms` or `torchaug.batch_transforms` packages.
+2. Import data augmentations either from `torchaug.transforms` or `torchaug.batch_transforms` packages. To ease with handling multiple sequential augmentations, wrappers have been defined.
 
 ```python
-from torchaug.transforms import RandomColorJitter
-from torchaug.batch_transforms import BatchRandomColorJitter
+from torchaug.transforms import (
+    ImageWrapper,
+    RandomColorJitter,
+    RandomGaussianBlur
+)
+from torchaug.batch_transforms import (
+    BatchImageWrapper,
+    BatchRandomColorJitter,
+    BatchRandomHorizontalFlip
+)
 
-transform = RandomColorJitter(...)
-batch_transform = BatchRandomColorJitter(...)
+transform = ImageWrapper(
+    [RandomColorJitter(...), RandomGaussianBlur(...)],
+)
+
+batch_transform = BatchImageWrapper(
+    [BatchRandomColorJitter(...), BatchRandomHorizontalFlip(...)],
+    inplace=True
+)
 ```
 
 ## How to contribute
