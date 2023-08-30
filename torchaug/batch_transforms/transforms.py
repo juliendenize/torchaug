@@ -164,7 +164,7 @@ class BatchRandomApply(BatchRandomTransform):
         self,
         transforms: list[nn.Module] | nn.Module,
         p: float = 0.5,
-        inplace: bool = True,
+        inplace: bool = False,
     ) -> None:
         super().__init__(p=p, inplace=inplace)
         _log_api_usage_once(self)
@@ -241,7 +241,7 @@ class BatchRandomColorJitter(BatchRandomTransform):
         hue: float | tuple[float, float] = 0,
         p: float = 0.5,
         num_rand_calls: int = -1,
-        inplace: bool = True,
+        inplace: bool = False,
         value_check: bool = False,
     ) -> None:
         super().__init__(p=p, inplace=inplace)
@@ -451,7 +451,7 @@ class BatchRandomGaussianBlur(BatchRandomTransform):
         kernel_size: int | tuple[int, int],
         sigma: float | tuple[float, float] = (0.1, 2.0),
         p: float = 0.5,
-        inplace: bool = True,
+        inplace: bool = False,
         value_check: bool = False,
     ):
         super().__init__(
@@ -544,7 +544,7 @@ class BatchRandomGrayScale(BatchRandomTransform):
     def __init__(
         self,
         p: float = 0.5,
-        inplace: bool = True,
+        inplace: bool = False,
     ):
         super().__init__(p=p, inplace=inplace)
         _log_api_usage_once(self)
@@ -580,7 +580,7 @@ class BatchMixUp(nn.Module):
         inplace: Whether to perform the operation inplace.
     """
 
-    def __init__(self, alpha: float, inplace: bool = True) -> None:
+    def __init__(self, alpha: float, inplace: bool = False) -> None:
         super().__init__()
         _log_api_usage_once(self)
 
@@ -646,7 +646,7 @@ class BatchRandomHorizontalFlip(BatchRandomTransform):
     def __init__(
         self,
         p: float = 0.5,
-        inplace: bool = True,
+        inplace: bool = False,
     ):
         super().__init__(p=p, inplace=inplace)
         _log_api_usage_once(self)
@@ -811,7 +811,7 @@ class BatchRandomSolarize(BatchRandomTransform):
         self,
         threshold: float,
         p: float = 0.5,
-        inplace: bool = True,
+        inplace: bool = False,
         value_check: bool = False,
     ) -> None:
         super().__init__(p=p, inplace=inplace)
