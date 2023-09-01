@@ -133,6 +133,7 @@ class BatchImageWrapper(Wrapper):
         self, transforms: Sequence[nn.Module] | nn.Module, inplace: bool = False
     ) -> None:
         super().__init__(transforms, inplace=inplace)
+        _log_api_usage_once(self)
 
     def forward(self, imgs: torch.Tensor) -> Tensor:
         """Apply :attr:`~transforms` on the batch of images.

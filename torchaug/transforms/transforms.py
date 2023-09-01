@@ -92,6 +92,7 @@ class Wrapper(nn.Module):
         self, transforms: list[nn.Module] | nn.Module, inplace: bool = False
     ) -> None:
         super().__init__()
+        _log_api_usage_once(self)
 
         _assert_module_or_list_of_modules(transforms)
 
@@ -195,6 +196,7 @@ class ImageWrapper(Wrapper):
         self, transforms: Sequence[nn.Module] | nn.Module, inplace: bool = False
     ) -> None:
         super().__init__(transforms=transforms, inplace=inplace)
+        _log_api_usage_once(self)
 
     def forward(self, img: torch.Tensor) -> Tensor:
         """Apply :attr:`~transforms` on the image.
