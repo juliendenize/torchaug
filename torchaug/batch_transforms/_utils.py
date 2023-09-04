@@ -1,6 +1,5 @@
 from typing import List
 
-import torch
 from torch import Tensor
 
 
@@ -12,16 +11,15 @@ def _is_tensor_batch_videos(x: Tensor) -> bool:
     return x.ndim == 5
 
 
-def get_batched_img_dimensions(img: Tensor) -> List[int]:
-    _assert_batch_images_tensor(img)
-    channels = 1 if img.ndim == 3 else img.shape[-3]
-    batch = img.shape[0]
-    height, width = img.shape[-2:]
+def get_batch_channels_height_width(imgs: Tensor) -> List[int]:
+    _assert_batch_images_tensor(imgs)
+    batch = imgs.shape[0]
+    channels, height, width = imgs.shape[-3:]
     return [batch, channels, height, width]
 
 
 def _assert_batch_channels(img: Tensor, permitted: List[int]) -> None:
-    c = get_batched_img_dimensions(img)[1]
+    c = get_batch_channels_height_width(img)[1]
     if c not in permitted:
         raise TypeError(
             f"Input image tensor permitted channel values are {permitted}, but found {c}."

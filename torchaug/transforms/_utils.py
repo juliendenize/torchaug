@@ -7,6 +7,19 @@ import torch
 from torch import Tensor, nn
 
 
+def _assert_channels(img: Tensor, permitted: list[int]) -> None:
+    c = get_channels_height_width(img)[0]
+    if c not in permitted:
+        raise TypeError(
+            f"Input image tensor permitted channel values are {permitted}, but found {c}"
+        )
+
+
+def _assert_image_tensor(img: Tensor) -> None:
+    if not _is_tensor_torch_image(img):
+        raise TypeError("Tensor is not a torch image.")
+
+
 def _assert_module_or_list_of_modules(collection: Any):
     if not isinstance(collection, nn.Module) and (
         not isinstance(collection, Sequence)
@@ -60,6 +73,10 @@ def _check_input(
         return tuple(value)
 
 
+def _is_tensor_torch_image(x: Tensor) -> bool:
+    return x.ndim >= 3
+
+
 def _is_tensor_video(x: Tensor) -> bool:
     return x.ndim == 4
 
@@ -74,6 +91,11 @@ def is_tensor_on_cpu(tensor: Tensor) -> bool:
         bool: True if the tensor is on CPU.
     """
     return tensor.device.type == "cpu"
+
+
+def get_channels_height_width(img: Tensor) -> list[int]:
+    _assert_image_tensor(img)
+    return list(img.shape[-3:])
 
 
 def transfer_tensor_on_device(

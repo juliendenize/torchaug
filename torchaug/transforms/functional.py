@@ -4,15 +4,16 @@ import torch
 from torch import Tensor
 from torch.nn.functional import conv2d
 from torch.nn.functional import pad as torch_pad
-from torchvision.transforms._functional_tensor import (_assert_channels,
-                                                       _assert_image_tensor,
-                                                       _cast_squeeze_in,
+from torchvision.transforms._functional_tensor import (_cast_squeeze_in,
                                                        _cast_squeeze_out,
                                                        _max_value, _rgb2hsv,
-                                                       get_dimensions, invert)
+                                                       invert)
 from torchvision.transforms.functional import convert_image_dtype
 
-from torchaug.transforms._utils import (_assert_tensor, is_tensor_on_cpu,
+from torchaug.transforms._utils import (_assert_channels, _assert_image_tensor,
+                                        _assert_tensor,
+                                        get_channels_height_width,
+                                        is_tensor_on_cpu,
                                         transfer_tensor_on_device)
 from torchaug.utils import _log_api_usage_once
 
@@ -123,7 +124,7 @@ def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
     _assert_image_tensor(img)
 
     _assert_channels(img, [1, 3])
-    if get_dimensions(img)[0] == 1:  # Match PIL behaviour
+    if get_channels_height_width(img)[0] == 1:  # Match PIL behaviour
         return img
 
     orig_dtype = img.dtype

@@ -6,8 +6,7 @@ import torch
 from torch import Tensor
 from torch.nn.functional import conv2d
 from torch.nn.functional import pad as torch_pad
-from torchvision.transforms._functional_tensor import (_assert_image_tensor,
-                                                       _cast_squeeze_in,
+from torchvision.transforms._functional_tensor import (_cast_squeeze_in,
                                                        _cast_squeeze_out,
                                                        _max_value, _rgb2hsv,
                                                        convert_image_dtype,
@@ -15,8 +14,8 @@ from torchvision.transforms._functional_tensor import (_assert_image_tensor,
 
 from torchaug.batch_transforms._utils import (_assert_batch_channels,
                                               _assert_batch_images_tensor,
-                                              get_batched_img_dimensions)
-from torchaug.transforms._utils import (_assert_tensor,
+                                              get_batch_channels_height_width)
+from torchaug.transforms._utils import (_assert_image_tensor, _assert_tensor,
                                         transfer_tensor_on_device)
 from torchaug.transforms.functional import _hsv2rgb
 from torchaug.utils import _log_api_usage_once
@@ -165,7 +164,7 @@ def batch_adjust_contrast(
     else:
         raise TypeError(f"contrast_factor should be a float or Tensor.")
 
-    c = get_batched_img_dimensions(imgs)[1]
+    c = get_batch_channels_height_width(imgs)[1]
     dtype = imgs.dtype if torch.is_floating_point(imgs) else torch.float32
     if c == 3:
         mean = torch.mean(
@@ -217,7 +216,7 @@ def batch_adjust_hue(
     _assert_image_tensor(imgs)
     _assert_batch_channels(imgs, [1, 3])
 
-    if get_batched_img_dimensions(imgs)[1] == 1:  # Match PIL behaviour
+    if get_batch_channels_height_width(imgs)[1] == 1:  # Match PIL behaviour
         return imgs
 
     batch_size = imgs.shape[0]
@@ -278,7 +277,7 @@ def batch_adjust_saturation(
     _assert_image_tensor(imgs)
     _assert_batch_channels(imgs, [1, 3])
 
-    if get_batched_img_dimensions(imgs)[1] == 1:  # Match PIL behaviour
+    if get_batch_channels_height_width(imgs)[1] == 1:  # Match PIL behaviour
         return imgs
 
     batch_size = imgs.shape[0]

@@ -160,7 +160,7 @@ class TestGaussianBlur:
         "input_tensor,error_type",
         [
             ([2, 0, 3], TypeError),
-            (torch.rand((12, 12)), IndexError),
+            (torch.rand((12, 12)), TypeError),
             ("ahah", TypeError),
         ],
     )
