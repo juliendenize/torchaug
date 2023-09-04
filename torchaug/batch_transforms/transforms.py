@@ -140,9 +140,6 @@ class BatchImageWrapper(Wrapper):
 
         Call :meth:`torchaug.transforms.Wrapper.forward`.
 
-        .. note:: If :attr:`~same_on_frames` is ``False``, the batch and frames
-            dimensions are merged.
-
         Args:
             imgs: The batch of images to transform.
 
