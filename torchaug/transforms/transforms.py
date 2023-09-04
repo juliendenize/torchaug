@@ -131,9 +131,9 @@ class Wrapper(nn.Module):
         output = tensor if self.inplace else tensor.clone()
 
         for transform in self.transforms:
-            output: Tensor = transform(output)
+            output: Tensor = transform(output.contiguous())
 
-        return output
+        return output.contiguous()
 
     def __repr__(self):
         transforms_repr = str(self.transforms).replace("\n", "\n    ")

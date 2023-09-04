@@ -5,6 +5,7 @@ from typing import Any, Sequence
 
 import pytest
 import torch
+import torchvision.transforms as tv_transforms
 import torchvision.transforms.functional as F_tv
 from torch import Tensor, nn
 from torchvision.transforms.functional import convert_image_dtype
@@ -829,13 +830,18 @@ class TestWrapper:
                 False,
             ),
             (
+                transforms.Normalize((0.5,), (0.5,), inplace=False, value_check=True),
+                True,
+            ),
+            (
                 [
+                    tv_transforms.RandomGrayscale(1.),
                     transforms.Normalize(
                         (0.5,), (0.5,), inplace=False, value_check=True
                     ),
                     transforms.Div255(inplace=False),
                 ],
-                True,
+                False,
             ),
         ],
     )
