@@ -835,7 +835,7 @@ class TestWrapper:
             ),
             (
                 [
-                    tv_transforms.RandomGrayscale(1.),
+                    tv_transforms.RandomGrayscale(1.0),
                     transforms.Normalize(
                         (0.5,), (0.5,), inplace=False, value_check=True
                     ),
