@@ -663,14 +663,22 @@ class TestVideoWrapper:
         [
             (
                 transforms.VideoNormalize(
-                    (0.5,), (0.5,), inplace=False, value_check=True, video_format="CTHW"
+                    (0.5, 0.5, 0.5),
+                    (0.5,),
+                    inplace=False,
+                    value_check=True,
+                    video_format="CTHW",
                 ),
                 False,
                 "CTHW",
             ),
             (
                 transforms.VideoNormalize(
-                    (0.5,), (0.5,), inplace=False, value_check=True, video_format="TCHW"
+                    (0.5, 0.5, 0.5),
+                    (0.5,),
+                    inplace=False,
+                    value_check=True,
+                    video_format="TCHW",
                 ),
                 True,
                 "CTHW",
@@ -678,7 +686,7 @@ class TestVideoWrapper:
             (
                 [
                     transforms.VideoNormalize(
-                        (0.5,),
+                        (0.5, 0.5, 0.5),
                         (0.5,),
                         inplace=False,
                         value_check=True,
@@ -692,7 +700,7 @@ class TestVideoWrapper:
             (
                 [
                     transforms.VideoNormalize(
-                        (0.5,),
+                        (0.5, 0.5, 0.5),
                         (0.5,),
                         inplace=True,
                         value_check=True,
@@ -714,9 +722,9 @@ class TestVideoWrapper:
         torch.manual_seed(28)
 
         if video_format == "CTHW":
-            tensor = torch.rand((3, 2, 16, 16))
+            tensor = torch.rand((3, 5, 16, 16))
         else:
-            tensor = torch.rand((2, 3, 16, 16))
+            tensor = torch.rand((5, 3, 16, 16))
 
         input_tensor = tensor.clone() if inplace else tensor
 

@@ -67,6 +67,54 @@ class RandomTransform(nn.Module, ABC):
         return img
 
 
+class VideoBase(ABC):
+    """Abstract class to make a base class for all video transforms.
+
+    Args:
+        video_format: Dimension order of the video. Can be ``TCHW`` or ``CTHW``.
+    """
+
+    def __init__(self, video_format: str) -> None:
+        super().__init__()
+        self.check_format(video_format)
+        self._video_format = video_format
+
+    @staticmethod
+    def check_format(format: str) -> None:
+        """Check if the format is either ``TCHW`` or ``CTHW``. Raises an error if not.
+
+        Args:
+            format: Format to check.
+        """
+        if format not in ["CTHW", "TCHW"]:
+            raise ValueError(
+                f"video_format should be either 'CTHW' or 'TCHW'. Got {format}."
+            )
+
+    @property
+    def video_format(self):
+        """Dimension order of the video.
+
+        Can be ``TCHW`` or ``CTHW``.
+        """
+        return self._video_format
+
+    @video_format.setter
+    def video_format(self, format: str) -> None:
+        self.check_format(format)
+        self._video_format = format
+
+    @property
+    def time_before_channel(self) -> bool:
+        """Boolean that checks if the :attr:`~video_format` has time dimension before channel."""
+        if self.video_format == "CTHW":
+            return False
+        elif self.video_format == "TCHW":
+            return True
+        else:
+            raise ValueError("Attribute _video_format was wrongly changed by user.")
+
+
 class Wrapper(nn.Module):
     """Wrap transforms to handle tensor data.
 
@@ -683,7 +731,7 @@ class RandomSolarize(RandomTransform):
         )
 
 
-class VideoNormalize(Normalize):
+class VideoNormalize(Normalize, VideoBase):
     """Normalize a tensor video with mean and standard deviation. Given mean: ``(mean[1],...,mean[n])`` and std:
     ``(std[1],..,std[n])`` for ``n`` channels, this transform will normalize each channel of the input
     ``torch.*Tensor`` i.e.,
@@ -711,25 +759,17 @@ class VideoNormalize(Normalize):
         value_check: bool = False,
         video_format: str = "CTHW",
     ) -> None:
-        super().__init__(
+        Normalize.__init__(
+            self,
             mean=mean,
             std=std,
             cast_dtype=cast_dtype,
             inplace=inplace,
             value_check=value_check,
         )
+        VideoBase.__init__(self, video_format=video_format)
+
         _log_api_usage_once(self)
-
-        self.video_format = video_format
-
-        if self.video_format == "CTHW":
-            self.time_before_channel = False
-        elif self.video_format == "TCHW":
-            self.time_before_channel = True
-        else:
-            raise ValueError(
-                f"video_format should be either 'CTHW' or 'TCHW'. Got {self.video_format}."
-            )
 
     def forward(self, video: Tensor) -> Tensor:
         """Normalize a video.
@@ -746,7 +786,7 @@ class VideoNormalize(Normalize):
             dims = [0, 2, 1, 3, 4] if video.ndim == 5 else [1, 0, 2, 3]
             video = video.permute(dims)
 
-        video = super().forward(video)
+        video = Normalize.forward(self, video)
 
         if not self.time_before_channel:
             video = video.permute(dims)
@@ -765,7 +805,7 @@ class VideoNormalize(Normalize):
         )
 
 
-class VideoWrapper(Wrapper):
+class VideoWrapper(Wrapper, VideoBase):
     """Wrap transforms to handle video data.
 
     If the frames should be augmented differently, the transform must
@@ -803,19 +843,10 @@ class VideoWrapper(Wrapper):
         inplace: bool = False,
         video_format: str = "CTHW",
     ) -> None:
-        super().__init__(transforms=transforms, inplace=inplace)
+        Wrapper.__init__(self, transforms=transforms, inplace=inplace)
+        VideoBase.__init__(self, video_format=video_format)
+
         _log_api_usage_once(self)
-
-        self.video_format = video_format
-
-        if self.video_format == "CTHW":
-            self.time_before_channel = False
-        elif self.video_format == "TCHW":
-            self.time_before_channel = True
-        else:
-            raise ValueError(
-                f"video_format should be either 'CTHW' or 'TCHW'. Got {self.video_format}."
-            )
 
     @staticmethod
     def _prepare_transform(transform: nn.Module):
@@ -846,7 +877,7 @@ class VideoWrapper(Wrapper):
         if not self.time_before_channel:
             video = video.permute(1, 0, 2, 3)
 
-        output = super().forward(video)
+        output = Wrapper.forward(self, video)
 
         if not self.time_before_channel:
             output = output.permute(1, 0, 2, 3)

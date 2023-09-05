@@ -21,7 +21,7 @@ from torchaug.batch_transforms._utils import (_assert_batch_images_tensor,
 from torchaug.transforms._utils import (_assert_module_or_list_of_modules,
                                         _check_input,
                                         transfer_tensor_on_device)
-from torchaug.transforms.transforms import Wrapper
+from torchaug.transforms.transforms import VideoBase, Wrapper
 from torchaug.utils import _log_api_usage_once
 
 
@@ -844,7 +844,7 @@ class BatchRandomSolarize(BatchRandomTransform):
         )
 
 
-class BatchVideoWrapper(Wrapper):
+class BatchVideoWrapper(Wrapper, VideoBase):
     """Wrap transforms to handle batched video data.
 
     The transforms are expected to handle the leading dimension differently.
@@ -884,20 +884,12 @@ class BatchVideoWrapper(Wrapper):
         same_on_frames: bool = True,
         video_format: str = "CTHW",
     ) -> None:
-        super().__init__(transforms=transforms, inplace=inplace)
+        Wrapper.__init__(self, transforms=transforms, inplace=inplace)
+        VideoBase.__init__(self, video_format=video_format)
+
         _log_api_usage_once(self)
 
-        self.video_format = video_format
         self.same_on_frames = same_on_frames
-
-        if self.video_format == "CTHW":
-            self.time_before_channel = False
-        elif self.video_format == "TCHW":
-            self.time_before_channel = True
-        else:
-            raise ValueError(
-                f"video_format should be either 'CTHW' or 'TCHW'. Got {self.video_format}."
-            )
 
     @staticmethod
     def _prepare_transform(transform: nn.Module):
@@ -912,7 +904,7 @@ class BatchVideoWrapper(Wrapper):
             BatchVideoWrapper._prepare_transform(transform)
             BatchVideoWrapper._prepare_transforms(list(transform.modules())[1:])
 
-    def forward(self, videos: Tensor):
+    def forward(self, videos: Tensor) -> Tensor:
         """Apply :attr:`~transforms` on the batch of videos.
 
         Call :meth:`torchaug.transforms.Wrapper.forward`.
@@ -937,7 +929,7 @@ class BatchVideoWrapper(Wrapper):
         if not self.same_on_frames:
             videos = videos.reshape(b * t, c, h, w)
 
-        output = super().forward(videos)
+        output = Wrapper.forward(self, videos)
 
         if not self.same_on_frames:
             output = output.reshape(b, t, *videos.shape[-3:])
@@ -958,7 +950,7 @@ class BatchVideoWrapper(Wrapper):
         )
 
 
-class BatchVideoResize(nn.Module):
+class BatchVideoResize(nn.Module, VideoBase):
     """Resize the input video to the given size. The video is expected to have [B, ..., H, W] shape, where ...
     means an arbitrary number of dimensions.
 
@@ -998,7 +990,9 @@ class BatchVideoResize(nn.Module):
         antialias: bool = True,
         video_format: str = "CTHW",
     ):
-        super().__init__()
+        nn.Module.__init__(self)
+        VideoBase.__init__(self, video_format=video_format)
+
         _log_api_usage_once(self)
 
         if not isinstance(size, (int, Sequence)):
@@ -1013,18 +1007,8 @@ class BatchVideoResize(nn.Module):
 
         self.interpolation = interpolation
         self.antialias = antialias
-        self.video_format = video_format
 
-        if self.video_format == "CTHW":
-            self.time_before_channel = False
-        elif self.video_format == "TCHW":
-            self.time_before_channel = True
-        else:
-            raise ValueError(
-                f"video_format should be either 'CTHW' or 'TCHW'. Got {self.video_format}."
-            )
-
-    def forward(self, videos: Tensor):
+    def forward(self, videos: Tensor) -> Tensor:
         """Resize the batch of videos.
 
         Args:
