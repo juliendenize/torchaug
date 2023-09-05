@@ -15,7 +15,7 @@ In this section are defined the classes and functions to transform a batch of im
 Wrappers
 --------
 
-List of wrappers of the data augmentations.
+List of wrappers of the batched data augmentations.
 
 .. autosummary::
     :toctree: generated/
@@ -25,11 +25,46 @@ List of wrappers of the data augmentations.
     BatchVideoWrapper
 
 
+Bases
+-----
+List of bases for the batched data augmentations and batch wrappers.
+
+.. autosummary::
+    :toctree: generated/
+    :template: class.rst
+
+    BatchRandomTransform
+
+
 Transforms
 ----------
 
 List of the batched data augmentations.
 
+Color
+^^^^^
+
+.. autosummary::
+    :toctree: generated/
+    :template: class.rst
+
+    BatchRandomColorJitter
+    BatchRandomGrayScale
+    BatchRandomSolarize
+
+Geometry
+^^^^^^^^
+
+.. autosummary::
+    :toctree: generated/
+    :template: class.rst
+
+    BatchRandomHorizontalFlip
+    BatchRandomResizedCrop
+    BatchVideoResize
+
+Misc
+^^^^
 
 .. autosummary::
     :toctree: generated/
@@ -37,15 +72,7 @@ List of the batched data augmentations.
 
     BatchMixUp
     BatchRandomApply
-    BatchRandomColorJitter
     BatchRandomGaussianBlur
-    BatchRandomGrayScale
-    BatchRandomHorizontalFlip
-    BatchRandomResizedCrop
-    BatchRandomSolarize
-    BatchRandomTransform
-    BatchVideoResize
-
 
 Functional
 ----------
@@ -53,6 +80,9 @@ Functional
 .. currentmodule:: torchaug.batch_transforms.functional
 
 List of the functions to make the batched data augmentations.
+
+Color
+^^^^^
 
 .. autosummary::
     :toctree: generated/
@@ -62,5 +92,15 @@ List of the functions to make the batched data augmentations.
     batch_adjust_contrast
     batch_adjust_hue
     batch_adjust_saturation
+    batch_gaussian_blur
+    batch_mixup
+
+Misc
+^^^^
+
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
     batch_gaussian_blur
     batch_mixup

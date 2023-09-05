@@ -37,5 +37,5 @@ def _assert_batch_videos_tensor(videos: Tensor) -> None:
 
 
 def _assert_video_or_batch_videos_tensor(videos: Tensor) -> None:
-    if not isinstance(videos, Tensor) or not videos.ndim in [4, 5]:
+    if not isinstance(videos, Tensor) or videos.ndim not in [4, 5]:
         raise TypeError("Tensor is not a torch video or a batch of videos.")
