@@ -9,8 +9,8 @@ In this section are defined the classes and functions to transform an image or v
 
 .. note:: Some transforms rely on Torchvision functional.
 
-Wrappers
---------
+Wrappers and Bases
+------------------
 
 List of wrappers of the data augmentations.
 
@@ -21,6 +21,14 @@ List of wrappers of the data augmentations.
     Wrapper
     ImageWrapper
     VideoWrapper
+
+List of bases for the data augmentations and wrappers.
+
+.. autosummary::
+    :toctree: generated/
+    :template: class.rst
+
+    VideoBase
 
 Transforms
 ----------
