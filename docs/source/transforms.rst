@@ -28,6 +28,7 @@ List of bases for the data augmentations and wrappers.
     :toctree: generated/
     :template: class.rst
 
+    RandomTransform
     VideoBase
 
 Transforms
@@ -35,6 +36,17 @@ Transforms
 
 List of the data augmentations.
 
+Color
+^^^^^
+.. autosummary::
+    :toctree: generated/
+    :template: class.rst
+
+    RandomColorJitter
+    RandomSolarize
+
+Misc
+^^^^
 .. autosummary::
     :toctree: generated/
     :template: class.rst
@@ -44,12 +56,8 @@ List of the data augmentations.
     Mul255
     Normalize
     RandomApply
-    RandomColorJitter
     RandomGaussianBlur
-    RandomSolarize
-    RandomTransform
     VideoNormalize
-
 
 Functional
 ----------
@@ -58,14 +66,24 @@ Functional
 
 List of the functions to make the data augmentations.
 
+Color
+^^^^^
 .. autosummary::
     :toctree: generated/
     :template: function.rst
 
     adjust_hue
+    solarize
+
+Misc
+^^^^
+
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
     div_255
     gaussian_blur
     mixup
     mul_255
     normalize
-    solarize
