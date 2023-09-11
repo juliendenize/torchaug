@@ -92,8 +92,6 @@ Color
     batch_adjust_contrast
     batch_adjust_hue
     batch_adjust_saturation
-    batch_gaussian_blur
-    batch_mixup
 
 Misc
 ^^^^
