@@ -154,6 +154,10 @@ class TestRandomGrayscale(BaseTesterTransform):
     def test_repr(self, p: float, num_output_channels: int, repr: str):
         assert transforms.RandomGrayscale(p, num_output_channels).__repr__() == repr
 
+    def test_wrong_num_output_channels(self):
+        with pytest.raises(ValueError):
+            transforms.RandomGrayscale(1, 2)
+
 
 class TestRandomSolarize(BaseTesterTransform):
     def test_functional_float(self):

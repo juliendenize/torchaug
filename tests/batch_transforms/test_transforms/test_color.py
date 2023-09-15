@@ -407,6 +407,10 @@ class TestBatchRandomGrayscale(BaseTesterTransform):
             == repr
         )
 
+    def test_wrong_num_output_channels(self):
+        with pytest.raises(ValueError):
+            transforms.BatchRandomGrayscale(1, 2)
+
 
 class TestBatchRandomSolarize(BaseTesterTransform):
     def test_output_values_float(self):
