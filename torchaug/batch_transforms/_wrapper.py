@@ -9,7 +9,7 @@ from torchaug.batch_transforms._utils import (_assert_batch_images_tensor,
                                               _assert_batch_videos_tensor)
 from torchaug.transforms._transform import VideoBase
 from torchaug.transforms._wrapper import Wrapper
-from torchaug.utils import _log_api_usage_once
+from torchaug.utils import VideoFormat, _log_api_usage_once
 
 
 class BatchImageWrapper(Wrapper):
@@ -93,7 +93,7 @@ class BatchVideoWrapper(Wrapper, VideoBase):
         transforms: Sequence[nn.Module] | nn.Module,
         inplace: bool = False,
         same_on_frames: bool = True,
-        video_format: str = "CTHW",
+        video_format: VideoFormat = VideoFormat.CTHW,
     ) -> None:
         Wrapper.__init__(self, transforms=transforms, inplace=inplace)
         VideoBase.__init__(self, video_format=video_format)
@@ -107,7 +107,7 @@ class BatchVideoWrapper(Wrapper, VideoBase):
         Wrapper._prepare_transform(transform)
 
         if hasattr(transform, "video_format"):
-            transform.video_format = "TCHW"
+            transform.video_format = VideoFormat.TCHW
 
     @staticmethod
     def _prepare_transforms(transforms: list[nn.Module]):
@@ -156,6 +156,6 @@ class BatchVideoWrapper(Wrapper, VideoBase):
             f"{self.__class__.__name__}(\n"
             f"    inplace={self.inplace},\n"
             f"    same_on_frames={self.same_on_frames},\n"
-            f"    video_format={self.video_format},\n"
+            f"    video_format={self.video_format.value},\n"
             f"    transforms={transforms_repr}\n)"
         )

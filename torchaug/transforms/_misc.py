@@ -11,7 +11,7 @@ import torchaug.transforms.functional as F
 from torchaug.batch_transforms._utils import \
     _assert_video_or_batch_videos_tensor
 from torchaug.transforms._utils import _assert_module_or_list_of_modules
-from torchaug.utils import _log_api_usage_once
+from torchaug.utils import VideoFormat, _log_api_usage_once
 
 from ._transform import RandomTransform, VideoBase
 
@@ -365,7 +365,7 @@ class VideoNormalize(Normalize, VideoBase):
         cast_dtype: torch.dtype | None = None,
         inplace: bool = False,
         value_check: bool = False,
-        video_format: str = "CTHW",
+        video_format: VideoFormat = VideoFormat.CTHW,
     ) -> None:
         Normalize.__init__(
             self,
@@ -409,5 +409,5 @@ class VideoNormalize(Normalize, VideoBase):
             f" cast_dtype={self.cast_dtype},"
             f" inplace={self.inplace},"
             f" value_check={self.value_check},"
-            f" video_format={self.video_format})"
+            f" video_format={self.video_format.value})"
         )

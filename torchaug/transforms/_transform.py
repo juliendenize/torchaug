@@ -5,6 +5,8 @@ from abc import ABC, abstractmethod
 import torch
 from torch import Tensor, nn
 
+from torchaug.utils import VideoFormat
+
 
 class RandomTransform(nn.Module, ABC):
     """Abstract class to make a base class for all random transforms.
@@ -38,7 +40,7 @@ class RandomTransform(nn.Module, ABC):
         """
         ...
 
-    def forward(self, img: Tensor):
+    def forward(self, img: Tensor) -> Tensor:
         """Call :meth:`apply_transform` based on random sample.
 
         Args:
@@ -61,22 +63,9 @@ class VideoBase(ABC):
         video_format: Dimension order of the video. Can be ``TCHW`` or ``CTHW``.
     """
 
-    def __init__(self, video_format: str) -> None:
+    def __init__(self, video_format: VideoFormat) -> None:
         super().__init__()
-        self.check_format(video_format)
-        self._video_format = video_format
-
-    @staticmethod
-    def check_format(format: str) -> None:
-        """Check if the format is either ``TCHW`` or ``CTHW``. Raises an error if not.
-
-        Args:
-            format: Format to check.
-        """
-        if format not in ["CTHW", "TCHW"]:
-            raise ValueError(
-                f"video_format should be either 'CTHW' or 'TCHW'. Got {format}."
-            )
+        self._video_format = VideoFormat(video_format)
 
     @property
     def video_format(self):
@@ -87,16 +76,11 @@ class VideoBase(ABC):
         return self._video_format
 
     @video_format.setter
-    def video_format(self, format: str) -> None:
-        self.check_format(format)
-        self._video_format = format
+    def video_format(self, format: VideoFormat) -> None:
+        format = VideoFormat(format)
+        self._video_format = VideoFormat(format)
 
     @property
     def time_before_channel(self) -> bool:
         """Boolean that checks if the :attr:`~video_format` has time dimension before channel."""
-        if self.video_format == "CTHW":
-            return False
-        elif self.video_format == "TCHW":
-            return True
-        else:
-            raise ValueError("Attribute _video_format was wrongly changed by user.")
+        return self._video_format == VideoFormat.TCHW

@@ -8,7 +8,7 @@ from torchvision.transforms._functional_tensor import _assert_image_tensor
 
 from torchaug.transforms._utils import (_assert_module_or_list_of_modules,
                                         _assert_tensor, _assert_video_tensor)
-from torchaug.utils import _log_api_usage_once
+from torchaug.utils import VideoFormat, _log_api_usage_once
 
 from ._transform import VideoBase
 
@@ -170,7 +170,7 @@ class VideoWrapper(Wrapper, VideoBase):
         self,
         transforms: Sequence[nn.Module] | nn.Module,
         inplace: bool = False,
-        video_format: str = "CTHW",
+        video_format: VideoFormat = VideoFormat.CTHW,
     ) -> None:
         Wrapper.__init__(self, transforms=transforms, inplace=inplace)
         VideoBase.__init__(self, video_format=video_format)
@@ -182,7 +182,7 @@ class VideoWrapper(Wrapper, VideoBase):
         Wrapper._prepare_transform(transform)
 
         if hasattr(transform, "video_format"):
-            transform.video_format = "TCHW"
+            transform.video_format = VideoFormat.TCHW
 
     @staticmethod
     def _prepare_transforms(transforms: list[nn.Module]):
@@ -218,6 +218,6 @@ class VideoWrapper(Wrapper, VideoBase):
         return (
             f"{self.__class__.__name__}(\n"
             f"    inplace={self.inplace},\n"
-            f"    video_format={self.video_format},\n"
+            f"    video_format={self.video_format.value},\n"
             f"    transforms={transforms_repr}\n)"
         )

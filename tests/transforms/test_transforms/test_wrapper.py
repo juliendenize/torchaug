@@ -7,6 +7,7 @@ import torch
 from torch import nn
 
 import torchaug.transforms as transforms
+from torchaug.utils import VideoFormat
 
 from ...base_tester import BaseTesterTransform
 
@@ -142,7 +143,7 @@ class TestVideoWrapper(BaseTesterTransform):
             if hasattr(transform, "inplace"):
                 assert transform.inplace
             if hasattr(transform, "video_format"):
-                assert transform.video_format == "TCHW"
+                assert transform.video_format == VideoFormat.TCHW
 
         if inplace and video_format == "TCHW":
             assert torch.equal(out, in_tensor)
@@ -185,7 +186,7 @@ class TestVideoWrapper(BaseTesterTransform):
             if hasattr(transform, "inplace"):
                 assert transform.inplace
             if hasattr(transform, "video_format"):
-                assert transform.video_format == "TCHW"
+                assert transform.video_format == VideoFormat.TCHW
 
         assert not torch.equal(out, in_tensor)
 

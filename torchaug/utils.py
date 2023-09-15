@@ -1,7 +1,13 @@
+from enum import Enum
 from types import FunctionType
 from typing import Any
 
 import torch
+
+
+class VideoFormat(Enum):
+    CTHW = "CTHW"
+    TCHW = "TCHW"
 
 
 def _log_api_usage_once(obj: Any) -> None:

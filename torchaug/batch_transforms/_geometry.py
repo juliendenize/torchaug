@@ -12,7 +12,7 @@ from torchvision.transforms.transforms import _interpolation_modes_from_int
 
 from torchaug.batch_transforms._utils import _assert_batch_videos_tensor
 from torchaug.transforms import VideoBase
-from torchaug.utils import _log_api_usage_once
+from torchaug.utils import VideoFormat, _log_api_usage_once
 
 from ._transform import BatchRandomTransform
 
@@ -215,7 +215,7 @@ class BatchVideoResize(nn.Module, VideoBase):
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         max_size: int | None = None,
         antialias: bool = True,
-        video_format: str = "CTHW",
+        video_format: VideoFormat = VideoFormat.CTHW,
     ):
         nn.Module.__init__(self)
         VideoBase.__init__(self, video_format=video_format)
@@ -272,5 +272,5 @@ class BatchVideoResize(nn.Module, VideoBase):
             f"interpolation={self.interpolation.value}, "
             f"max_size={self.max_size}, "
             f"antialias={self.antialias}, "
-            f"video_format={self.video_format})"
+            f"video_format={self.video_format.value})"
         )

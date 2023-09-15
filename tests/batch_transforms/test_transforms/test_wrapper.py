@@ -14,6 +14,7 @@ import torchaug.batch_transforms as transforms
 import torchaug.batch_transforms.functional as F_b
 import torchaug.transforms as mono_transforms
 import torchaug.transforms.functional as F
+from torchaug.utils import VideoFormat
 
 from ...base_tester import BaseTesterTransform
 
@@ -376,7 +377,7 @@ class TestBatchVideoWrapper(BaseTesterTransform):
             if hasattr(transform, "inplace"):
                 assert transform.inplace
             if hasattr(transform, "video_format"):
-                assert transform.video_format == "TCHW"
+                assert transform.video_format == VideoFormat.TCHW
 
         output = wrapper(input_tensor)
 

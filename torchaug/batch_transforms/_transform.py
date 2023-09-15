@@ -86,7 +86,6 @@ class BatchRandomTransform(nn.Module, ABC):
                 :num_apply
             ]
 
-        if num_apply > 0:
-            output[indices_do_apply] = self.apply_transform(output[indices_do_apply])
+        output[indices_do_apply] = self.apply_transform(output[indices_do_apply])
 
         return output
