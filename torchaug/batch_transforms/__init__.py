@@ -1,6 +1,7 @@
 from . import functional
-from ._color import (BatchRandomColorJitter, BatchRandomGrayScale,
+from ._color import (BatchRandomColorJitter, BatchRandomGrayscale,
                      BatchRandomSolarize)
+from ._deprecated import BatchRandomGrayScale
 from ._geometry import (BatchRandomHorizontalFlip, BatchRandomResizedCrop,
                         BatchVideoResize)
 from ._misc import BatchMixUp, BatchRandomApply, BatchRandomGaussianBlur

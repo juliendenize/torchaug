@@ -224,10 +224,10 @@ if __name__ == "__main__":
                 ),
             ),
             (
-                "BatchRandomGrayScale",
+                "BatchRandomGrayscale",
                 "",
                 T.RandomApply([T.Grayscale(num_output_channels=3)], 0.5),
-                BF.BatchRandomGrayScale(0.5, inplace=True).to(device=device),
+                BF.BatchRandomGrayscale(0.5, inplace=True).to(device=device),
             ),
             (
                 "BatchRandomHorizontalFlip",

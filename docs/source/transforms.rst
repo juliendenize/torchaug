@@ -43,6 +43,7 @@ Color
     :template: class.rst
 
     RandomColorJitter
+    RandomGrayscale
     RandomSolarize
 
 Misc

@@ -49,7 +49,7 @@ Color
     :template: class.rst
 
     BatchRandomColorJitter
-    BatchRandomGrayScale
+    BatchRandomGrayscale
     BatchRandomSolarize
 
 Geometry
