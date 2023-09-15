@@ -11,7 +11,7 @@ class BatchRandomGrayScale(BatchRandomGrayscale):
         warnings.warn(
             (
                 f"{self.__class__.__name__} has been renamed to BatchRandomGrayscale for consistency with other vision libraries, "
-                "please update your import accordingly. BatchRandomGrayScale will be deleted in 0.4."
+                f"please update your import accordingly. {self.__class__.__name__} will be deleted in 0.4."
             ),
             category=DeprecationWarning,
             stacklevel=2,
