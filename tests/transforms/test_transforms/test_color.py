@@ -107,6 +107,54 @@ class TestRandomColorJitter(BaseTesterTransform):
         )
 
 
+class TestRandomGrayscale(BaseTesterTransform):
+    def test_output_values_float(self):
+        torch.manual_seed(28)
+        imgs = self.get_float_image((3, 8, 8))
+
+        expected_out = F_tv.rgb_to_grayscale(imgs, 3)
+
+        out = transforms.RandomGrayscale(1)(imgs)
+        torch.testing.assert_close(out, expected_out)
+
+    def test_output_values_uint8(self):
+        torch.manual_seed(28)
+        imgs = self.get_uint8_image((3, 8, 8))
+
+        expected_out = F_tv.rgb_to_grayscale(imgs, 1)
+
+        out = transforms.RandomGrayscale(1, 1)(imgs)
+        torch.testing.assert_close(out, expected_out)
+
+    @pytest.mark.parametrize("p", [(0.5), (1.0), (0.0), (0.5)])
+    def test_functional_float(self, p: float):
+        imgs = self.get_float_image((4, 3, 8, 8))
+        out = transforms.RandomGrayscale(p)(imgs)
+
+        if p == 0:
+            assert torch.equal(imgs, out)
+
+    @pytest.mark.parametrize("p", [(0.5), (1.0), (0.0), (0.5)])
+    def test_functional_uint8(self, p: float):
+        imgs = self.get_uint8_image((4, 3, 8, 8))
+        out = transforms.RandomGrayscale(p)(imgs)
+
+        if p == 0:
+            assert torch.equal(imgs, out)
+
+    @pytest.mark.parametrize(
+        "p,num_output_channels,repr",
+        [
+            (0.5, 3, "RandomGrayscale(p=0.5, num_output_channels=3)"),
+            (1.0, 1, "RandomGrayscale(p=1.0, num_output_channels=1)"),
+            (0.0, 3, "RandomGrayscale(p=0.0, num_output_channels=3)"),
+            (0.5, 1, "RandomGrayscale(p=0.5, num_output_channels=1)"),
+        ],
+    )
+    def test_repr(self, p: float, num_output_channels: int, repr: str):
+        assert transforms.RandomGrayscale(p, num_output_channels).__repr__() == repr
+
+
 class TestRandomSolarize(BaseTesterTransform):
     def test_functional_float(self):
         torch.manual_seed(28)

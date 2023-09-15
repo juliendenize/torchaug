@@ -321,7 +321,7 @@ class TestBatchRandomColorJitter(BaseTesterTransform):
             transforms.BatchRandomColorJitter(num_rand_calls=num_rand_calls)
 
 
-class TestBatchRandomGrayScale(BaseTesterTransform):
+class TestBatchRandomGrayscale(BaseTesterTransform):
     def test_output_values_float(self):
         torch.manual_seed(28)
         imgs = self.get_float_image((4, 3, 8, 8))
@@ -332,7 +332,7 @@ class TestBatchRandomGrayScale(BaseTesterTransform):
             imgs[indices_to_apply], 3
         )
 
-        out = transforms.BatchRandomGrayScale(0.5)(imgs)
+        out = transforms.BatchRandomGrayscale(0.5)(imgs)
         torch.testing.assert_close(out, expected_out)
 
     def test_output_values_uint8(self):
@@ -342,10 +342,10 @@ class TestBatchRandomGrayScale(BaseTesterTransform):
 
         expected_out = imgs.clone()
         expected_out[indices_to_apply] = F_tv.rgb_to_grayscale(
-            imgs[indices_to_apply], 3
+            imgs[indices_to_apply], 1
         )
 
-        out = transforms.BatchRandomGrayScale(0.5)(imgs)
+        out = transforms.BatchRandomGrayscale(0.5, 1)(imgs)
         torch.testing.assert_close(out, expected_out)
 
     @pytest.mark.parametrize(
@@ -353,7 +353,7 @@ class TestBatchRandomGrayScale(BaseTesterTransform):
     )
     def test_functional_float(self, p: float, inplace: bool):
         imgs = self.get_float_image((4, 3, 8, 8))
-        out = transforms.BatchRandomGrayScale(p, inplace)(imgs)
+        out = transforms.BatchRandomGrayscale(p, 3, inplace)(imgs)
 
         if inplace or p == 0:
             assert torch.equal(imgs, out)
@@ -365,7 +365,7 @@ class TestBatchRandomGrayScale(BaseTesterTransform):
     )
     def test_functional_uint8(self, p: float, inplace: bool):
         imgs = self.get_uint8_image((4, 3, 8, 8))
-        out = transforms.BatchRandomGrayScale(p, inplace)(imgs)
+        out = transforms.BatchRandomGrayscale(p, 1, inplace)(imgs)
 
         if inplace or p == 0:
             assert torch.equal(imgs, out)
@@ -373,16 +373,39 @@ class TestBatchRandomGrayScale(BaseTesterTransform):
             assert not torch.equal(imgs, out)
 
     @pytest.mark.parametrize(
-        "p,inplace,repr",
+        "p,num_output_channels,inplace,repr",
         [
-            (0.5, False, "BatchRandomGrayScale(p=0.5, inplace=False)"),
-            (1.0, False, "BatchRandomGrayScale(p=1.0, inplace=False)"),
-            (0.0, False, "BatchRandomGrayScale(p=0.0, inplace=False)"),
-            (0.5, True, "BatchRandomGrayScale(p=0.5, inplace=True)"),
+            (
+                0.5,
+                3,
+                False,
+                "BatchRandomGrayscale(p=0.5, num_output_channels=3, inplace=False)",
+            ),
+            (
+                1.0,
+                1,
+                False,
+                "BatchRandomGrayscale(p=1.0, num_output_channels=1, inplace=False)",
+            ),
+            (
+                0.0,
+                3,
+                False,
+                "BatchRandomGrayscale(p=0.0, num_output_channels=3, inplace=False)",
+            ),
+            (
+                0.5,
+                1,
+                True,
+                "BatchRandomGrayscale(p=0.5, num_output_channels=1, inplace=True)",
+            ),
         ],
     )
-    def test_repr(self, p: float, inplace: bool, repr: str):
-        assert transforms.BatchRandomGrayScale(p, inplace).__repr__() == repr
+    def test_repr(self, p: float, num_output_channels: int, inplace: bool, repr: str):
+        assert (
+            transforms.BatchRandomGrayscale(p, num_output_channels, inplace).__repr__()
+            == repr
+        )
 
 
 class TestBatchRandomSolarize(BaseTesterTransform):

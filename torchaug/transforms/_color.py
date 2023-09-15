@@ -139,6 +139,50 @@ class RandomColorJitter(RandomTransform):
         return s
 
 
+class RandomGrayscale(RandomTransform):
+    """Convert an image to grayscale.
+
+    The image is expected to be of shape [..., 1 or 3, H, W]
+    where ... means an arbitrary number of dimensions.
+
+    Args:
+        p: Probability of the images to be grayscaled.
+        num_output_channels: Number of channels of the output image. Can be ``1`` or ``3``.
+    """
+
+    def __init__(
+        self,
+        p: float = 0.5,
+        num_output_channels: int = 3,
+    ):
+        super().__init__(p=p)
+        _log_api_usage_once(self)
+
+        if num_output_channels not in (1, 3):
+            raise ValueError("num_output_channels should be either 1 or 3")
+
+        self.num_output_channels = num_output_channels
+
+    def apply_transform(self, img: Tensor) -> Tensor:
+        """Apply grayscale on the image.
+
+        Args:
+            img: Image to be grayscaled.
+
+        Returns:
+            Grayscaled image.
+        """
+        img = F_tv.rgb_to_grayscale(img, self.num_output_channels)
+        return img
+
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}("
+            f"p={self.p}"
+            f", num_output_channels={self.num_output_channels})"
+        )
+
+
 class RandomSolarize(RandomTransform):
     """Solarize the image randomly with a given probability by inverting all pixel values above a threshold.
 
