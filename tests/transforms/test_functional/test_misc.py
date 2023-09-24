@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from typing import Any
 
 import pytest
@@ -29,6 +30,17 @@ class TestDiv255(BaseTesterFunctional):
 
     def test_output_values_uint8(self):
         pass
+
+    @pytest.mark.skipif(
+        sys.version_info >= (3, 11), reason="requires python3.10 or lower."
+    )
+    def test_compile(self):
+        torch.manual_seed(28)
+
+        x = self.get_float_image((3, 2, 2))
+        compiled_fn = torch.compile(F.div_255)
+
+        compiled_fn(x)
 
     @pytest.mark.parametrize(
         "input_tensor,error_type",
@@ -104,6 +116,17 @@ class TestGaussianBlur(BaseTesterFunctional):
         if torch.cuda.is_available():
             x = torch.randn((3, 2, 2), device="cuda")
             F.gaussian_blur(x, [3, 3], torch.tensor(1, device="cpu"))
+
+    @pytest.mark.skipif(
+        sys.version_info >= (3, 11), reason="requires python3.10 or lower."
+    )
+    def test_compile(self):
+        torch.manual_seed(28)
+
+        x = self.get_uint8_image((3, 2, 2))
+        compiled_fn = torch.compile(F.gaussian_blur)
+
+        compiled_fn(x, [3, 3])
 
     @pytest.mark.parametrize(
         "kernel,error_type",
@@ -183,6 +206,17 @@ class TestMixup(BaseTesterFunctional):
 
             F.mixup(x_1, x_2, 0.5, False)
 
+    @pytest.mark.skipif(
+        sys.version_info >= (3, 11), reason="requires python3.10 or lower."
+    )
+    def test_compile(self):
+        torch.manual_seed(28)
+
+        x = self.get_float_image((3, 2, 2))
+        compiled_fn = torch.compile(F.mixup)
+
+        compiled_fn(x, x, 0.5)
+
     @pytest.mark.parametrize(
         "lam,error_type",
         [
@@ -234,6 +268,17 @@ class TestMul255(BaseTesterFunctional):
 
     def test_output_values_uint8(self):
         pass
+
+    @pytest.mark.skipif(
+        sys.version_info >= (3, 11), reason="requires python3.10 or lower."
+    )
+    def test_compile(self):
+        torch.manual_seed(28)
+
+        x = self.get_float_image((3, 2, 2))
+        compiled_fn = torch.compile(F.mul_255)
+
+        compiled_fn(x)
 
     @pytest.mark.parametrize(
         "input_tensor,error_type",
@@ -309,6 +354,17 @@ class TestNormalize(BaseTesterFunctional):
         torch.testing.assert_close(out, expected_out)
 
         assert not torch.equal(out, in_x)  # cast_dtype prevent inplace.
+
+    @pytest.mark.skipif(
+        sys.version_info >= (3, 11), reason="requires python3.10 or lower."
+    )
+    def test_compile(self):
+        torch.manual_seed(28)
+
+        x = self.get_float_image((3, 2, 2))
+        compiled_fn = torch.compile(F.normalize)
+
+        compiled_fn(x, 0.5, 0.5)
 
     @pytest.mark.parametrize(
         "x,error_type",

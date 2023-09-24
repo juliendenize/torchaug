@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import sys
 from typing import Any
 
 import pytest
@@ -56,6 +57,17 @@ class TestBatchMixUp(BaseTesterTransform):
 
     def test_functional_uint8(self):
         pass
+
+    @pytest.mark.skipif(
+        sys.version_info >= (3, 11), reason="requires python3.10 or lower."
+    )
+    def test_compile(self):
+        torch.manual_seed(28)
+
+        x = self.get_float_image((4, 3, 2, 2))
+        compiled_fn = torch.compile(transforms.BatchMixUp(0.5))
+
+        compiled_fn(x)
 
     def test_repr(self):
         assert (
@@ -162,6 +174,19 @@ class TestBatchRandomApply(BaseTesterTransform):
         torch.manual_seed(seed)
         imgs = self.get_uint8_image((4, 3, 8, 8))
         transforms.BatchRandomApply(apply_transforms, p, inplace)(imgs)
+
+    @pytest.mark.parametrize("p", [0, 0.5, 1.0])
+    @pytest.mark.skipif(
+        sys.version_info >= (3, 11), reason="requires python3.10 or lower."
+    )
+    def test_compile(self, p: float):
+        torch.manual_seed(28)
+        x = self.get_uint8_image((4, 3, 2, 2))
+        compiled_fn = torch.compile(
+            transforms.BatchRandomApply(mono_transforms.RandomSolarize(128, 0.5), p=p)
+        )
+
+        compiled_fn(x)
 
     @pytest.mark.parametrize(
         "p,apply_transforms,inplace,repr",
@@ -286,6 +311,17 @@ class TestBatchRandomGaussianBlur(BaseTesterTransform):
         transforms.BatchRandomGaussianBlur(kernel_size, sigma, p, inplace, value_check)(
             imgs
         )
+
+    @pytest.mark.parametrize("p", [0, 0.5, 1.0])
+    @pytest.mark.skipif(
+        sys.version_info >= (3, 11), reason="requires python3.10 or lower."
+    )
+    def test_compile(self, p: float):
+        torch.manual_seed(28)
+        x = self.get_uint8_image((4, 3, 4, 4))
+        compiled_fn = torch.compile(transforms.BatchRandomGaussianBlur([3, 3], p=p))
+
+        compiled_fn(x)
 
     @pytest.mark.parametrize(
         "kernel_size,sigma,p,inplace,value_check,repr",

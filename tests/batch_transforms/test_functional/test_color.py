@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from typing import Any
 
 import pytest
@@ -68,6 +69,15 @@ class TestBatchAdjustBrightness(BaseTesterFunctional):
         )
 
         torch.testing.assert_close(torchaug_out, torchvision_out)
+
+    @pytest.mark.skipif(
+        sys.version_info >= (3, 11), reason="requires python3.10 or lower."
+    )
+    def test_compile(self):
+        x = self.get_uint8_image((4, 3, 2, 2))
+        compiled_fn = torch.compile(F.batch_adjust_brightness)
+
+        compiled_fn(x, 0.5, False)
 
     @pytest.mark.parametrize(
         "brightness_factor,error_type",
@@ -154,6 +164,15 @@ class TestBatchAdjustContrast(BaseTesterFunctional):
 
         torch.testing.assert_close(torchaug_out, torchvision_out)
 
+    @pytest.mark.skipif(
+        sys.version_info >= (3, 11), reason="requires python3.10 or lower."
+    )
+    def test_compile(self):
+        x = self.get_uint8_image((4, 3, 2, 2))
+        compiled_fn = torch.compile(F.batch_adjust_contrast)
+
+        compiled_fn(x, 0.5, False)
+
     @pytest.mark.parametrize(
         "contrast_factor,error_type",
         [
@@ -232,6 +251,15 @@ class TestBatchAdjustHue(BaseTesterFunctional):
         )
 
         torch.testing.assert_close(torchaug_out, torchvision_out)
+
+    @pytest.mark.skipif(
+        sys.version_info >= (3, 11), reason="requires python3.10 or lower."
+    )
+    def test_compile(self):
+        x = self.get_uint8_image((4, 3, 2, 2))
+        compiled_fn = torch.compile(F.batch_adjust_hue)
+
+        compiled_fn(x, 0.5, False)
 
     @pytest.mark.parametrize(
         "hue_factor,error_type",
@@ -317,6 +345,15 @@ class TestBatchAdjustSaturation(BaseTesterFunctional):
         )
 
         torch.testing.assert_close(torchaug_out, torchvision_out)
+
+    @pytest.mark.skipif(
+        sys.version_info >= (3, 11), reason="requires python3.10 or lower."
+    )
+    def test_compile(self):
+        x = self.get_uint8_image((4, 3, 2, 2))
+        compiled_fn = torch.compile(F.batch_adjust_saturation)
+
+        compiled_fn(x, 0.5, False)
 
     @pytest.mark.parametrize(
         "saturation_factor,error_type",

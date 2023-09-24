@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import sys
 from typing import Any, Sequence
 
 import pytest
@@ -134,6 +135,23 @@ class TestBatchImageWrapper(BaseTesterTransform):
             assert torch.equal(output, input_tensor)
         else:
             assert not torch.equal(output, input_tensor)
+
+    @pytest.mark.skipif(
+        sys.version_info >= (3, 11), reason="requires python3.10 or lower."
+    )
+    def test_compile(self):
+        torch.manual_seed(28)
+
+        x = self.get_uint8_image((4, 3, 2, 2))
+        compiled_fn = torch.compile(
+            transforms.BatchImageWrapper(
+                transforms.BatchRandomSolarize(
+                    128, 0.5, inplace=False, value_check=True
+                )
+            )
+        )
+
+        compiled_fn(x)
 
     @pytest.mark.parametrize(
         "list_transforms,inplace,repr",
@@ -453,6 +471,23 @@ class TestBatchVideoWrapper(BaseTesterTransform):
             assert torch.equal(output, input_tensor)
         else:
             assert not torch.equal(output, input_tensor)
+
+    @pytest.mark.skipif(
+        sys.version_info >= (3, 11), reason="requires python3.10 or lower."
+    )
+    def test_compile(self):
+        torch.manual_seed(28)
+
+        x = self.get_uint8_image((4, 3, 2, 2, 2))
+        compiled_fn = torch.compile(
+            transforms.BatchVideoWrapper(
+                transforms.BatchRandomSolarize(
+                    128, 0.5, inplace=False, value_check=True
+                )
+            )
+        )
+
+        compiled_fn(x)
 
     @pytest.mark.parametrize(
         "list_transforms,inplace,same_on_frames,video_format,repr",

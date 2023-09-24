@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import sys
 from typing import Any, Sequence
 
 import pytest
@@ -33,6 +34,17 @@ class TestDiv255(BaseTesterTransform):
 
     def test_functional_uint8(self):
         pass
+
+    @pytest.mark.skipif(
+        sys.version_info >= (3, 11), reason="requires python3.10 or lower."
+    )
+    def test_compile(self):
+        torch.manual_seed(28)
+
+        x = self.get_float_image((3, 2, 2))
+        compiled_fn = torch.compile(transforms.Div255())
+
+        compiled_fn(x)
 
     def test_repr(self):
         assert transforms.Div255(False).__repr__() == "Div255(inplace=False)"
@@ -82,6 +94,17 @@ class TestMixup(BaseTesterTransform):
     def test_functional_uint8(self):
         pass
 
+    @pytest.mark.skipif(
+        sys.version_info >= (3, 11), reason="requires python3.10 or lower."
+    )
+    def test_compile(self):
+        torch.manual_seed(28)
+
+        x = self.get_float_image((3, 2, 2))
+        compiled_fn = torch.compile(transforms.MixUp(0.5))
+
+        compiled_fn(x)
+
     @pytest.mark.parametrize(
         "alpha,inplace,repr",
         [
@@ -113,6 +136,17 @@ class TestMul255(BaseTesterTransform):
 
     def test_functional_uint8(self):
         pass
+
+    @pytest.mark.skipif(
+        sys.version_info >= (3, 11), reason="requires python3.10 or lower."
+    )
+    def test_compile(self):
+        torch.manual_seed(28)
+
+        x = self.get_float_image((3, 2, 2))
+        compiled_fn = torch.compile(transforms.Mul255())
+
+        compiled_fn(x)
 
     def test_repr(self):
         assert transforms.Mul255(False).__repr__() == "Mul255(inplace=False)"
@@ -158,6 +192,17 @@ class TestNormalize(BaseTesterTransform):
         torch.testing.assert_close(out, expected_out)
 
         assert not torch.equal(out, in_x)
+
+    @pytest.mark.skipif(
+        sys.version_info >= (3, 11), reason="requires python3.10 or lower."
+    )
+    def test_compile(self):
+        torch.manual_seed(28)
+
+        x = self.get_float_image((3, 2, 2))
+        compiled_fn = torch.compile(transforms.Normalize(0.5, 0.5))
+
+        compiled_fn(x)
 
     @pytest.mark.parametrize(
         "mean,std,cast_dtype,inplace,value_check,repr",
@@ -268,6 +313,22 @@ class TestRandomApply(BaseTesterTransform):
             p=p,
         )(tensor)
 
+    @pytest.mark.parametrize("p", [0, 0.5, 1.0])
+    @pytest.mark.skipif(
+        sys.version_info >= (3, 11), reason="requires python3.10 or lower."
+    )
+    def test_compile(self, p: float):
+        torch.manual_seed(28)
+
+        x = self.get_uint8_image((3, 2, 2))
+        compiled_fn = torch.compile(
+            transforms.RandomApply(
+                transforms.RandomGaussianBlur((3, 3), (0.1, 2.0), p=1.0), p=p
+            )
+        )
+
+        compiled_fn(x)
+
     @pytest.mark.parametrize(
         "p,apply_transforms,repr",
         [
@@ -295,10 +356,10 @@ class TestRandomApply(BaseTesterTransform):
             )
 
 
-class TestRandomGaussianBlur:
+class TestRandomGaussianBlur(BaseTesterTransform):
     def test_functional_float(self):
         torch.manual_seed(28)
-        tensor = torch.rand((3, 16, 16))
+        tensor = self.get_float_image((3, 16, 16))
 
         out_not_blurred = transforms.RandomGaussianBlur(3, 0.1, 0.0)(tensor)
         transforms.RandomGaussianBlur((3, 3), (0.1, 2.0), 0.5)(tensor)
@@ -311,7 +372,7 @@ class TestRandomGaussianBlur:
 
     def test_functional_uint8(self):
         torch.manual_seed(28)
-        tensor = torch.randint(0, 255, (3, 16, 16))
+        tensor = self.get_uint8_image((3, 16, 16))
 
         out_not_blurred = transforms.RandomGaussianBlur(3, 0.1, 0.0)(tensor)
         transforms.RandomGaussianBlur((3, 3), (0.1, 2.0), 0.5)(tensor)
@@ -321,6 +382,20 @@ class TestRandomGaussianBlur:
 
         torch.testing.assert_close(out_blurred, torchvision_out)
         torch.testing.assert_close(out_not_blurred, tensor)
+
+    @pytest.mark.parametrize("p", [0, 0.5, 1.0])
+    @pytest.mark.skipif(
+        sys.version_info >= (3, 11), reason="requires python3.10 or lower."
+    )
+    def test_compile(self, p: float):
+        torch.manual_seed(28)
+
+        x = self.get_uint8_image((3, 2, 2))
+        compiled_fn = torch.compile(
+            transforms.RandomGaussianBlur((3, 3), (0.1, 2.0), p=p)
+        )
+
+        compiled_fn(x)
 
     @pytest.mark.parametrize(
         "kernel_size,sigma,p,value_check,repr",
@@ -461,6 +536,17 @@ class TestVideoNormalize(BaseTesterTransform):
 
         torch.testing.assert_close(out, expected_out)
         assert not torch.equal(in_x, expected_out)
+
+    @pytest.mark.skipif(
+        sys.version_info >= (3, 11), reason="requires python3.10 or lower."
+    )
+    def test_compile(self):
+        torch.manual_seed(28)
+
+        x = self.get_float_image((3, 2, 2, 2))
+        compiled_fn = torch.compile(transforms.VideoNormalize(0.5, 0.5))
+
+        compiled_fn(x)
 
     @pytest.mark.parametrize(
         "mean,std,cast_dtype,inplace,value_check,video_format,repr",

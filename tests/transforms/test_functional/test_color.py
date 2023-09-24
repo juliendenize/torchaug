@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from typing import Any
 
 import pytest
@@ -77,6 +78,17 @@ class TestAdjustHue(BaseTesterFunctional):
 
         torch.testing.assert_close(torchaug_out, torchvision_out)
 
+    @pytest.mark.skipif(
+        sys.version_info >= (3, 11), reason="requires python3.10 or lower."
+    )
+    def test_compile(self):
+        torch.manual_seed(28)
+
+        x = self.get_uint8_image((3, 2, 2))
+        compiled_fn = torch.compile(F.adjust_hue)
+
+        compiled_fn(x, 0.1)
+
     @pytest.mark.parametrize(
         "hue_factor,error_type",
         [
@@ -134,6 +146,17 @@ class TestSolarize(BaseTesterFunctional):
         torch.testing.assert_close(
             F.solarize(x, threshold, value_check), F_tv.solarize(x, float(threshold))
         )
+
+    @pytest.mark.skipif(
+        sys.version_info >= (3, 11), reason="requires python3.10 or lower."
+    )
+    def test_compile(self):
+        torch.manual_seed(28)
+
+        x = self.get_uint8_image((3, 2, 2))
+        compiled_fn = torch.compile(F.solarize)
+
+        compiled_fn(x, 0.5)
 
     @pytest.mark.parametrize(
         "x,error_type",

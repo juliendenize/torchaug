@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import sys
 from typing import Any
 
 import pytest
@@ -160,6 +161,17 @@ class TestBatchRandomColorJitter(BaseTesterTransform):
             assert torch.equal(imgs, out)
         else:
             assert not torch.equal(imgs, out)
+
+    @pytest.mark.parametrize("p", [0, 0.5, 1.0])
+    @pytest.mark.skip(reason="Compile error from Dynamo.")
+    def test_compile(self, p: float):
+        torch.manual_seed(28)
+        x = self.get_uint8_image((4, 3, 2, 2))
+        compiled_fn = torch.compile(
+            transforms.BatchRandomColorJitter(0.5, 0.5, 0.5, 0.1, p=p)
+        )
+
+        compiled_fn(x)
 
     @pytest.mark.parametrize(
         "brightness,contrast,saturation,hue,p,num_rand_calls,inplace,value_check,repr",
@@ -372,6 +384,17 @@ class TestBatchRandomGrayscale(BaseTesterTransform):
         else:
             assert not torch.equal(imgs, out)
 
+    @pytest.mark.parametrize("p", [0, 0.1, 0.2, 0.3, 0.5, 1.0])
+    @pytest.mark.skipif(
+        sys.version_info >= (3, 11), reason="requires python3.10 or lower."
+    )
+    def test_compile(self, p: float):
+        torch.manual_seed(28)
+        x = self.get_uint8_image((4, 3, 2, 2))
+        compiled_fn = torch.compile(transforms.BatchRandomGrayscale(p=p))
+
+        compiled_fn(x)
+
     @pytest.mark.parametrize(
         "p,num_output_channels,inplace,repr",
         [
@@ -474,6 +497,17 @@ class TestBatchRandomSolarize(BaseTesterTransform):
             assert torch.equal(imgs, out)
         else:
             assert not torch.equal(imgs, out)
+
+    @pytest.mark.parametrize("p", [0, 0.5, 1.0])
+    @pytest.mark.skipif(
+        sys.version_info >= (3, 11), reason="requires python3.10 or lower."
+    )
+    def test_compile(self, p: float):
+        torch.manual_seed(28)
+        x = self.get_uint8_image((4, 3, 2, 2))
+        compiled_fn = torch.compile(transforms.BatchRandomSolarize(0.5, p=p))
+
+        compiled_fn(x)
 
     @pytest.mark.parametrize(
         "threshold,p,inplace,value_check,repr",

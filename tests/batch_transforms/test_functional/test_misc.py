@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from typing import Any
 
 import pytest
@@ -94,6 +95,17 @@ class TestBatchGaussianBlur(BaseTesterFunctional):
 
         torch.testing.assert_close(out, expected_out)
 
+    @pytest.mark.skipif(
+        sys.version_info >= (3, 11), reason="requires python3.10 or lower."
+    )
+    def test_compile(self):
+        torch.manual_seed(28)
+
+        x = self.get_uint8_image((4, 3, 2, 2))
+        compiled_fn = torch.compile(F.batch_gaussian_blur)
+
+        compiled_fn(x, [3, 3], 0.5, False)
+
     def test_cuda_transfer(self):
         if torch.cuda.is_available():
             x = torch.randn((3, 3, 2, 2), device="cuda")
@@ -186,6 +198,17 @@ class TestBatchMixup(BaseTesterFunctional):
 
     def test_output_values_uint8(self):
         pass
+
+    @pytest.mark.skipif(
+        sys.version_info >= (3, 11), reason="requires python3.10 or lower."
+    )
+    def test_compile(self):
+        torch.manual_seed(28)
+
+        x = self.get_float_image((4, 3, 2, 2))
+        compiled_fn = torch.compile(F.batch_mixup)
+
+        compiled_fn(x, x, 0.5, False)
 
     def test_cuda_transfer(self):
         if torch.cuda.is_available():

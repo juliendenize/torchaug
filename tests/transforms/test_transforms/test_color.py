@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import sys
 
 import pytest
 import torch
@@ -68,6 +69,20 @@ class TestRandomColorJitter(BaseTesterTransform):
 
         torch.testing.assert_close(out_jittered, torchvision_out)
         torch.testing.assert_close(out_not_jittered, tensor)
+
+    @pytest.mark.parametrize("p", [0, 0.5, 1.0])
+    @pytest.mark.skipif(
+        sys.version_info >= (3, 11), reason="requires python3.10 or lower."
+    )
+    def test_compile(self, p: float):
+        torch.manual_seed(28)
+
+        x = self.get_uint8_image((3, 2, 2))
+        compiled_fn = torch.compile(
+            transforms.RandomColorJitter(0.5, 0.5, 0.5, 0.1, p=p)
+        )
+
+        compiled_fn(x)
 
     @pytest.mark.parametrize(
         "brightness,contrast,saturation,hue,p,repr",
@@ -142,6 +157,18 @@ class TestRandomGrayscale(BaseTesterTransform):
         if p == 0:
             assert torch.equal(imgs, out)
 
+    @pytest.mark.parametrize("p", [0, 0.5, 1.0])
+    @pytest.mark.skipif(
+        sys.version_info >= (3, 11), reason="requires python3.10 or lower."
+    )
+    def test_compile(self, p: float):
+        torch.manual_seed(28)
+
+        x = self.get_uint8_image((3, 2, 2))
+        compiled_fn = torch.compile(transforms.RandomGrayscale(p=p))
+
+        compiled_fn(x)
+
     @pytest.mark.parametrize(
         "p,num_output_channels,repr",
         [
@@ -187,6 +214,18 @@ class TestRandomSolarize(BaseTesterTransform):
 
         torch.testing.assert_close(out_solarized, expected_out)
         torch.testing.assert_close(out_not_solarized, tensor)
+
+    @pytest.mark.parametrize("p", [0, 0.5, 1.0])
+    @pytest.mark.skipif(
+        sys.version_info >= (3, 11), reason="requires python3.10 or lower."
+    )
+    def test_compile(self, p: float):
+        torch.manual_seed(28)
+
+        x = self.get_uint8_image((3, 2, 2))
+        compiled_fn = torch.compile(transforms.RandomSolarize(128, p=p))
+
+        compiled_fn(x)
 
     def test_repr(self):
         assert re.match(
