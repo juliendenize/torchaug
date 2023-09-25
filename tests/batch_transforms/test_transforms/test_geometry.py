@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from typing import Any, Sequence
 
 import pytest
@@ -59,6 +60,17 @@ class TestBatchRandomHorizontalFlip(BaseTesterTransform):
             assert torch.equal(imgs, out)
         else:
             assert not torch.equal(imgs, out)
+
+    @pytest.mark.parametrize("p", [0, 0.5, 1.0])
+    @pytest.mark.skipif(
+        sys.version_info >= (3, 11), reason="requires python3.10 or lower."
+    )
+    def test_compile(self, p: float):
+        torch.manual_seed(28)
+        x = self.get_uint8_image((4, 3, 2, 2))
+        compiled_fn = torch.compile(transforms.BatchRandomHorizontalFlip(p=p))
+
+        compiled_fn(x)
 
     @pytest.mark.parametrize(
         "p,inplace,repr",
@@ -185,6 +197,16 @@ class TestBatchRandomResizedCrop(BaseTesterTransform):
         out = transforms.BatchRandomResizedCrop(
             size, scale, ratio, interpolation, antialias, num_rand_calls
         )(imgs)
+
+    @pytest.mark.skipif(
+        sys.version_info >= (3, 11), reason="requires python3.10 or lower."
+    )
+    def test_compile(self):
+        torch.manual_seed(28)
+        x = self.get_uint8_image((4, 3, 2, 2))
+        compiled_fn = torch.compile(transforms.BatchRandomResizedCrop([2, 2]))
+
+        compiled_fn(x)
 
     @pytest.mark.parametrize(
         "size,scale,ratio,interpolation,antialias,num_rand_calls,repr",
@@ -366,6 +388,16 @@ class TestBatchVideoResize(BaseTesterTransform):
             antialias=antialias,
             video_format=video_format,
         )(tensor)
+
+    @pytest.mark.skipif(
+        sys.version_info >= (3, 11), reason="requires python3.10 or lower."
+    )
+    def test_compile(self):
+        torch.manual_seed(28)
+        x = self.get_uint8_image((4, 3, 2, 2, 2))
+        compiled_fn = torch.compile(transforms.BatchVideoResize([2, 2]))
+
+        compiled_fn(x)
 
     @pytest.mark.parametrize(
         "size,interpolation,max_size,antialias,video_format,repr",

@@ -87,10 +87,10 @@ class BatchRandomGaussianBlur(BatchRandomTransform):
         dtype = sigma_min.dtype
         device = sigma_min.device
         return (
-            torch.rand(batch_size, 1, dtype=dtype, device=device).expand(batch_size, 2)
+            torch.rand(batch_size, 1, dtype=dtype, device=device)
             * (sigma_max - sigma_min)
             + sigma_min
-        )
+        ).expand(batch_size, 2)
 
     def apply_transform(self, imgs: Tensor) -> Tensor:
         """Blur the batch of images.

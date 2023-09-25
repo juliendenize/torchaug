@@ -318,9 +318,9 @@ class RandomGaussianBlur(RandomTransform):
         dtype = sigma_min.dtype
         device = sigma_min.device
         return (
-            torch.rand([], dtype=dtype, device=device) * (sigma_max - sigma_min)
+            torch.rand([1], dtype=dtype, device=device) * (sigma_max - sigma_min)
             + sigma_min
-        )
+        ).expand(2)
 
     def apply_transform(self, img: Tensor) -> Tensor:
         """Blur the image.
@@ -332,7 +332,7 @@ class RandomGaussianBlur(RandomTransform):
             Gaussian blurred image.
         """
         sigma: Tensor = self.get_params(self.sigma[0], self.sigma[1])
-        return F.gaussian_blur(img, self.kernel_size, [sigma, sigma], self.value_check)
+        return F.gaussian_blur(img, self.kernel_size, sigma, self.value_check)
 
     def __repr__(self) -> str:
         s = f"{self.__class__.__name__}(kernel_size={self.kernel_size}, sigma={self.sigma.tolist()}, p={self.p}, value_check={self.value_check})"

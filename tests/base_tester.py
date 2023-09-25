@@ -38,6 +38,10 @@ class BaseTesterFunctional(ABC):
     def test_wrong_input_tensor(self):
         pass
 
+    @abstractmethod
+    def test_compile(self):
+        pass
+
 
 class BaseTesterTransform(ABC):
     def get_generator(self, seed: int = 28) -> torch.Generator:
@@ -69,4 +73,8 @@ class BaseTesterTransform(ABC):
 
     @abstractmethod
     def test_repr(self):
+        pass
+
+    @abstractmethod
+    def test_compile(self):
         pass

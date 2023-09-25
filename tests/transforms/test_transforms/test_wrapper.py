@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from typing import Sequence
 
 import pytest
@@ -71,6 +72,28 @@ class TestImageWrapper(BaseTesterTransform):
 
         if hasattr(transform, "inplace"):
             assert transform.inplace
+
+    @pytest.mark.skipif(
+        sys.version_info >= (3, 11), reason="requires python3.10 or lower."
+    )
+    def test_compile(self):
+        torch.manual_seed(28)
+
+        x = self.get_uint8_image((3, 2, 2))
+
+        transform = (
+            transforms.Normalize(
+                (0.5,),
+                (0.5,),
+                cast_dtype=torch.float32,
+                inplace=False,
+                value_check=True,
+            ),
+        )
+
+        compiled_fn = torch.compile(transforms.ImageWrapper(transform))
+
+        compiled_fn(x)
 
     @pytest.mark.parametrize(
         "list_transforms,inplace,repr",
@@ -190,6 +213,28 @@ class TestVideoWrapper(BaseTesterTransform):
 
         assert not torch.equal(out, in_tensor)
 
+    @pytest.mark.skipif(
+        sys.version_info >= (3, 11), reason="requires python3.10 or lower."
+    )
+    def test_compile(self):
+        torch.manual_seed(28)
+
+        x = self.get_uint8_image((3, 2, 2, 2))
+
+        transform = (
+            transforms.VideoNormalize(
+                (0.5,),
+                (0.5,),
+                cast_dtype=torch.float32,
+                inplace=False,
+                value_check=True,
+            ),
+        )
+
+        compiled_fn = torch.compile(transforms.VideoWrapper(transform))
+
+        compiled_fn(x)
+
     @pytest.mark.parametrize(
         "list_transforms,inplace,video_format,repr",
         [
@@ -302,6 +347,28 @@ class TestWrapper(BaseTesterTransform):
 
         if hasattr(transform, "inplace"):
             assert transform.inplace
+
+    @pytest.mark.skipif(
+        sys.version_info >= (3, 11), reason="requires python3.10 or lower."
+    )
+    def test_compile(self):
+        torch.manual_seed(28)
+
+        x = self.get_uint8_image((3, 2, 2))
+
+        transform = (
+            transforms.Normalize(
+                (0.5,),
+                (0.5,),
+                cast_dtype=torch.float32,
+                inplace=False,
+                value_check=True,
+            ),
+        )
+
+        compiled_fn = torch.compile(transforms.ImageWrapper(transform))
+
+        compiled_fn(x)
 
     @pytest.mark.parametrize(
         "list_transforms,inplace,repr",
