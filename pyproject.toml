@@ -1,17 +1,19 @@
 [build-system]
-requires = ["setuptools>=61.2"]
 build-backend = "setuptools.build_meta"
+requires = [
+  "setuptools>=61.2",
+]
 
 [project]
 name = "torchaug"
-authors = [
-  { name="Julien Denize", email="julien.denize@hotmail.fr" },
-]
 description = "Torchvision Complementary tool to perform batch and GPU data augmentations."
 keywords = [
   "computer vision",
   "deep learning",
   "pytorch",
+]
+authors = [
+  { name="Julien Denize", email="julien.denize@hotmail.fr" },
 ]
 requires-python = ">=3.8"
 classifiers = [
@@ -30,6 +32,7 @@ classifiers = [
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
   "Topic :: Scientific/Engineering :: Artificial Intelligence",
   "Topic :: Scientific/Engineering :: Image Processing",
   "Topic :: Software Development :: Libraries",
@@ -39,11 +42,10 @@ dynamic = [
   "readme",
   "version",
 ]
-
 [project.urls]
-"Homepage" = "https://github.com/juliendenize/torchaug"
 "Bug Tracker" = "https://github.com/juliendenize/torchaug/issues"
 "Download" = "https://github.com/juliendenize/torchaug"
+"Homepage" = "https://github.com/juliendenize/torchaug"
 "Source Code" = "https://github.com/juliendenize/torchaug"
 
 [tool.setuptools]

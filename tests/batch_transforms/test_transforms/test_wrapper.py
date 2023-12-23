@@ -1,20 +1,16 @@
 from __future__ import annotations
 
-import re
 import sys
 from typing import Any, Sequence
 
 import pytest
 import torch
-import torchvision.transforms as tv_transforms
-import torchvision.transforms.functional as F_tv
+import torchvision.transforms.v2 as tv_transforms
 from torch import nn
-from torchvision.transforms.functional import InterpolationMode
+from torchvision.transforms.v2.functional import InterpolationMode
 
 import torchaug.batch_transforms as transforms
-import torchaug.batch_transforms.functional as F_b
 import torchaug.transforms as mono_transforms
-import torchaug.transforms.functional as F
 from torchaug.utils import VideoFormat
 
 from ...base_tester import BaseTesterTransform

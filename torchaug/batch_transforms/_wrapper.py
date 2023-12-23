@@ -5,8 +5,10 @@ from typing import Sequence
 import torch
 from torch import Tensor, nn
 
-from torchaug.batch_transforms._utils import (_assert_batch_images_tensor,
-                                              _assert_batch_videos_tensor)
+from torchaug.batch_transforms._utils import (
+    _assert_batch_images_tensor,
+    _assert_batch_videos_tensor,
+)
 from torchaug.transforms._transform import VideoBase
 from torchaug.transforms._wrapper import Wrapper
 from torchaug.utils import VideoFormat, _log_api_usage_once

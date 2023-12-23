@@ -6,12 +6,9 @@ import torch
 from torch import Tensor
 from torch.nn.functional import conv2d
 from torch.nn.functional import pad as torch_pad
-from torchvision.transforms._functional_tensor import (_cast_squeeze_in,
-                                                       _cast_squeeze_out)
 
 from torchaug.batch_transforms._utils import _assert_batch_images_tensor
-from torchaug.transforms._utils import (_assert_tensor,
-                                        transfer_tensor_on_device)
+from torchaug.transforms._utils import _assert_tensor, transfer_tensor_on_device
 from torchaug.utils import _log_api_usage_once
 
 
@@ -162,22 +159,24 @@ def batch_gaussian_blur(
             and not torch.all(torch.gt(sigma, 0))
         )
     ):
-        raise ValueError(f"sigma should have positive values.")
+        raise ValueError("sigma should have positive values.")
 
-    dtype = imgs.dtype if torch.is_floating_point(imgs) else torch.float32
+    imgs_dtype = imgs.dtype
+    is_float = torch.is_floating_point(imgs)
+    k_dtype = imgs_dtype if is_float else torch.float32
 
     b, *rest_dims, h, w = imgs.shape
     imgs = imgs.reshape(b, math.prod(rest_dims), h, w)
 
     device = imgs.device
     kernel = _get_batch_gaussian_kernel2d(
-        kernel_size, sigma_t, dtype=dtype, device=device
+        kernel_size, sigma_t, dtype=k_dtype, device=device
     )
     kernel = kernel[:, None, ...]
     kernel = kernel.expand(-1, imgs.shape[-3], kernel_size[0], kernel_size[1])
     kernel = kernel.reshape(-1, 1, kernel_size[0], kernel_size[1])
 
-    imgs, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(imgs, [kernel.dtype])
+    imgs = imgs if is_float else imgs.to(dtype=torch.float32)
 
     # padding = (left, right, top, bottom)
     padding = [
@@ -190,9 +189,8 @@ def batch_gaussian_blur(
     imgs = imgs.view(-1, kernel.size(0), imgs.size(-2), imgs.size(-1))
     imgs = conv2d(imgs, kernel, groups=imgs.shape[-3])
 
-    imgs = _cast_squeeze_out(imgs, need_cast, need_squeeze, out_dtype)
-
     imgs = imgs.reshape(b, *rest_dims, h, w)
+    imgs = imgs if is_float else imgs.round_().to(dtype=imgs_dtype)
 
     return imgs
 

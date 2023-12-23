@@ -8,8 +8,10 @@ from torch import Tensor, nn
 from torchvision.transforms.transforms import _setup_size
 
 import torchaug.batch_transforms.functional as F_b
-from torchaug.transforms._utils import (_assert_module_or_list_of_modules,
-                                        transfer_tensor_on_device)
+from torchaug.transforms._utils import (
+    _assert_module_or_list_of_modules,
+    transfer_tensor_on_device,
+)
 from torchaug.utils import _log_api_usage_once
 
 from ._transform import BatchRandomTransform

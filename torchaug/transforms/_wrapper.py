@@ -4,10 +4,13 @@ from typing import Sequence
 
 import torch
 from torch import Tensor, nn
-from torchvision.transforms._functional_tensor import _assert_image_tensor
 
-from torchaug.transforms._utils import (_assert_module_or_list_of_modules,
-                                        _assert_tensor, _assert_video_tensor)
+from torchaug.transforms._utils import (
+    _assert_module_or_list_of_modules,
+    _assert_tensor,
+    _assert_image_tensor,
+    _assert_video_tensor,
+)
 from torchaug.utils import VideoFormat, _log_api_usage_once
 
 from ._transform import VideoBase

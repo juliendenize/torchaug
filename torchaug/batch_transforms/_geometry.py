@@ -4,14 +4,14 @@ from math import ceil
 from typing import Sequence
 
 import torch
-import torchvision.transforms as tv_transforms
-import torchvision.transforms.functional as F_tv
+import torchvision.transforms.v2 as tv_transforms
+import torchvision.transforms.v2.functional as F_tv
 from torch import Tensor, nn
-from torchvision.transforms.functional import InterpolationMode
+from torchvision.transforms.v2.functional import InterpolationMode
 from torchvision.transforms.transforms import _interpolation_modes_from_int
 
 from torchaug.batch_transforms._utils import _assert_batch_videos_tensor
-from torchaug.transforms import VideoBase
+from torchaug.transforms._wrapper import VideoBase
 from torchaug.utils import VideoFormat, _log_api_usage_once
 
 from ._transform import BatchRandomTransform

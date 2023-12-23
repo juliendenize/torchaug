@@ -4,13 +4,14 @@ import torch
 from torch import Tensor
 from torch.nn.functional import conv2d
 from torch.nn.functional import pad as torch_pad
-from torchvision.transforms._functional_tensor import (_cast_squeeze_in,
-                                                       _cast_squeeze_out,
-                                                       convert_image_dtype)
+from torchvision.transforms.v2.functional import convert_image_dtype
 
-from torchaug.transforms._utils import (_assert_image_tensor, _assert_tensor,
-                                        is_tensor_on_cpu,
-                                        transfer_tensor_on_device)
+from torchaug.transforms._utils import (
+    _assert_image_tensor,
+    _assert_tensor,
+    is_tensor_on_cpu,
+    transfer_tensor_on_device,
+)
 from torchaug.utils import _log_api_usage_once
 
 
@@ -101,15 +102,15 @@ def gaussian_blur(
 
     if isinstance(kernel_size, int):
         kernel_size = [kernel_size, kernel_size]
+
     if len(kernel_size) != 2:
         raise ValueError(
             f"If kernel_size is a sequence its length should be 2. Got {len(kernel_size)}."
         )
-    for ksize in kernel_size:
-        if ksize % 2 == 0 or ksize < 0:
-            raise ValueError(
-                f"kernel_size should have odd and positive integers. Got {kernel_size}."
-            )
+    elif any([ksize % 2 == 0 or ksize < 0 for ksize in kernel_size]):
+        raise ValueError(
+            f"kernel_size should have odd and positive integers. Got {kernel_size}."
+        )
 
     if sigma is None:
         sigma_t = torch.tensor(
@@ -161,14 +162,21 @@ def gaussian_blur(
     ):
         raise ValueError(f"sigma should have positive values. Got {sigma}.")
 
-    dtype = img.dtype if torch.is_floating_point(img) else torch.float32
+    img_dtype = img.dtype
+    img_shape = img.shape
+    img_ndim = img.ndim
+    is_float = torch.is_floating_point(img)
+    k_dtype = img.dtype if is_float else torch.float32
     device = img.device
-    kernel = _get_gaussian_kernel2d(kernel_size, sigma_t, dtype=dtype, device=device)
+    kernel = _get_gaussian_kernel2d(kernel_size, sigma_t, dtype=k_dtype, device=device)
     kernel = kernel.expand(img.shape[-3], 1, kernel.shape[0], kernel.shape[1])
 
-    img, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(img, [kernel.dtype])
+    img = img if is_float else img.to(dtype=torch.float32)
+    if img_ndim == 3:
+        img = img.unsqueeze(dim=0)
+    elif img_ndim > 4:
+        img = img.reshape((-1,) + img.shape[-3:])
 
-    # padding = (left, right, top, bottom)
     padding = [
         kernel_size[0] // 2,
         kernel_size[0] // 2,
@@ -178,7 +186,12 @@ def gaussian_blur(
     img = torch_pad(img, padding, mode="reflect")
     img = conv2d(img, kernel, groups=img.shape[-3])
 
-    img = _cast_squeeze_out(img, need_cast, need_squeeze, out_dtype)
+    if img_ndim == 3:
+        img = img.squeeze(dim=0)
+    elif img_ndim > 4:
+        img = img.reshape(img_shape)
+
+    img = img if is_float else img.round_().to(dtype=img_dtype)
     return img
 
 
@@ -292,7 +305,7 @@ def normalize(
         tensor = tensor.clone()
 
     if (value_check or is_tensor_on_cpu(std)) and not torch.all(torch.gt(std, 0)):
-        raise ValueError(f"std contains a zero leading to division by zero.")
+        raise ValueError("std contains a zero leading to division by zero.")
 
     if mean.ndim == 1:
         mean = mean.view(-1, 1, 1)
