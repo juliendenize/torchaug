@@ -5,7 +5,7 @@ from typing import Any
 
 import pytest
 import torch
-import torchvision.transforms.functional as F_tv
+import torchvision.transforms.v2.functional as F_tv
 from torch import Tensor
 
 import torchaug.transforms.functional as F

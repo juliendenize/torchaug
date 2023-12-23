@@ -2,16 +2,20 @@ from __future__ import annotations
 
 import torch
 from torch import Tensor
-from torchvision.transforms._functional_tensor import (_max_value, _rgb2hsv,
-                                                       convert_image_dtype,
-                                                       rgb_to_grayscale)
+from torchvision.transforms.v2.functional import convert_image_dtype, rgb_to_grayscale
 
-from torchaug.batch_transforms._utils import (_assert_batch_channels,
-                                              _assert_batch_images_tensor,
-                                              get_batch_channels_height_width)
-from torchaug.transforms._utils import (_assert_image_tensor, _assert_tensor,
-                                        transfer_tensor_on_device)
-from torchaug.transforms.functional._color import _hsv2rgb
+from torchaug.batch_transforms._utils import (
+    _assert_batch_channels,
+    _assert_batch_images_tensor,
+    get_batch_channels_height_width,
+)
+from torchaug.transforms._utils import (
+    _assert_image_tensor,
+    _assert_tensor,
+    _max_value,
+    transfer_tensor_on_device,
+)
+from torchaug.transforms.functional._color import _rgb_to_hsv, _hsv_to_rgb
 from torchaug.utils import _log_api_usage_once
 
 
@@ -56,7 +60,7 @@ def batch_adjust_brightness(
 
     if isinstance(brightness_factor, float):
         if brightness_factor < 0.0:
-            raise ValueError(f"brightness_factor is not non-negative.")
+            raise ValueError("brightness_factor is not non-negative.")
         brightness_factor = torch.tensor(brightness_factor, device=imgs.device).expand(
             batch_size
         )
@@ -65,15 +69,13 @@ def batch_adjust_brightness(
             brightness_factor, imgs.device, True
         )
         if value_check and not torch.all(torch.ge(brightness_factor, 0)):
-            raise ValueError(f"brightness_factor is not non-negative.")
+            raise ValueError("brightness_factor is not non-negative.")
         if brightness_factor.numel() == 1:
             brightness_factor = brightness_factor.expand(batch_size)
         elif brightness_factor.numel() != batch_size:
-            raise ValueError(
-                f"brightness_factor tensor should contain 1 or B elements."
-            )
+            raise ValueError("brightness_factor tensor should contain 1 or B elements.")
     else:
-        raise TypeError(f"brightness_factor should be a float or Tensor.")
+        raise TypeError("brightness_factor should be a float or Tensor.")
 
     brightness_factor = brightness_factor.float()
     bound = _max_value(imgs.dtype)
@@ -112,20 +114,20 @@ def batch_adjust_contrast(
 
     if isinstance(contrast_factor, float):
         if contrast_factor < 0.0:
-            raise ValueError(f"contrast_factor is not non-negative.")
+            raise ValueError("contrast_factor is not non-negative.")
         contrast_factor = torch.tensor(contrast_factor, device=imgs.device).expand(
             batch_size
         )
     elif isinstance(contrast_factor, Tensor):
         contrast_factor = transfer_tensor_on_device(contrast_factor, imgs.device, True)
         if value_check and not torch.all(torch.ge(contrast_factor, 0)):
-            raise ValueError(f"contrast_factor is not non-negative.")
+            raise ValueError("contrast_factor is not non-negative.")
         if contrast_factor.numel() == 1:
             contrast_factor = contrast_factor.expand(batch_size)
         elif contrast_factor.numel() != batch_size:
-            raise ValueError(f"contrast_factor tensor should contain 1 or B elements.")
+            raise ValueError("contrast_factor tensor should contain 1 or B elements.")
     else:
-        raise TypeError(f"contrast_factor should be a float or Tensor.")
+        raise TypeError("contrast_factor should be a float or Tensor.")
 
     c = get_batch_channels_height_width(imgs)[1]
     dtype = imgs.dtype if torch.is_floating_point(imgs) else torch.float32
@@ -186,32 +188,32 @@ def batch_adjust_hue(
 
     if isinstance(hue_factor, float):
         if not -0.5 <= hue_factor <= 0.5:
-            raise ValueError(f"hue_factor is not between -0.5 and 0.5.")
+            raise ValueError("hue_factor is not between -0.5 and 0.5.")
         hue_factor = torch.tensor(hue_factor, device=imgs.device).expand(batch_size)
     elif isinstance(hue_factor, Tensor):
         hue_factor = transfer_tensor_on_device(hue_factor, imgs.device, True)
         if value_check and not torch.all(
             torch.logical_and(torch.ge(hue_factor, -0.5), torch.le(hue_factor, 0.5))
         ):
-            raise ValueError(f"hue_factor is not between -0.5 and 0.5.")
+            raise ValueError("hue_factor is not between -0.5 and 0.5.")
         if hue_factor.numel() == 1:
             hue_factor = hue_factor.expand(batch_size)
         elif hue_factor.numel() != batch_size:
-            raise ValueError(f"hue_factor tensor should contain 1 or B elements.")
+            raise ValueError("hue_factor tensor should contain 1 or B elements.")
     else:
-        raise TypeError(f"hue_factor should be a float or Tensor.")
+        raise TypeError("hue_factor should be a float or Tensor.")
 
     orig_dtype = imgs.dtype
     imgs = convert_image_dtype(imgs, torch.float32)
 
-    imgs = _rgb2hsv(imgs)
+    imgs = _rgb_to_hsv(imgs)
     h, s, v = imgs.unbind(dim=-3)
 
     hue_factor = hue_factor.view(-1, *[1 for _ in range(h.ndim - 1)])
 
     h = (h + hue_factor) % 1.0
     imgs = torch.stack((h, s, v), dim=-3)
-    imgs_hue_adj = _hsv2rgb(imgs)
+    imgs_hue_adj = _hsv_to_rgb(imgs)
 
     return convert_image_dtype(imgs_hue_adj, orig_dtype)
 
@@ -247,7 +249,7 @@ def batch_adjust_saturation(
 
     if isinstance(saturation_factor, float):
         if saturation_factor < 0.0:
-            raise ValueError(f"saturation_factor is not non-negative.")
+            raise ValueError("saturation_factor is not non-negative.")
         saturation_factor = torch.tensor(saturation_factor, device=imgs.device).expand(
             batch_size
         )
@@ -256,14 +258,12 @@ def batch_adjust_saturation(
             saturation_factor, imgs.device, True
         )
         if value_check and not torch.all(torch.ge(saturation_factor, 0)):
-            raise ValueError(f"saturation_factor is not non-negative.")
+            raise ValueError("saturation_factor is not non-negative.")
         if saturation_factor.numel() == 1:
             saturation_factor = saturation_factor.expand(batch_size)
         elif saturation_factor.numel() != batch_size:
-            raise ValueError(
-                f"saturation_factor tensor should contain 1 or B elements."
-            )
+            raise ValueError("saturation_factor tensor should contain 1 or B elements.")
     else:
-        raise TypeError(f"saturation_factor should be a float or Tensor.")
+        raise TypeError("saturation_factor should be a float or Tensor.")
 
     return _batch_blend(imgs, rgb_to_grayscale(imgs), saturation_factor)

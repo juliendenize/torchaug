@@ -8,8 +8,7 @@ from torch import Tensor, nn
 from torchvision.transforms.transforms import _setup_size
 
 import torchaug.transforms.functional as F
-from torchaug.batch_transforms._utils import \
-    _assert_video_or_batch_videos_tensor
+from torchaug.batch_transforms._utils import _assert_video_or_batch_videos_tensor
 from torchaug.transforms._utils import _assert_module_or_list_of_modules
 from torchaug.utils import VideoFormat, _log_api_usage_once
 
@@ -163,7 +162,6 @@ class Normalize(nn.Module):
         inplace: bool = False,
         value_check: bool = False,
     ) -> None:
-
         super().__init__()
         _log_api_usage_once(self)
 

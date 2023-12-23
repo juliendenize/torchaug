@@ -56,7 +56,6 @@ def time_batch_transform_tv(n_runs: int, tensor: torch.Tensor, transform: Callab
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser(
         description="Speed comparison between Torchvision and Torchaug.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -178,7 +177,7 @@ if __name__ == "__main__":
             )
 
         header = [
-            f"Transform",
+            "Transform",
             "Torchvision",
             "Torchaug",
         ]
@@ -326,7 +325,7 @@ if __name__ == "__main__":
                 )
             rows.append(row)
         header = [
-            f"Transform",
+            "Transform",
             "Rand Calls",
         ]
 

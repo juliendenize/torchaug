@@ -5,9 +5,9 @@ from typing import Any, Sequence
 
 import pytest
 import torch
-import torchvision.transforms as tv_transforms
-import torchvision.transforms.functional as F_tv
-from torchvision.transforms.functional import InterpolationMode
+import torchvision.transforms.v2 as tv_transforms
+import torchvision.transforms.v2.functional as F_tv
+from torchvision.transforms.v2.functional import InterpolationMode
 
 import torchaug.batch_transforms as transforms
 
@@ -169,7 +169,7 @@ class TestBatchRandomResizedCrop(BaseTesterTransform):
     ):
         imgs = self.get_float_image((8, 3, 8, 8))
 
-        out = transforms.BatchRandomResizedCrop(
+        transforms.BatchRandomResizedCrop(
             size, scale, ratio, interpolation, antialias, num_rand_calls
         )(imgs)
 
@@ -194,7 +194,7 @@ class TestBatchRandomResizedCrop(BaseTesterTransform):
     ):
         imgs = self.get_uint8_image((8, 3, 8, 8))
 
-        out = transforms.BatchRandomResizedCrop(
+        transforms.BatchRandomResizedCrop(
             size, scale, ratio, interpolation, antialias, num_rand_calls
         )(imgs)
 
@@ -353,7 +353,7 @@ class TestBatchVideoResize(BaseTesterTransform):
             if video_format == "TCHW"
             else self.get_float_image((2, 3, 8, 16, 16))
         )
-        out = transforms.BatchVideoResize(
+        transforms.BatchVideoResize(
             size=size,
             interpolation=interpolation,
             max_size=max_size,
@@ -381,7 +381,7 @@ class TestBatchVideoResize(BaseTesterTransform):
             if video_format == "TCHW"
             else self.get_uint8_image((2, 3, 8, 16, 16))
         )
-        out = transforms.BatchVideoResize(
+        transforms.BatchVideoResize(
             size=size,
             interpolation=interpolation,
             max_size=max_size,

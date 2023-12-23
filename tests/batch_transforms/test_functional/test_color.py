@@ -5,7 +5,7 @@ from typing import Any
 
 import pytest
 import torch
-import torchvision.transforms.functional as F_tv
+import torchvision.transforms.v2.functional as F_tv
 from torch import Tensor
 
 import torchaug.batch_transforms.functional as F
@@ -46,7 +46,7 @@ class TestBatchAdjustBrightness(BaseTesterFunctional):
     @pytest.mark.parametrize(
         "brightness_factor,brightness_torchvision_factor",
         [
-            (torch.tensor((1, 0.5, 2)), (1, 0.5, 2)),
+            (torch.tensor((1, 0.5, 2)), (1.0, 0.5, 2.0)),
             (torch.tensor(0.5), (0.5, 0.5, 0.5)),
             (torch.tensor([0.5]), (0.5, 0.5, 0.5)),
             (0.5, (0.5, 0.5, 0.5)),

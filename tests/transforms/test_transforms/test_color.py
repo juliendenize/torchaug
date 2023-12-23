@@ -5,7 +5,7 @@ import sys
 
 import pytest
 import torch
-import torchvision.transforms.functional as F_tv
+import torchvision.transforms.v2.functional as F_tv
 
 import torchaug.transforms as transforms
 import torchaug.transforms.functional as F

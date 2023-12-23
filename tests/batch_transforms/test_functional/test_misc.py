@@ -217,13 +217,6 @@ class TestBatchMixup(BaseTesterFunctional):
 
             F.batch_mixup(x_1, x_2, torch.tensor(0.5, device="cpu"), False)
 
-    def test_cuda_transfer(self):
-        if torch.cuda.is_available():
-            x_1 = torch.randn((3, 3, 2, 2), device="cuda")
-            x_2 = torch.randn((3, 3, 2, 2), device="cuda")
-
-            F.batch_mixup(x_1, x_2, torch.tensor(0.5, device="cpu"), False)
-
     @pytest.mark.parametrize(
         "lam,error_type",
         [

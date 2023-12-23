@@ -81,6 +81,33 @@ def _is_tensor_video(x: Tensor) -> bool:
     return x.ndim == 4
 
 
+def _max_value(dtype: torch.dtype) -> int:
+    """Get the maximum value of a torch dtype.
+
+    From Torchvision.
+
+    Args:
+        dtype: the dtype to analyze.
+
+    Returns:
+        The maximum value for the dtype.
+    """
+    if dtype == torch.uint8:
+        return 255
+    elif dtype == torch.int8:
+        return 127
+    elif dtype == torch.int16:
+        return 32767
+    elif dtype == torch.int32:
+        return 2147483647
+    elif dtype == torch.int64:
+        return 9223372036854775807
+    else:
+        # This is only here for completeness. This value is implicitly assumed in a lot of places so changing it is not
+        # easy.
+        return 1
+
+
 def is_tensor_on_cpu(tensor: Tensor) -> bool:
     """Check if tensor is on CPU.
 
