@@ -5,13 +5,13 @@ from typing import Any, Sequence
 
 import pytest
 import torch
-import torchvision.transforms.v2 as tv_transforms
-from torch import nn
-from torchvision.transforms.v2.functional import InterpolationMode
 
 import torchaug.batch_transforms as transforms
 import torchaug.transforms as mono_transforms
+import torchvision.transforms.v2 as tv_transforms
+from torch import nn
 from torchaug.utils import VideoFormat
+from torchvision.transforms.v2.functional import InterpolationMode
 
 from ...base_tester import BaseTesterTransform
 

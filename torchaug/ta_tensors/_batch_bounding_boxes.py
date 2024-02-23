@@ -1,17 +1,23 @@
 from __future__ import annotations
+
+from typing import Any, List, Mapping, Sequence, Tuple
+
 import torch
 from torch import Tensor
-from typing import Any, Mapping, Sequence, Tuple
-from torchvision.tv_tensors import BoundingBoxFormat, TVTensor
 from torch.utils._pytree import tree_flatten
-from torchaug.ta_tensors._bounding_boxes import BoundingBoxes
+
+from ._bounding_boxes import BoundingBoxes, BoundingBoxFormat
+from ._ta_tensor import TATensor
 
 
 def convert_bboxes_to_batch_bboxes(
     bboxes: Sequence[BoundingBoxes],
 ) -> BatchBoundingBoxes:
     """Convert a sequence of :class:`~torchvision.tv_tensors.BoundingBoxes` objects to a
-    :class:`~torchaug.torchaug_tensors.BatchBoundingBoxes` object."""
+    :class:`~torchaug.torchaug_tensors.BatchBoundingBoxes` object.
+
+    Assumes all bboxes are valid.
+    """
 
     if not all(
         bbox.canvas_size == bboxes[0].canvas_size and bbox.format == bboxes[0].format
@@ -19,19 +25,23 @@ def convert_bboxes_to_batch_bboxes(
     ):
         raise ValueError
 
-    canvas_size, format, device = (
+    canvas_size, format = (
         bboxes[0].canvas_size,
         bboxes[0].format,
-        bboxes[0].device,
     )
 
     bboxes_data = torch.cat([bbox.as_subclass(Tensor) for bbox in bboxes])
-    idx_sample = torch.tensor(
-        [0] + [bbox.shape[0] for bbox in bboxes], device=device, dtype=torch.int32
-    ).cumsum(0)
+    idx_sample = (
+        torch.tensor([0] + [bbox.shape[0] for bbox in bboxes], dtype=torch.int32)
+        .cumsum(0)
+        .tolist()
+    )
 
     batch_bboxes = BatchBoundingBoxes(
-        bboxes_data, canvas_size=canvas_size, format=format, idx_sample=idx_sample
+        bboxes_data,
+        canvas_size=canvas_size,
+        format=format,
+        idx_sample=idx_sample,
     )
 
     return batch_bboxes
@@ -63,7 +73,7 @@ def convert_batch_bboxes_to_bboxes(
     return list_bboxes
 
 
-class BatchBoundingBoxes(TVTensor):
+class BatchBoundingBoxes(TATensor):
     """:class:`torch.Tensor` subclass for bounding boxes.
 
     .. note::
@@ -85,7 +95,19 @@ class BatchBoundingBoxes(TVTensor):
 
     format: BoundingBoxFormat
     canvas_size: Tuple[int, int]
-    idx_sample: Tensor
+    idx_sample: List[int]
+
+    @property
+    def batch_size(self) -> int:
+        return self.idx_sample[-1]
+
+    @property
+    def num_boxes(self) -> int:
+        return self.data.shape[0]
+
+    @property
+    def num_sample_boxes(self, idx: int) -> int:
+        return self.idx_sample[idx + 1] - self.idx_sample[idx]
 
     @classmethod
     def _wrap(
@@ -94,7 +116,7 @@ class BatchBoundingBoxes(TVTensor):
         *,
         format: BoundingBoxFormat | str,
         canvas_size: Tuple[int, int],
-        idx_sample: Tensor,
+        idx_sample: List[int],
         check_dims: bool = True,
     ) -> BatchBoundingBoxes:  # type: ignore[override]
         if check_dims and tensor.ndim != 2:
@@ -113,7 +135,7 @@ class BatchBoundingBoxes(TVTensor):
         *,
         format: BoundingBoxFormat | str,
         canvas_size: Tensor,
-        idx_sample: Tensor,
+        idx_sample: List[int],
         dtype: torch.dtype | None = None,
         device: torch.device | str | int | None = None,
         requires_grad: bool | None = None,
@@ -122,7 +144,7 @@ class BatchBoundingBoxes(TVTensor):
             data, dtype=dtype, device=device, requires_grad=requires_grad
         )
         idx_sample = cls._to_tensor(
-            idx_sample, device=device, dtype=torch.int32, requires_grad=False
+            idx_sample, device=device, dtype=torch.long, requires_grad=False
         )
         return cls._wrap(
             tensor, format=format, canvas_size=canvas_size, idx_sample=idx_sample
@@ -173,9 +195,62 @@ class BatchBoundingBoxes(TVTensor):
             )
         return output
 
+    def get_chunk(self, chunk_indices: torch.Tensor) -> BatchBoundingBoxes:
+        """Get a chunk of the batch of  bounding boxes.
+
+        Args:
+            chunk_indices (torch.Tensor): The indices of the chunk to get.
+
+        Returns:
+            BatchBoundingBoxes: The chunk of the batch bounding boxes.
+        """
+
+        chunk_idx_sample = torch.zeros(
+            chunk_indices.shape[0] + 1, device=self.device, dtype=torch.long
+        )
+        chunk_idx_sample[1:] = (
+            self.idx_sample[chunk_indices + 1] - self.idx_sample[chunk_indices]
+        )
+        chunk_idx_sample = chunk_idx_sample.cumsum(0)
+
+        return BatchBoundingBoxes(
+            self[chunk_indices],
+            format=self.format,
+            canvas_size=self.canvas_size,
+            idx_sample=chunk_idx_sample,
+            device=self.device,
+            requires_grad=self.requires_grad,
+        )
+
+    def update_chunk_(
+        self, chunk: BatchBoundingBoxes, chunk_indices: torch.Tensor
+    ) -> BatchBoundingBoxes:
+        """Update a chunk of the batch of bounding boxes.
+
+        Args:
+            chunk (BatchBoundingBoxes): The chunk update.
+            chunk_indices (torch.Tensor): The indices of the chunk to update.
+
+        Returns:
+            BatchBoundingBoxes: The updated batch of bounding boxes.
+        """
+        if chunk.format != self.format:
+            raise ValueError(
+                "The format of the chunk must be the same as the format of the batch of bounding boxes."
+            )
+
+        if chunk.canvas_size != self.canvas_size:
+            raise ValueError(
+                "The canvas size of the chunk must be the same as the canvas size of the batch of bounding boxes."
+            )
+
+        self[chunk_indices] = chunk
+
+        return self
+
     def __repr__(self, *, tensor_contents: Any = None) -> str:  # type: ignore[override]
         return self._make_repr(
             format=self.format,
             canvas_size=self.canvas_size,
-            idx_sample=self.idx_sample.tolist(),
+            idx_sample=self.idx_sample,
         )

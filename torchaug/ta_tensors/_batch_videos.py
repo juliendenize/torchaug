@@ -1,10 +1,13 @@
 from __future__ import annotations
+
 from typing import Any
+
 from torch._C import device, dtype
-from torchvision.tv_tensors import TVTensor
+
+from ._ta_tensor import TATensor
 
 
-class BatchVideos(TVTensor):
+class BatchVideos(TATensor):
     """:class:`torch.Tensor` subclass for batch of videos.
 
     Args:

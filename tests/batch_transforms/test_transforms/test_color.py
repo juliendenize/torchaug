@@ -6,11 +6,11 @@ from typing import Any
 
 import pytest
 import torch
-import torchvision.transforms.v2.functional as F_tv
 
 import torchaug.batch_transforms as transforms
 import torchaug.batch_transforms.functional as F_b
 import torchaug.transforms.functional as F
+import torchvision.transforms.v2.functional as F_tv
 
 from ...base_tester import BaseTesterTransform
 

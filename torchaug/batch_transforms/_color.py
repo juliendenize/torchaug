@@ -185,7 +185,8 @@ class BatchRandomColorJitter(BatchRandomTransform):
                     imgs_combination = F_b.batch_adjust_brightness(
                         imgs_combination,
                         brightness_factor[
-                            i * num_apply_per_combination : (i + 1)
+                            i
+                            * num_apply_per_combination : (i + 1)
                             * num_apply_per_combination
                         ],
                         self.value_check,
@@ -194,7 +195,8 @@ class BatchRandomColorJitter(BatchRandomTransform):
                     imgs_combination = F_b.batch_adjust_contrast(
                         imgs_combination,
                         contrast_factor[
-                            i * num_apply_per_combination : (i + 1)
+                            i
+                            * num_apply_per_combination : (i + 1)
                             * num_apply_per_combination
                         ],
                         self.value_check,
@@ -203,7 +205,8 @@ class BatchRandomColorJitter(BatchRandomTransform):
                     imgs_combination = F_b.batch_adjust_saturation(
                         imgs_combination,
                         saturation_factor[
-                            i * num_apply_per_combination : (i + 1)
+                            i
+                            * num_apply_per_combination : (i + 1)
                             * num_apply_per_combination
                         ],
                         self.value_check,
@@ -212,7 +215,8 @@ class BatchRandomColorJitter(BatchRandomTransform):
                     imgs_combination = F_b.batch_adjust_hue(
                         imgs_combination,
                         hue_factor[
-                            i * num_apply_per_combination : (i + 1)
+                            i
+                            * num_apply_per_combination : (i + 1)
                             * num_apply_per_combination
                         ],
                         self.value_check,

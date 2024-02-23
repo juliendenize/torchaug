@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Sequence
 
 import torch
-from torch import Tensor, nn
+from torch import nn, Tensor
 
 from torchaug.batch_transforms._utils import (
     _assert_batch_images_tensor,
@@ -11,7 +11,7 @@ from torchaug.batch_transforms._utils import (
 )
 from torchaug.transforms._transform import VideoBase
 from torchaug.transforms._wrapper import Wrapper
-from torchaug.utils import VideoFormat, _log_api_usage_once
+from torchaug.utils import _log_api_usage_once, VideoFormat
 
 
 class BatchImageWrapper(Wrapper):

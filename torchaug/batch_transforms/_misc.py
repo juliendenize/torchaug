@@ -4,7 +4,7 @@ import numbers
 from typing import Sequence
 
 import torch
-from torch import Tensor, nn
+from torch import nn, Tensor
 from torchvision.transforms.transforms import _setup_size
 
 import torchaug.batch_transforms.functional as F_b

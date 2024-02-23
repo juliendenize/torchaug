@@ -1,7 +1,7 @@
 import torch
+from torchaug import ta_tensors
 from torchaug.transforms._utils import _max_value as get_max_value
 from torchvision import tv_tensors
-from torchaug import ta_tensors
 
 BATCH_DEFAULT_SIZE = (2,)
 DEFAULT_SIZE = (17, 11)

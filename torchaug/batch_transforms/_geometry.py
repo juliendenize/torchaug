@@ -6,13 +6,13 @@ from typing import Sequence
 import torch
 import torchvision.transforms.v2 as tv_transforms
 import torchvision.transforms.v2.functional as F_tv
-from torch import Tensor, nn
-from torchvision.transforms.v2.functional import InterpolationMode
+from torch import nn, Tensor
 from torchvision.transforms.transforms import _interpolation_modes_from_int
+from torchvision.transforms.v2.functional import InterpolationMode
 
 from torchaug.batch_transforms._utils import _assert_batch_videos_tensor
 from torchaug.transforms._wrapper import VideoBase
-from torchaug.utils import VideoFormat, _log_api_usage_once
+from torchaug.utils import _log_api_usage_once, VideoFormat
 
 from ._transform import BatchRandomTransform
 

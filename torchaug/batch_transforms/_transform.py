@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from math import ceil, floor
 
 import torch
-from torch import Tensor, nn
+from torch import nn, Tensor
 
 
 class BatchRandomTransform(nn.Module, ABC):

@@ -5,9 +5,9 @@ from typing import Sequence
 
 import pytest
 import torch
-from torch import nn
 
 import torchaug.transforms as transforms
+from torch import nn
 from torchaug.utils import VideoFormat
 
 from ...base_tester import BaseTesterTransform

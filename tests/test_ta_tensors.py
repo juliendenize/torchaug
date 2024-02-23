@@ -1,17 +1,18 @@
-from .utils import (
-    assert_equal,
-    make_batch_videos,
-    make_batch_images,
-    make_batch_segmentation_masks,
-    make_batch_bounding_boxes,
-    make_bounding_boxes,
-)
-
 from copy import deepcopy
+
 import pytest
 import torch
-from torchvision import tv_tensors
 from torchaug import ta_tensors
+from torchvision import tv_tensors
+
+from .utils import (
+    assert_equal,
+    make_batch_bounding_boxes,
+    make_batch_images,
+    make_batch_segmentation_masks,
+    make_batch_videos,
+    make_bounding_boxes,
+)
 
 
 @pytest.fixture(autouse=True)

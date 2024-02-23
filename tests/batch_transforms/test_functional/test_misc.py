@@ -5,10 +5,10 @@ from typing import Any
 
 import pytest
 import torch
-from torch import Tensor
 
 import torchaug.batch_transforms.functional as F
 import torchaug.transforms.functional as F_mono
+from torch import Tensor
 
 from ...base_tester import BaseTesterFunctional
 

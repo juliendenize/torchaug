@@ -4,8 +4,7 @@ import math
 
 import torch
 from torch import Tensor
-from torch.nn.functional import conv2d
-from torch.nn.functional import pad as torch_pad
+from torch.nn.functional import conv2d, pad as torch_pad
 
 from torchaug.batch_transforms._utils import _assert_batch_images_tensor
 from torchaug.transforms._utils import _assert_tensor, transfer_tensor_on_device

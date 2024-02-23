@@ -1,10 +1,13 @@
 from __future__ import annotations
-import torch
+
 from typing import Any
-from torchvision.tv_tensors import TVTensor
+
+import torch
+
+from ._ta_tensor import TATensor
 
 
-class BatchMasks(TVTensor):
+class BatchMasks(TATensor):
     """:class:`torch.Tensor` subclass for batch of segmentation and detection masks.
 
     Args:
@@ -33,6 +36,3 @@ class BatchMasks(TVTensor):
             raise ValueError
 
         return tensor.as_subclass(cls)
-
-    def __repr__(self, *, tensor_contents: Any = None) -> str:  # type: ignore[override]
-        return self._make_repr()

@@ -1,283 +1,255 @@
-from __future__ import annotations
-
-import numbers
-from typing import Sequence
+import warnings
+from typing import Any, Callable, cast, Dict, List, Optional, Sequence, Type, Union
 
 import torch
-from torch import Tensor, nn
-from torchvision.transforms.transforms import _setup_size
+from torch.utils._pytree import tree_flatten, tree_unflatten
 
-import torchaug.transforms.functional as F
-from torchaug.batch_transforms._utils import _assert_video_or_batch_videos_tensor
-from torchaug.transforms._utils import _assert_module_or_list_of_modules
-from torchaug.utils import VideoFormat, _log_api_usage_once
+from torchvision import transforms as tv_tensors
 
-from ._transform import RandomTransform, VideoBase
+from torchvision.transforms.v2._utils import (
+    _parse_labels_getter,
+    _setup_number_or_seq,
+    _setup_size,
+    is_pure_tensor,
+)
 
+from torchaug import ta_tensors
 
-class Div255(nn.Module):
-    """Divide a tensor by 255.
+from torchaug.transforms import functional as F
 
-    Args:
-        inplace: Bool to make this operation in-place.
-    """
-
-    def __init__(self, inplace: bool = False) -> None:
-        super().__init__()
-        _log_api_usage_once(self)
-
-        self.inplace = inplace
-
-    def forward(self, tensor: Tensor) -> Tensor:
-        """Divide tensor by 255.
-
-        Args:
-            tensor: The tensor to divide.
-
-        Returns:
-            Divided tensor.
-        """
-        return F.div_255(tensor, inplace=self.inplace)
-
-    def __repr__(self):
-        return f"{__class__.__name__}(inplace={self.inplace})"
+from ._transform import Transform
+from ._utils import get_batch_bounding_boxes, get_bounding_boxes
 
 
-class MixUp(nn.Module):
-    """Mix input tensor with linear interpolation drawn according a Beta law.
+# TODO: do we want/need to expose this?
+class Identity(Transform):
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return inpt
 
-    The shape of the tensors is expected to be [B, ...] with ... any number of dimensions.
-    The tensor should be float.
 
-    .. note::
-        The tensor is rolled according its first dimension and mixed with one
-        drawn interpolation parameter for the whole tensor.
+class Lambda(Transform):
+    """Apply a user-defined function as a transform.
+
+    This transform does not support torchscript.
 
     Args:
-        alpha: Parameter for the Beta law.
-        inplace: Whether to perform the operation inplace.
+        lambd (function): Lambda/function to be used for transform.
     """
 
-    def __init__(self, alpha: float, inplace: bool = False) -> None:
+    _transformed_types = (object,)
+
+    def __init__(self, lambd: Callable[[Any], Any], *types: Type):
         super().__init__()
-        _log_api_usage_once(self)
+        self.lambd = lambd
+        self.types = types or self._transformed_types
 
-        self.alpha = alpha
-        self.inplace = inplace
-        self.mix_sampler = torch.distributions.Beta(
-            torch.tensor([alpha]), torch.tensor([alpha])
-        )
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        if isinstance(inpt, self.types):
+            return self.lambd(inpt)
+        else:
+            return inpt
 
-    def _get_params(self) -> float:
-        """Draw the mixing coefficient.
-
-        Returns:
-            The mixing coefficient.
-        """
-        return float(self.mix_sampler.sample(()))
-
-    def forward(
-        self, tensor: Tensor, labels: Tensor | None = None
-    ) -> tuple[Tensor, Tensor | None, float]:
-        """Mix the input tensor and labels.
-
-        Args:
-            tensor: The tensor to mix.
-            labels: If not None, the labels to mix.
-
-        Returns:
-            Tuple:
-            - mixed tensor.
-            - mixed labels or None.
-            - mixing coefficient.
-        """
-        lam = self._get_params()
-
-        tensor = tensor if self.inplace else tensor.clone()
-
-        if labels is None:
-            return F.mixup(tensor, tensor.roll(1, 0), lam, True), None, lam
-
-        labels = labels if self.inplace else labels.clone()
-
-        return (
-            F.mixup(tensor, tensor.roll(1, 0), lam, True),
-            F.mixup(labels, labels.roll(1, 0), lam, True),
-            lam,
-        )
-
-    def __repr__(self):
-        return f"{__class__.__name__}(alpha={self.alpha}, inplace={self.inplace})"
+    def extra_repr(self) -> str:
+        extras = []
+        name = getattr(self.lambd, "__name__", None)
+        if name:
+            extras.append(name)
+        extras.append(f"types={[type.__name__ for type in self.types]}")
+        return ", ".join(extras)
 
 
-class Mul255(nn.Module):
-    """Multiply a tensor by 255.
+class LinearTransformation(Transform):
+    """Transform a tensor image or video with a square transformation matrix and a mean_vector computed offline.
+
+    This transform does not support PIL Image.
+    Given transformation_matrix and mean_vector, will flatten the torch.*Tensor and
+    subtract mean_vector from it which is then followed by computing the dot
+    product with the transformation matrix and then reshaping the tensor to its
+    original shape.
+
+    Applications:
+        whitening transformation: Suppose X is a column vector zero-centered data.
+        Then compute the data covariance matrix [D x D] with torch.mm(X.t(), X),
+        perform SVD on this matrix and pass it as transformation_matrix.
 
     Args:
-        inplace: Bool to make this operation in-place.
+        transformation_matrix (Tensor): tensor [D x D], D = C x H x W
+        mean_vector (Tensor): tensor [D], D = C x H x W
     """
 
-    def __init__(self, inplace: bool = False) -> None:
-        super().__init__()
-        _log_api_usage_once(self)
+    def __init__(
+        self,
+        transformation_matrix: torch.Tensor,
+        mean_vector: torch.Tensor,
+        inplace: bool = False,
+        batch_transform: bool = False,
+    ):
+        super().__init__(inplace=inplace, batch_transform=batch_transform)
+        if not batch_transform and transformation_matrix.size(
+            0
+        ) != transformation_matrix.size(1):
+            raise ValueError(
+                "transformation_matrix should be square. Got "
+                f"{tuple(transformation_matrix.size())} rectangular matrix."
+            )
+        elif batch_transform and transformation_matrix.size(
+            1
+        ) != transformation_matrix.size(2):
+            raise ValueError(
+                "transformation_matrix should be square. Got "
+                f"{tuple(transformation_matrix.size())} rectangular matrix."
+            )
 
-        self.inplace = inplace
+        if not batch_transform and mean_vector.size(0) != transformation_matrix.size(0):
+            raise ValueError(
+                f"mean_vector should have the same length {mean_vector.size(0)}"
+                f" as any one of the dimensions of the transformation_matrix [{tuple(transformation_matrix.size())}]"
+            )
 
-    def forward(self, tensor: Tensor) -> Tensor:
-        """Multiply tensor by 255.
+        elif batch_transform and mean_vector.size(1) != transformation_matrix.size(2):
+            raise ValueError(
+                f"mean_vector should have the same length {mean_vector.size(1)}"
+                f" as any one of the dimensions of the transformation"
+            )
 
-        Args:
-            tensor: The tensor to multiply.
+        if transformation_matrix.device != mean_vector.device:
+            raise ValueError(
+                f"Input tensors should be on the same device. Got {transformation_matrix.device} and {mean_vector.device}"
+            )
 
-        Returns:
-            Multiplied tensor.
-        """
-        return F.mul_255(tensor, inplace=self.inplace)
+        if transformation_matrix.dtype != mean_vector.dtype:
+            raise ValueError(
+                f"Input tensors should have the same dtype. Got {transformation_matrix.dtype} and {mean_vector.dtype}"
+            )
 
-    def __repr__(self):
-        return f"{__class__.__name__}(inplace={self.inplace})"
+        self.transformation_matrix = transformation_matrix
+        self.mean_vector = mean_vector
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        shape = inpt.shape
+        n = shape[-3] * shape[-2] * shape[-1]
+
+        if not self.batch_transform:
+            if n != self.transformation_matrix.shape[0]:
+                raise ValueError(
+                    "Input tensor and transformation matrix have incompatible shape."
+                    + f"[{shape[-3]} x {shape[-2]} x {shape[-1]}] != "
+                    + f"{self.transformation_matrix.shape[0]}"
+                )
+
+            if inpt.device != self.mean_vector.device.type:
+                raise ValueError(
+                    "Input tensor should be on the same device as transformation matrix and mean vector. "
+                    f"Got {inpt.device} vs {self.mean_vector.device}"
+                )
+
+            flat_inpt = inpt.reshape(-1, n) - self.mean_vector
+        else:
+            batch_size = inpt.shape[0]
+            other_dims = inpt.shape[1:-3]
+
+            if batch_size != self.transformation_matrix.shape[0]:
+                raise ValueError(
+                    "Input tensor and transformation matrix have incompatible shape."
+                    + f"{batch_size} != {self.transformation_matrix.shape[0]}"
+                )
+
+            if batch_size != self.mean_vector.shape[0]:
+                raise ValueError(
+                    "Input tensor and mean vector have incompatible shape."
+                    + f"{batch_size} != {self.mean_vector.shape[0]}"
+                )
+
+            if n != self.transformation_matrix.shape[1]:
+                raise ValueError(
+                    "Input tensor and transformation matrix have incompatible shape."
+                    + f"[{shape[-3]} x {shape[-2]} x {shape[-1]}] != "
+                    + f"{self.transformation_matrix.shape[1]}"
+                )
+
+            if inpt.device != self.mean_vector.device.type:
+                raise ValueError(
+                    "Input tensor should be on the same device as transformation matrix and mean vector. "
+                    f"Got {inpt.device} vs {self.mean_vector.device}"
+                )
+
+            flat_inpt = inpt.reshape(batch_size, n) - self.mean_vector.view(
+                batch_size, [1] * len(other_dims), n
+            )
+
+        transformation_matrix = self.transformation_matrix.to(flat_inpt.dtype)
+        output = torch.mm(flat_inpt, transformation_matrix)
+        output = output.reshape(shape)
+
+        if isinstance(
+            inpt,
+            (
+                ta_tensors.Image,
+                ta_tensors.Video,
+                ta_tensors.BatchImages,
+                ta_tensors.BatchVideos,
+            ),
+        ):
+            output = ta_tensors.wrap(output, like=inpt)
+        return output
 
 
-class Normalize(nn.Module):
-    """Normalize a tensor image with mean and standard deviation. Given mean: ``(mean[1],...,mean[n])`` and
-    std: ``(std[1],..,std[n])`` for ``n`` channels, this transform will normalize each channel of the input
-    ``torch.Tensor`` i.e.,
+class Normalize(Transform):
+    """Normalize a tensor image or video with mean and standard deviation.
 
+    This transform does not support PIL Image.
+    Given mean: ``(mean[1],...,mean[n])`` and std: ``(std[1],..,std[n])`` for ``n``
+    channels, this transform will normalize each channel of the input
+    ``torch.*Tensor`` i.e.,
     ``output[channel] = (input[channel] - mean[channel]) / std[channel]``
 
+    .. note::
+        This transform acts out of place, i.e., it does not mutate the input tensor.
+
     Args:
-        mean: Sequence of means for each channel.
-        std: Sequence of standard deviations for each channel.
-        cast_dtype: If not None, scale and cast input to dtype. Expected to be a float dtype.
-        inplace: Bool to make this operation in-place.
-        value_check: Bool to perform tensor value check.
-            Might cause slow down on some devices because of synchronization.
+        mean (sequence): Sequence of means for each channel.
+        std (sequence): Sequence of standard deviations for each channel.
+        inplace(bool,optional): Bool to make this operation in-place.
+
     """
 
     def __init__(
-        self,
-        mean: Sequence[float] | float,
-        std: Sequence[float] | float,
-        cast_dtype: torch.dtype | None = None,
-        inplace: bool = False,
-        value_check: bool = False,
-    ) -> None:
-        super().__init__()
-        _log_api_usage_once(self)
+        self, mean: Sequence[float], std: Sequence[float], inplace: bool = False
+    ):
+        super().__init__(inplace=inplace)
+        self.mean = list(mean)
+        self.std = list(std)
 
-        mean = torch.as_tensor(mean)
-        std = torch.as_tensor(std)
-
-        if mean.ndim in [0, 1]:
-            mean = mean.view(-1, 1, 1)
-        if std.ndim in [0, 1]:
-            std = std.view(-1, 1, 1)
-
-        self.register_buffer("mean", mean)
-        self.register_buffer("std", std)
-        self.inplace = inplace
-        self.value_check = value_check
-        self.cast_dtype = cast_dtype
-
-    def forward(self, tensor: Tensor) -> Tensor:
-        """Normalize tensor.
-
-        Args:
-            tensor: The tensor to normalize.
-
-        Returns:
-            Normalized tensor.
-        """
-        return F.normalize(
-            tensor,
-            mean=self.mean,
-            std=self.std,
-            cast_dtype=self.cast_dtype,
-            inplace=self.inplace,
-            value_check=self.value_check,
-        )
-
-    def __repr__(self) -> str:
-        return (
-            f"{self.__class__.__name__}("
-            f"mean={self.mean.tolist()},"
-            f" std={self.std.tolist()},"
-            f" cast_dtype={self.cast_dtype},"
-            f" inplace={self.inplace},"
-            f" value_check={self.value_check})"
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return self._call_kernel(
+            F.normalize, inpt, mean=self.mean, std=self.std, inplace=self.inplace
         )
 
 
-class RandomApply(RandomTransform):
-    """Apply randomly a list of transformations with a given probability.
-
-    Args:
-        transforms: list of transformations
-        p: probability
-    """
-
-    def __init__(
-        self, transforms: Sequence[nn.Module] | nn.Module, p: float = 0.5
-    ) -> None:
-        super().__init__(p=p)
-        _log_api_usage_once(self)
-
-        _assert_module_or_list_of_modules(transforms)
-
-        if isinstance(transforms, nn.Module):
-            transforms = [transforms]
-
-        self.transforms = nn.ModuleList(transforms)
-
-    def apply_transform(self, img: Tensor) -> Tensor:
-        """
-        Args:
-            img: Image to transform.
-
-        Returns:
-            Transformed image.
-        """
-        for t in self.transforms:
-            img = t(img)
-        return img
-
-    def __repr__(self) -> str:
-        transforms_repr = str(self.transforms).replace("\n", "\n    ")
-        return (
-            f"{self.__class__.__name__}("
-            f"\n    p={self.p},"
-            f"\n    transforms={transforms_repr}"
-            f"\n)"
-        )
-
-
-class RandomGaussianBlur(RandomTransform):
+class GaussianBlur(Transform):
     """Blurs image with randomly chosen Gaussian blur.
 
-    The image is expected to have the shape [..., C, H, W], where ...
-    means an arbitrary number of leading dimensions.
+    If the input is a Tensor, it is expected
+    to have [..., C, H, W] shape, where ... means an arbitrary number of leading dimensions.
 
     Args:
-        kernel_size: Size of the Gaussian kernel.
-        sigma: Standard deviation to be used for creating kernel to perform blurring.
-            If float, sigma is fixed. If it is tuple of float (min, max), sigma
-            is chosen uniformly at random to lie in the given range.
-        value_check: Bool to perform tensor value check.
-            Might cause slow down on some devices because of synchronization.
+        kernel_size (int or sequence): Size of the Gaussian kernel.
+        sigma (float or tuple of float (min, max)): Standard deviation to be used for
+            creating kernel to perform blurring. If float, sigma is fixed. If it is tuple
+            of float (min, max), sigma is chosen uniformly at random to lie in the
+            given range.
     """
 
     def __init__(
         self,
-        kernel_size: int | tuple[int, int],
-        sigma: float | tuple[float, float] = (0.1, 2.0),
-        p: float = 0.5,
-        value_check: bool = False,
-    ):
-        super().__init__(p=p)
-        _log_api_usage_once(self)
-
+        kernel_size: Union[int, Sequence[int]],
+        sigma: Union[int, float, Sequence[float]] = (0.1, 2.0),
+        inplace: bool = False,
+        batch_transform: bool = False,
+    ) -> None:
+        super().__init__(inplace=inplace, batch_transform=batch_transform)
         self.kernel_size = _setup_size(
-            kernel_size, "Kernel size should be a tuple/list of two integers."
+            kernel_size, "Kernel size should be a tuple/list of two integers"
         )
         for ks in self.kernel_size:
             if ks <= 0 or ks % 2 == 0:
@@ -285,127 +257,245 @@ class RandomGaussianBlur(RandomTransform):
                     "Kernel size value should be an odd and positive number."
                 )
 
-        if isinstance(sigma, numbers.Number):
-            if sigma <= 0:
-                raise ValueError("If sigma is a single number, it must be positive.")
-            sigma = (sigma, sigma)
-        elif isinstance(sigma, Sequence) and len(sigma) == 2:
-            if not 0.0 < sigma[0] <= sigma[1]:
-                raise ValueError(
-                    "sigma values should be positive and of the form (min, max)."
-                )
-        else:
+        self.sigma = _setup_number_or_seq(sigma, "sigma")
+
+        if not 0.0 < self.sigma[0] <= self.sigma[1]:
             raise ValueError(
-                "sigma should be a single number or a list/tuple with length 2."
+                f"sigma values should be positive and of the form (min, max). Got {self.sigma}"
             )
 
-        self.register_buffer("sigma", torch.as_tensor(sigma))
-        self.value_check = value_check
+    def _get_params(
+        self,
+        flat_inputs: List[Any],
+        num_chunks: int,
+        chunks_indices: List[torch.Tensor],
+    ) -> Dict[str, Any]:
+        params = []
 
-    @staticmethod
-    def get_params(sigma_min: Tensor, sigma_max: Tensor) -> Tensor:
-        """Choose sigma for random gaussian blurring.
+        for _ in range(num_chunks):
+            if not self.batch_transform:
+                sigma = torch.empty(1).uniform_(self.sigma[0], self.sigma[1]).item()
+                params.append(dict(sigma=[sigma, sigma]))
+            else:
+                device = chunks_indices[0].device
+                batch_size = chunks_indices[0].shape[0]
+                sigma = (
+                    torch.empty((batch_size, 1), device=device)
+                    .uniform_(self.sigma[0], self.sigma[1])
+                    .expand(-1, 2)
+                )
+            return dict(sigma=sigma)
 
-        Args:
-            sigma_min: Minimum standard deviation that can be chosen for blurring kernel.
-            sigma_max: Maximum standard deviation that can be chosen for blurring kernel.
+        return params
 
-        Returns:
-            Standard deviation to be passed to calculate kernel for gaussian blurring.
-        """
-        dtype = sigma_min.dtype
-        device = sigma_min.device
-        return (
-            torch.rand([1], dtype=dtype, device=device) * (sigma_max - sigma_min)
-            + sigma_min
-        ).expand(2)
-
-    def apply_transform(self, img: Tensor) -> Tensor:
-        """Blur the image.
-
-        Args:
-            img: Image to be blurred.
-
-        Returns:
-            Gaussian blurred image.
-        """
-        sigma: Tensor = self.get_params(self.sigma[0], self.sigma[1])
-        return F.gaussian_blur(img, self.kernel_size, sigma, self.value_check)
-
-    def __repr__(self) -> str:
-        s = f"{self.__class__.__name__}(kernel_size={self.kernel_size}, sigma={self.sigma.tolist()}, p={self.p}, value_check={self.value_check})"
-        return s
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return self._call_kernel(
+            F.gaussian_blur_batch if self.batch_transform else F.gaussian_blur,
+            inpt,
+            self.kernel_size,
+            **params,
+        )
 
 
-class VideoNormalize(Normalize, VideoBase):
-    """Normalize a tensor video with mean and standard deviation. Given mean: ``(mean[1],...,mean[n])`` and std:
-    ``(std[1],..,std[n])`` for ``n`` channels, this transform will normalize each channel of the input
-    ``torch.*Tensor`` i.e.,
+class ToDtype(Transform):
+    """Converts the input to a specific dtype, optionally scaling the values for images or videos.
 
-    ``output[channel] = (input[channel] - mean[channel]) / std[channel]``
-
-    Videos should be in format [..., T, C, H, W] or [..., C, T, H, W] with ... 0 or 1 leading dimension.
+    .. note::
+        ``ToDtype(dtype, scale=True)`` is the recommended replacement for ``ConvertImageDtype(dtype)``.
 
     Args:
-        mean: Sequence of means for each channel.
-        std: Sequence of standard deviations for each channel.
-        video_format: Dimension order of the video. Can be ``TCHW`` or ``CTHW``.
-        cast_dtype: If not None, scale and cast input to the dtype. Expected to be a float dtype.
-        inplace: Bool to make this operation in-place.
-        value_check: Bool to perform tensor value check.
-            Might cause slow down on some devices because of synchronization.
+        dtype (``torch.dtype`` or dict of ``TVTensor`` -> ``torch.dtype``): The dtype to convert to.
+            If a ``torch.dtype`` is passed, e.g. ``torch.float32``, only images and videos will be converted
+            to that dtype: this is for compatibility with :class:`~torchvision.transforms.v2.ConvertImageDtype`.
+            A dict can be passed to specify per-tv_tensor conversions, e.g.
+            ``dtype={tv_tensors.Image: torch.float32, tv_tensors.Mask: torch.int64, "others":None}``. The "others"
+            key can be used as a catch-all for any other tv_tensor type, and ``None`` means no conversion.
+        scale (bool, optional): Whether to scale the values for images or videos. See :ref:`range_and_dtype`.
+            Default: ``False``.
     """
 
     def __init__(
         self,
-        mean: Sequence[float] | None = None,
-        std: Sequence[float] | None = None,
-        cast_dtype: torch.dtype | None = None,
-        inplace: bool = False,
-        value_check: bool = False,
-        video_format: VideoFormat = VideoFormat.CTHW,
+        dtype: Union[torch.dtype, Dict[Union[Type, str], Optional[torch.dtype]]],
+        scale: bool = False,
     ) -> None:
-        Normalize.__init__(
-            self,
-            mean=mean,
-            std=std,
-            cast_dtype=cast_dtype,
-            inplace=inplace,
-            value_check=value_check,
+        super().__init__()
+
+        if not isinstance(dtype, (dict, torch.dtype)):
+            raise ValueError(
+                f"dtype must be a dict or a torch.dtype, got {type(dtype)} instead"
+            )
+
+        if (
+            isinstance(dtype, dict)
+            and torch.Tensor in dtype
+            and any(
+                cls in dtype
+                for cls in [
+                    ta_tensors.Image,
+                    ta_tensors.Video,
+                    ta_tensors.BatchImages,
+                    ta_tensors.BatchVideos,
+                ]
+            )
+        ):
+            warnings.warn(
+                "Got `dtype` values for `torch.Tensor` and either `tv_tensors.Image` or `tv_tensors.Video`. "
+                "Note that a plain `torch.Tensor` will *not* be transformed by this (or any other transformation) "
+                "in case a `tv_tensors.Image` or `tv_tensors.Video` is present in the input."
+            )
+        self.dtype = dtype
+        self.scale = scale
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        if isinstance(self.dtype, torch.dtype):
+            # For consistency / BC with ConvertImageDtype, we only care about images or videos when dtype
+            # is a simple torch.dtype
+            if not is_pure_tensor(inpt) and not isinstance(
+                inpt,
+                (
+                    ta_tensors.Image,
+                    ta_tensors.Video,
+                    ta_tensors.BatchImages,
+                    ta_tensors.BatchVideos,
+                ),
+            ):
+                return inpt
+
+            dtype: Optional[torch.dtype] = self.dtype
+        elif type(inpt) in self.dtype:
+            dtype = self.dtype[type(inpt)]
+        elif "others" in self.dtype:
+            dtype = self.dtype["others"]
+        else:
+            raise ValueError(
+                f"No dtype was specified for type {type(inpt)}. "
+                "If you only need to convert the dtype of images or videos, you can just pass e.g. dtype=torch.float32. "
+                "If you're passing a dict as dtype, "
+                'you can use "others" as a catch-all key '
+                'e.g. dtype={tv_tensors.Mask: torch.int64, "others": None} to pass-through the rest of the inputs.'
+            )
+
+        supports_scaling = is_pure_tensor(inpt) or isinstance(
+            inpt,
+            (
+                ta_tensors.Image,
+                ta_tensors.BatchImages,
+                ta_tensors.Video,
+                ta_tensors.BatchVideos,
+            ),
         )
-        VideoBase.__init__(self, video_format=video_format)
+        if dtype is None:
+            if self.scale and supports_scaling:
+                warnings.warn(
+                    "scale was set to True but no dtype was specified for images or videos: no scaling will be done."
+                )
+            return inpt
 
-        _log_api_usage_once(self)
+        return self._call_kernel(F.to_dtype, inpt, dtype=dtype, scale=self.scale)
 
-    def forward(self, video: Tensor) -> Tensor:
-        """Normalize a video.
 
-        Args:
-            video: The video to normalize.
+class SanitizeBoundingBoxes(Transform):
+    """Remove degenerate/invalid bounding boxes and their corresponding labels and masks.
 
-        Returns:
-            Normalized video.
-        """
-        _assert_video_or_batch_videos_tensor(video)
+    This transform removes bounding boxes and their associated labels/masks that:
 
-        if not self.time_before_channel:
-            dims = [0, 2, 1, 3, 4] if video.ndim == 5 else [1, 0, 2, 3]
-            video = video.permute(dims)
+    - are below a given ``min_size``: by default this also removes degenerate boxes that have e.g. X2 <= X1.
+    - have any coordinate outside of their corresponding image. You may want to
+      call :class:`~torchvision.transforms.v2.ClampBoundingBoxes` first to avoid undesired removals.
 
-        video = Normalize.forward(self, video)
+    It is recommended to call it at the end of a pipeline, before passing the
+    input to the models. It is critical to call this transform if
+    :class:`~torchvision.transforms.v2.RandomIoUCrop` was called.
+    If you want to be extra careful, you may call it after all transforms that
+    may modify bounding boxes but once at the end should be enough in most
+    cases.
 
-        if not self.time_before_channel:
-            video = video.permute(dims)
+    Args:
+        min_size (float, optional) The size below which bounding boxes are removed. Default is 1.
+        labels_getter (callable or str or None, optional): indicates how to identify the labels in the input.
+            By default, this will try to find a "labels" key in the input (case-insensitive), if
+            the input is a dict or it is a tuple whose second element is a dict.
+            This heuristic should work well with a lot of datasets, including the built-in torchvision datasets.
+            It can also be a callable that takes the same input
+            as the transform, and returns the labels.
+    """
 
-        return video
+    def __init__(
+        self,
+        min_size: float = 1.0,
+        labels_getter: Union[
+            Callable[[Any], Optional[torch.Tensor]], str, None
+        ] = "default",
+        batch_transform: bool = False,
+    ) -> None:
+        super().__init__(batch_transform=batch_transform)
 
-    def __repr__(self) -> str:
-        return (
-            f"{self.__class__.__name__}("
-            f"mean={self.mean.tolist()},"
-            f" std={self.std.tolist()},"
-            f" cast_dtype={self.cast_dtype},"
-            f" inplace={self.inplace},"
-            f" value_check={self.value_check},"
-            f" video_format={self.video_format.value})"
+        if min_size < 1:
+            raise ValueError(f"min_size must be >= 1, got {min_size}.")
+        self.min_size = min_size
+
+        self.labels_getter = labels_getter
+        self._labels_getter = _parse_labels_getter(labels_getter)
+
+    def forward(self, *inputs: Any) -> Any:
+        inputs = inputs if len(inputs) > 1 else inputs[0]
+
+        labels = self._labels_getter(inputs)
+        if labels is not None and not isinstance(labels, torch.Tensor):
+            raise ValueError(
+                f"The labels in the input to forward() must be a tensor or None, got {type(labels)} instead."
+            )
+
+        flat_inputs, spec = tree_flatten(inputs)
+        boxes = (
+            get_bounding_boxes(flat_inputs)
+            if self.batch_transform
+            else get_batch_bounding_boxes(flat_inputs)
         )
+
+        if labels is not None and boxes.shape[0] != labels.shape[0]:
+            raise ValueError(
+                f"Number of boxes (shape={boxes.shape}) and number of labels (shape={labels.shape}) do not match."
+            )
+
+        boxes = cast(
+            tv_tensors.BoundingBoxes,
+            F.convert_bounding_box_format(
+                boxes,
+                new_format=tv_tensors.BoundingBoxFormat.XYXY,
+            ),
+        )
+        ws, hs = boxes[:, 2] - boxes[:, 0], boxes[:, 3] - boxes[:, 1]
+        valid = (ws >= self.min_size) & (hs >= self.min_size) & (boxes >= 0).all(dim=-1)
+        # TODO: Do we really need to check for out of bounds here? All
+        # transforms should be clamping anyway, so this should never happen?
+        image_h, image_w = boxes.canvas_size
+        valid &= (boxes[:, 0] <= image_w) & (boxes[:, 2] <= image_w)
+        valid &= (boxes[:, 1] <= image_h) & (boxes[:, 3] <= image_h)
+
+        params = dict(valid=valid.as_subclass(torch.Tensor), labels=labels)
+        flat_outputs = [
+            # Even-though it may look like we're transforming all inputs, we don't:
+            # _transform() will only care about BoundingBoxeses and the labels
+            self._transform(inpt, params)
+            for inpt in flat_inputs
+        ]
+
+        return tree_unflatten(flat_outputs, spec)
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        is_label = inpt is not None and inpt is params["labels"]
+        is_bounding_boxes_or_mask = isinstance(
+            inpt, (ta_tensors.BoundingBoxes, ta_tensors.Mask)
+        )
+
+        if not (is_label or is_bounding_boxes_or_mask):
+            return inpt
+
+        output = inpt[params["valid"]]
+
+        if is_label:
+            return output
+
+        return tv_tensors.wrap(output, like=inpt)

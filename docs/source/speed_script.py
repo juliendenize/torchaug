@@ -5,10 +5,9 @@ from typing import Callable
 
 import tabulate
 import torch
-from torchvision import transforms as T
 
-from torchaug import batch_transforms as BF
-from torchaug import transforms as F
+from torchaug import batch_transforms as BF, transforms as F
+from torchvision import transforms as T
 
 torch.set_printoptions(precision=3)
 

@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import numbers
-from typing import Any, Sequence
+from typing import Any, List, Sequence
 
 import torch
-from torch import Tensor, nn
+from torch import nn, Tensor
+
+from torchaug import ta_tensors
 
 
 def _assert_channels(img: Tensor, permitted: list[int]) -> None:
@@ -144,3 +146,25 @@ def transfer_tensor_on_device(
     tensor = tensor.to(device=device, non_blocking=non_blocking)
 
     return tensor
+
+
+def get_bounding_boxes(flat_inputs: List[Any]) -> ta_tensors.BoundingBoxes:
+    # This assumes there is only one bbox per sample as per the general convention
+    try:
+        return next(
+            inpt for inpt in flat_inputs if isinstance(inpt, (ta_tensors.BoundingBoxes))
+        )
+    except StopIteration:
+        raise ValueError("No bounding boxes were found in the sample")
+
+
+def get_batch_bounding_boxes(flat_inputs: List[Any]) -> ta_tensors.BatchBoundingBoxes:
+    # This assumes there is only one bbox per sample as per the general convention
+    try:
+        return next(
+            inpt
+            for inpt in flat_inputs
+            if isinstance(inpt, ta_tensors.BatchBoundingBoxes)
+        )
+    except StopIteration:
+        raise ValueError("No batch of bounding boxes were found in the sample")

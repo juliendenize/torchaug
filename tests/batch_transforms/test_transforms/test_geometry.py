@@ -5,11 +5,11 @@ from typing import Any, Sequence
 
 import pytest
 import torch
+
+import torchaug.batch_transforms as transforms
 import torchvision.transforms.v2 as tv_transforms
 import torchvision.transforms.v2.functional as F_tv
 from torchvision.transforms.v2.functional import InterpolationMode
-
-import torchaug.batch_transforms as transforms
 
 from ...base_tester import BaseTesterTransform
 

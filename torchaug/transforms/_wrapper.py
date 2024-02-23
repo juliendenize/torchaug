@@ -3,17 +3,16 @@ from __future__ import annotations
 from typing import Sequence
 
 import torch
-from torch import Tensor, nn
+from torch import nn, Tensor
 
 from torchaug.transforms._utils import (
+    _assert_image_tensor,
     _assert_module_or_list_of_modules,
     _assert_tensor,
-    _assert_image_tensor,
     _assert_video_tensor,
 )
-from torchaug.utils import VideoFormat, _log_api_usage_once
-
-from ._transform import VideoBase
+from torchaug.utils import _log_api_usage_once, VideoFormat
+from ._transform import RandomApplyTransform
 
 
 class Wrapper(nn.Module):
@@ -55,8 +54,15 @@ class Wrapper(nn.Module):
 
     @staticmethod
     def _prepare_transform(transform: nn.Module):
-        if hasattr(transform, "inplace"):
-            transform.inplace = True
+        import inspect
+
+        if isinstance(transform, RandomApplyTransform):
+            init_signature = inspect.signature(transform.__init__)
+            parameters = init_signature.parameters
+            has_inplace = "inplace" in parameters
+
+            if has_inplace:
+                transform.inplace = True
 
     @staticmethod
     def _prepare_transforms(transforms: list[nn.Module]):
