@@ -1,4 +1,60 @@
+from torchvision.transforms import AutoAugmentPolicy, InterpolationMode
+
 from . import functional
-from ._misc import Normalize
-from ._transform import RandomApplyTransform, Transform
-from ._utils import is_tensor_on_cpu
+
+from ._augment import CutMix, MixUp, RandomErasing
+from ._auto_augment import AugMix, AutoAugment, RandAugment, TrivialAugmentWide
+from ._color import (
+    ColorJitter,
+    Grayscale,
+    RandomAdjustSharpness,
+    RandomAutocontrast,
+    RandomChannelPermutation,
+    RandomEqualize,
+    RandomGrayscale,
+    RandomInvert,
+    RandomPhotometricDistort,
+    RandomPosterize,
+    RandomSolarize,
+)
+from ._container import (
+    Compose,
+    RandomApply,
+    RandomChoice,
+    RandomOrder,
+    SequentialTransform,
+)
+from ._geometry import (
+    CenterCrop,
+    ElasticTransform,
+    FiveCrop,
+    Pad,
+    RandomAffine,
+    RandomCrop,
+    RandomHorizontalFlip,
+    RandomIoUCrop,
+    RandomPerspective,
+    RandomResize,
+    RandomResizedCrop,
+    RandomRotation,
+    RandomShortestSize,
+    RandomVerticalFlip,
+    RandomZoomOut,
+    Resize,
+    ScaleJitter,
+    TenCrop,
+)
+from ._meta import ClampBoundingBoxes, ConvertBoundingBoxFormat
+from ._misc import (
+    GaussianBlur,
+    Identity,
+    Lambda,
+    LinearTransformation,
+    Normalize,
+    SanitizeBoundingBoxes,
+    ToDtype,
+)
+from ._temporal import UniformTemporalSubsample
+
+from ._transform import Transform
+from ._type_conversion import ToBatchImages, ToImage, ToPureTensor

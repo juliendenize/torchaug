@@ -1,6 +1,6 @@
 import collections.abc
 from itertools import permutations
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import torch
 from torchvision.transforms.v2._utils import query_chw
@@ -18,6 +18,7 @@ class Grayscale(Transform):
 
     Args:
         num_output_channels (int): (1 or 3) number of channels desired for output image
+        batch_transform (bool): whether to apply the transform in batch mode. Default value is False
     """
 
     _reshape_transform: bool = True
@@ -49,6 +50,8 @@ class RandomGrayscale(RandomApplyTransform):
 
     Args:
         p (float): probability that image should be converted to grayscale.
+        inplace (bool, optional): whether to apply the transform in place. Default value is False
+        batch_transform (bool, optional): whether to apply the transform in batch mode. Default value is False
     """
 
     def __init__(
@@ -100,6 +103,11 @@ class RandomColorJitter(RandomApplyTransform):
             To jitter hue, the pixel values of the input image has to be non-negative for conversion to HSV space;
             thus it does not work if you normalize your image to an interval with negative values,
             or use an interpolation that generates negative values before using this function.
+        p (float): probability of image being color jittered. Default value is 0.5
+        inplace (bool): whether to apply the transform in place. Default value is False
+        num_chunks (int): number of chunks to split the input into. Default value is 1
+        permute_chunks (bool): whether to permute the chunks. Default value is False
+        batch_transform (bool): whether to apply the transform in batch mode. Default value is False
     """
 
     def __init__(
@@ -112,12 +120,17 @@ class RandomColorJitter(RandomApplyTransform):
         inplace: bool = False,
         num_chunks: int = 1,
         permute_chunks: bool = False,
+        batch_transform: bool = False,
     ) -> None:
         if num_chunks == -1:
             num_chunks = 24  # 24 = 4! (factorial of 4) permutations
 
         super().__init__(
-            p=p, inplace=inplace, num_chunks=num_chunks, permute_chunks=permute_chunks
+            p=p,
+            inplace=inplace,
+            num_chunks=num_chunks,
+            permute_chunks=permute_chunks,
+            batch_transform=batch_transform,
         )
         self.brightness = self._check_input(brightness, "brightness")
         self.contrast = self._check_input(contrast, "contrast")
@@ -315,6 +328,10 @@ class ColorJitter(RandomColorJitter):
             To jitter hue, the pixel values of the input image has to be non-negative for conversion to HSV space;
             thus it does not work if you normalize your image to an interval with negative values,
             or use an interpolation that generates negative values before using this function.
+        inplace (bool, optional): whether to apply the transform in place. Default value is False
+        num_chunks (int, optional): number of chunks to split the batched input into. Default value is 1
+        permute_chunks (bool, optional): whether to permute the chunks. Default value is False
+        batch_transform (bool, optional): whether to apply the transform in batch mode. Default value is False
     """
 
     def __init__(
@@ -326,6 +343,7 @@ class ColorJitter(RandomColorJitter):
         inplace: bool = False,
         num_chunks: int = 1,
         permute_chunks: bool = False,
+        batch_transform: bool = False,
     ) -> None:
         super().__init__(
             brightness=brightness,
@@ -336,10 +354,55 @@ class ColorJitter(RandomColorJitter):
             inplace=inplace,
             num_chunks=num_chunks,
             permute_chunks=permute_chunks,
+            batch_transform=batch_transform,
         )
 
     def extra_repr(self) -> str:
         return super().extra_repr(exclude_names=["p"])
+
+
+class RandomChannelPermutation(RandomApplyTransform):
+    """Randomly permute the channels of an image or video
+
+    Args:
+        p (float, optional): probability of the image being channel permuted. Default value is 0.5
+        inplace (bool, optional): whether to apply the transform in place. Default value is False
+        num_chunks (int, optional): number of chunks to split the batched input into. Default value is 1
+        permute_chunks (bool, optional): whether to permute the chunks. Default value is False
+        batch_transform (bool, optional): whether to apply the transform in batch mode. Default value is False
+    """
+
+    def __init__(
+        self,
+        p: float = 1.0,
+        inplace: bool = False,
+        num_chunks: int = 1,
+        permute_chunks: bool = False,
+        batch_transform: bool = False,
+    ):
+        super().__init__(
+            p=p,
+            inplace=inplace,
+            num_chunks=num_chunks,
+            permute_chunks=permute_chunks,
+            batch_transform=batch_transform,
+        )
+
+    def _get_params(
+        self,
+        flat_inputs: List[Any],
+        num_chunks: int,
+        chunks_indices: List[torch.Tensor],
+    ) -> Dict[str, Any]:
+        num_channels, *_ = query_chw(flat_inputs)
+
+        params = []
+        for _ in range(num_chunks):
+            params.append(dict(permutation=torch.randperm(num_channels).tolist()))
+        return params
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return self._call_kernel(F.permute_channels, inpt, params["permutation"])
 
 
 class RandomPhotometricDistort(RandomApplyTransform):
@@ -364,6 +427,11 @@ class RandomPhotometricDistort(RandomApplyTransform):
             or use an interpolation that generates negative values before using this function.
         p_transform (float, optional) probability each distortion operation (contrast, saturation, ...) to be applied.
             Default is 0.5.
+        p (float, optional): probability of the image being photometrically distorted. Default value is 0.5
+        inplace (bool, optional): whether to apply the transform in place. Default value is False
+        num_chunks (int, optional): number of chunks to split the batched input into. Default value is 1
+        permute_chunks (bool, optional): whether to permute the chunks. Default value is False
+        batch_transform (bool, optional): whether to apply the transform in batch mode. Default value is False
     """
 
     def __init__(
@@ -482,6 +550,8 @@ class RandomEqualize(RandomApplyTransform):
 
     Args:
         p (float): probability of the image being equalized. Default value is 0.5
+        inplace (bool, optional): whether to apply the transform in place. Default value is False
+        batch_transform (bool, optional): whether to apply the transform in batch mode. Default value is False
     """
 
     def __init__(
@@ -509,7 +579,8 @@ class RandomInvert(RandomApplyTransform):
 
     Args:
         p (float): probability of the image being color inverted. Default value is 0.5
-        batch_transform (bool): whether to apply the transform in batch mode. Default value is False
+        inplace (bool, optional): whether to apply the transform in place. Default value is False
+        batch_transform (bool, optional): whether to apply the transform in batch mode. Default value is False
     """
 
     def __init__(
@@ -539,6 +610,8 @@ class RandomPosterize(RandomApplyTransform):
     Args:
         bits (int): number of bits to keep for each channel (0-8)
         p (float): probability of the image being posterized. Default value is 0.5
+        inplace (bool, optional): whether to apply the transform in place. Default value is False
+        batch_transform (bool, optional): whether to apply the transform in batch mode. Default value is False
     """
 
     def __init__(
@@ -613,6 +686,8 @@ class RandomAutocontrast(RandomApplyTransform):
 
     Args:
         p (float): probability of the image being autocontrasted. Default value is 0.5
+        inplace (bool, optional): whether to apply the transform in place. Default value is False
+        batch_transform (bool, optional): whether to apply the transform in batch mode. Default value is False
     """
 
     def __init__(
@@ -642,6 +717,8 @@ class RandomAdjustSharpness(RandomApplyTransform):
             any non-negative number. 0 gives a blurred image, 1 gives the
             original image while 2 increases the sharpness by a factor of 2.
         p (float): probability of the image being sharpened. Default value is 0.5
+        inplace (bool, optional): whether to apply the transform in place. Default value is False
+        batch_transform (bool, optional): whether to apply the transform in batch mode. Default value is False
     """
 
     def __init__(

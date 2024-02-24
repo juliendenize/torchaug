@@ -1,10 +1,16 @@
-from typing import Any, Callable, Dict, List, Optional, Sequence, Union
+from __future__ import annotations
+
+from typing import Any, Callable, List, Optional, Sequence, Union
 
 import torch
 
-from torch import nn
-from torchvision import transforms as _transforms
-from torchvision.transforms.v2 import Transform
+from torch import nn, Tensor
+
+from torch.utils._pytree import tree_flatten, tree_unflatten
+
+from torchaug.transforms._utils import _assert_module_or_list_of_modules
+from torchaug.utils import _log_api_usage_once
+from ._transform import RandomApplyTransform, Transform
 
 
 class Compose(Transform):
@@ -79,8 +85,6 @@ class RandomApply(Transform):
         p (float): probability of applying the list of transforms
     """
 
-    _v1_transform_cls = _transforms.RandomApply
-
     def __init__(
         self, transforms: Union[Sequence[Callable], nn.ModuleList], p: float = 0.5
     ) -> None:
@@ -97,9 +101,6 @@ class RandomApply(Transform):
                 "`p` should be a floating point value in the interval [0.0, 1.0]."
             )
         self.p = p
-
-    def _extract_params_for_v1_transform(self) -> Dict[str, Any]:
-        return {"transforms": self.transforms, "p": self.p}
 
     def forward(self, *inputs: Any) -> Any:
         needs_unpacking = len(inputs) > 1
@@ -180,3 +181,65 @@ class RandomOrder(Transform):
             outputs = transform(*inputs)
             inputs = outputs if needs_unpacking else (outputs,)
         return outputs
+
+
+class SequentialTransform(Transform):
+    """Sequentially apply a list of transforms.
+
+    Args:
+        transforms (Sequence[RandomApplyTransform]): A list of transforms.
+        inplace (bool): Whether to perform the transforms in-place.
+    """
+
+    def __init__(
+        self, transforms: List[RandomApplyTransform], inplace: bool = False
+    ) -> None:
+        super().__init__()
+        _log_api_usage_once(self)
+
+        _assert_module_or_list_of_modules(transforms)
+
+        self._prepare_transforms(transforms)
+        self.transforms = nn.ModuleList(transforms)
+
+        self.inplace = inplace
+
+    @staticmethod
+    def _prepare_transform(transform: nn.Module):
+        import inspect
+
+        if isinstance(transform, RandomApplyTransform):
+            init_signature = inspect.signature(transform.__init__)
+            parameters = init_signature.parameters
+            has_inplace = "inplace" in parameters
+
+            if has_inplace:
+                transform.inplace = True
+            transform._receive_flatten_inputs = True
+
+    @staticmethod
+    def _prepare_transforms(transforms: list[nn.Module]):
+        for transform in transforms:
+            SequentialTransform._prepare_transform(transform)
+            SequentialTransform._prepare_transforms(list(transform.modules())[1:])
+
+    def forward(self, *inputs: Any) -> Any:
+        if not self._receive_flatten_inputs:
+            inputs = inputs if len(inputs) > 1 else inputs[0]
+            flat_inputs, spec = tree_flatten(inputs)
+        else:
+            flat_inputs = list(inputs)
+
+        for transform in self.transforms:
+            flat_inputs: Tensor = transform(*flat_inputs)
+
+        if self._receive_flatten_inputs:
+            return tree_unflatten(flat_inputs, spec)
+
+        return flat_inputs
+
+    def extra_repr(self) -> str:
+        format_string = []
+        for t in self.transforms:
+            format_string.append(f"    {t}")
+        return f"inplace={self.inplace}, transforms=\n" + "\n".join(format_string)

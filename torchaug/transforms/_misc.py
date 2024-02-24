@@ -69,12 +69,14 @@ class LinearTransformation(Transform):
 
     Applications:
         whitening transformation: Suppose X is a column vector zero-centered data.
-        Then compute the data covariance matrix [D x D] with torch.mm(X.t(), X),
+        Then compute the data covariance matrix [D x D] or the batch covariance matrix [B x D x D] with torch.mm(X.t(), X),
         perform SVD on this matrix and pass it as transformation_matrix.
 
     Args:
-        transformation_matrix (Tensor): tensor [D x D], D = C x H x W
-        mean_vector (Tensor): tensor [D], D = C x H x W
+        transformation_matrix (Tensor): tensor [D x D] or [B x D X D], D = C x H x W
+        mean_vector (Tensor): tensor [D] or [B X D], D = C x H x W
+        inplace (bool, optional): whether to apply the transform in place. Default value is False
+        batch_transform (bool, optional): whether to apply the transform in batch mode. Default value is False
     """
 
     def __init__(
@@ -209,7 +211,8 @@ class Normalize(Transform):
     Args:
         mean (sequence): Sequence of means for each channel.
         std (sequence): Sequence of standard deviations for each channel.
-        inplace(bool,optional): Bool to make this operation in-place.
+        inplace (bool, optional): whether to apply the transform in place. Default value is False
+        batch_transform (bool, optional): whether to apply the transform in batch mode. Default value is False
 
     """
 
@@ -238,6 +241,8 @@ class GaussianBlur(Transform):
             creating kernel to perform blurring. If float, sigma is fixed. If it is tuple
             of float (min, max), sigma is chosen uniformly at random to lie in the
             given range.
+        inplace (bool, optional): whether to apply the transform in place. Default value is False
+        batch_transform (bool, optional): whether to apply the transform in batch mode. Default value is False
     """
 
     def __init__(
@@ -419,6 +424,7 @@ class SanitizeBoundingBoxes(Transform):
             This heuristic should work well with a lot of datasets, including the built-in torchvision datasets.
             It can also be a callable that takes the same input
             as the transform, and returns the labels.
+        batch_transform (bool, optional): whether to apply the transform in batch mode. Default value is False
     """
 
     def __init__(

@@ -52,6 +52,8 @@ class RandomHorizontalFlip(RandomApplyTransform):
 
     Args:
         p (float, optional): probability of the input being flipped. Default value is 0.5
+        inplace (bool, optional): whether to apply the transform in place. Default value is False
+        batch_transform (bool, optional): whether to apply the transform in batch mode. Default value is False
     """
 
     def __init__(
@@ -73,6 +75,8 @@ class RandomVerticalFlip(RandomApplyTransform):
 
     Args:
         p (float, optional): probability of the input being flipped. Default value is 0.5
+        inplace (bool, optional): whether to apply the transform in place. Default value is False
+        batch_transform (bool, optional): whether to apply the transform in batch mode. Default value is False
     """
 
     def __init__(
@@ -132,6 +136,7 @@ class Resize(Transform):
 
             The default value changed from ``None`` to ``True`` in
             v0.17, for the PIL and Tensor backends to be consistent.
+        batch_transform (bool, optional): whether to apply the transform in batch mode. Default value is False
     """
 
     _reshape_transform = True
@@ -185,6 +190,7 @@ class CenterCrop(Transform):
         size (sequence or int): Desired output size of the crop. If size is an
             int instead of sequence like (h, w), a square crop (size, size) is
             made. If provided a sequence of length 1, it will be interpreted as (size[0], size[0]).
+        batch_transform (bool, optional): whether to apply the transform in batch mode. Default value is False
     """
 
     _reshape_transform = True
@@ -248,6 +254,9 @@ class RandomResizedCrop(Transform):
 
             The default value changed from ``None`` to ``True`` in
             v0.17, for the PIL and Tensor backends to be consistent.
+        num_chunks (int, optional): number of chunks to split the batched input into. Default value is 1
+        permute_chunks (bool, optional): whether to permute the chunks. Default value is False
+        batch_transform (bool, optional): whether to apply the transform in batch mode. Default value is False
     """
 
     _reshape_transform = True
@@ -675,6 +684,10 @@ class RandomRotation(Transform):
             Fill value can be also a dictionary mapping data type to the fill value, e.g.
             ``fill={tv_tensors.Image: 127, tv_tensors.Mask: 0}`` where ``Image`` will be filled with 127 and
             ``Mask`` will be filled with 0.
+        inplace (bool, optional): whether to apply the transform in place. Default value is False
+        num_chunks (int, optional): number of chunks to split the batched input into. Default value is 1
+        permute_chunks (bool, optional): whether to permute the chunks. Default value is False
+        batch_transform (bool, optional): whether to apply the transform in batch mode. Default value is False
 
     .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
 
@@ -774,6 +787,10 @@ class RandomAffine(Transform):
             ``Mask`` will be filled with 0.
         center (sequence, optional): Optional center of rotation, (x, y). Origin is the upper left corner.
             Default is the center of the image.
+        inplace (bool, optional): whether to apply the transform in place. Default value is False
+        num_chunks (int, optional): number of chunks to split the batched input into. Default value is 1
+        permute_chunks (bool, optional): whether to permute the chunks. Default value is False
+        batch_transform (bool, optional): whether to apply the transform in batch mode. Default value is False
 
     .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
 
@@ -1069,6 +1086,10 @@ class RandomPerspective(RandomApplyTransform):
             Fill value can be also a dictionary mapping data type to the fill value, e.g.
             ``fill={tv_tensors.Image: 127, tv_tensors.Mask: 0}`` where ``Image`` will be filled with 127 and
             ``Mask`` will be filled with 0.
+        inplace (bool, optional): whether to apply the transform in place. Default value is False
+        num_chunks (int, optional): number of chunks to split the batched input into. Default value is 1
+        permute_chunks (bool, optional): whether to permute the chunks. Default value is False
+        batch_transform (bool, optional): whether to apply the transform in batch mode. Default value is False
     """
 
     def __init__(
@@ -1196,6 +1217,8 @@ class ElasticTransform(Transform):
             Fill value can be also a dictionary mapping data type to the fill value, e.g.
             ``fill={tv_tensors.Image: 127, tv_tensors.Mask: 0}`` where ``Image`` will be filled with 127 and
             ``Mask`` will be filled with 0.
+        inplace (bool, optional): whether to apply the transform in place. Default value is False
+        batch_transform (bool, optional): whether to apply the transform in batch mode. Default value is False
     """
 
     def __init__(
@@ -1292,6 +1315,7 @@ class RandomIoUCrop(Transform):
             a cropped image or video. Default, ``None`` which corresponds to ``[0.0, 0.1, 0.3, 0.5, 0.7, 0.9, 1.0]``
         trials (int, optional): Number of trials to find a crop for a given value of minimal IoU (Jaccard) overlap.
             Default, 40.
+        batch_transform (bool, optional): whether to apply the transform in batch mode. Default value is False
     """
 
     def __init__(
@@ -1302,8 +1326,9 @@ class RandomIoUCrop(Transform):
         max_aspect_ratio: float = 2.0,
         sampler_options: Optional[List[float]] = None,
         trials: int = 40,
+        batch_transform: bool = False,
     ):
-        super().__init__()
+        super().__init__(batch_transform=batch_transform)
         # Configuration similar to https://github.com/weiliu89/caffe/blob/ssd/examples/ssd/ssd_coco.py#L89-L174
         self.min_scale = min_scale
         self.max_scale = max_scale

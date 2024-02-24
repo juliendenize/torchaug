@@ -11,7 +11,7 @@ from torchaug import ta_tensors
 from torchaug.utils import _log_api_usage_once
 
 from ._utils._kernel import _get_kernel, _register_kernel_internal
-from ._utils._tensor import _transfer_tensor_on_device
+from ._utils._tensor import __transfer_tensor_on_device
 
 
 def normalize(
@@ -60,12 +60,12 @@ def normalize_image(
     device = image.device
 
     if not isinstance(mean, torch.Tensor):
-        mean = _transfer_tensor_on_device(mean, device, True)
+        mean = __transfer_tensor_on_device(mean, device, True)
     else:
         mean = torch.as_tensor(mean, dtype=dtype, device=device)
 
     if isinstance(std, torch.Tensor):
-        std = _transfer_tensor_on_device(std, device, True)
+        std = __transfer_tensor_on_device(std, device, True)
     else:
         std = torch.as_tensor(std, dtype=dtype, device=device)
 
@@ -184,7 +184,7 @@ def gaussian_blur_image(
             s = float(sigma)
             sigma = [s, s]
         elif isinstance(sigma, torch.Tensor):
-            sigma = _transfer_tensor_on_device(sigma, image.device, True)
+            sigma = __transfer_tensor_on_device(sigma, image.device, True)
         else:
             raise TypeError(
                 f"sigma should be either float or sequence of floats. Got {type(sigma)}"
@@ -268,7 +268,7 @@ def gaussian_blur_batch_images(
     if images.numel() == 0:
         return images
 
-    sigma = _transfer_tensor_on_device(sigma, images.device, True)
+    sigma = __transfer_tensor_on_device(sigma, images.device, True)
 
     dtype = images.dtype
     shape = images.shape

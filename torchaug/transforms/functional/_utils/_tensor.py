@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+from typing import Any
+
 import torch
 
+from torchaug import ta_tensors
 
-def _transfer_tensor_on_device(
+
+def __transfer_tensor_on_device(
     tensor: torch.Tensor, device: torch.device, non_blocking: bool = False
 ) -> torch.Tensor:
     """Transfer a tensor to a device.
@@ -36,7 +40,7 @@ def _get_positive_batch_factor(
             raise ValueError("factor is not non-negative.")
         factor = torch.tensor(factor, device=device, dtype=dtype).expand(batch_size)
     elif isinstance(factor, torch.Tensor):
-        factor = _transfer_tensor_on_device(factor, device, True)
+        factor = __transfer_tensor_on_device(factor, device, True)
         if value_check and not torch.all(torch.ge(factor, 0)):
             raise ValueError("factor is not non-negative.")
         if factor.numel() == 1:
@@ -74,3 +78,7 @@ def _max_value(dtype: torch.dtype) -> int:
         # This is only here for completeness. This value is implicitly assumed in a lot of places so changing it is not
         # easy.
         return 1
+
+
+def is_pure_tensor(inpt: Any) -> bool:
+    return isinstance(inpt, torch.Tensor) and not isinstance(inpt, ta_tensors.TATensor)

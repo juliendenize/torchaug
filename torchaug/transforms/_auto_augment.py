@@ -4,26 +4,26 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 import torch
 
 from torch.utils._pytree import tree_flatten, tree_unflatten, TreeSpec
-from torchvision import tv_tensors
-from torchvision.transforms.v2 import AutoAugmentPolicy, InterpolationMode
 
-from torchvision.transforms.v2._utils import (
-    _get_fill,
-    _setup_fill_arg,
-    check_type,
-    is_pure_tensor,
-)
+from torchvision.transforms.v2._utils import _get_fill, _setup_fill_arg, check_type
 from torchvision.transforms.v2.functional._geometry import _check_interpolation
 
 import torchaug.transforms.functional as F
 from torchaug import ta_tensors
+from torchaug.transforms import AutoAugmentPolicy, InterpolationMode
 from ._transform import Transform, Transform
 from .functional._meta import get_size
 from .functional._utils._kernel import _FillType, _FillTypeJIT
-from .functional._utils._tensor import _max_value
+from .functional._utils._tensor import _max_value, is_pure_tensor
 
 
-ImageOrVideo = Union[torch.Tensor, ta_tensors.Image, ta_tensors.Video]
+ImageOrVideo = Union[
+    torch.Tensor,
+    ta_tensors.Image,
+    ta_tensors.Video,
+    ta_tensors.BatchImages,
+    ta_tensors.BatchVideos,
+]
 
 
 class _AutoAugmentBase(Transform):
@@ -65,7 +65,7 @@ class _AutoAugmentBase(Transform):
         ),
     ) -> Tuple[Tuple[List[Any], TreeSpec, int], ImageOrVideo]:
         if self.batch_transform:
-            unsupported_types.extend([tv_tensors.Image, tv_tensors.Video])
+            unsupported_types.extend([ta_tensors.Image, ta_tensors.Video])
         flat_inputs, spec = tree_flatten(inputs if len(inputs) > 1 else inputs[0])
         needs_transform_list = self._needs_transform_list(flat_inputs)
 
@@ -202,9 +202,7 @@ class _AutoAugmentBase(Transform):
             )
             return contrast(image, contrast_factor=1.0 + magnitude)
         elif transform_id == "Sharpness":
-            sharpness = (
-                F.adjust_sharpness_batch if self.batch_transform else F.adjust_sharpness
-            )
+            sharpness = F.adjust_sharpness
             return sharpness(image, sharpness_factor=1.0 + magnitude)
         elif transform_id == "Posterize":
             return F.posterize(image, bits=int(magnitude))
@@ -242,6 +240,10 @@ class AutoAugment(_AutoAugmentBase):
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
         fill (sequence or number, optional): Pixel fill value for the area outside the transformed
             image. If given a number, the value is used for all bands respectively.
+        inplace (bool, optional): whether to apply the transform in place. Default value is False
+        num_chunks (int, optional): number of chunks to split the batched input into. Default value is 1
+        permute_chunks (bool, optional): whether to permute the chunks. Default value is False
+        batch_transform (bool, optional): whether to apply the transform in batch mode. Default value is False
     """
 
     _AUGMENTATION_SPACE = {
@@ -460,6 +462,10 @@ class RandAugment(_AutoAugmentBase):
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
         fill (sequence or number, optional): Pixel fill value for the area outside the transformed
             image. If given a number, the value is used for all bands respectively.
+        inplace (bool, optional): whether to apply the transform in place. Default value is False
+        num_chunks (int, optional): number of chunks to split the batched input into. Default value is 1
+        permute_chunks (bool, optional): whether to permute the chunks. Default value is False
+        batch_transform (bool, optional): whether to apply the transform in batch mode. Default value is False
     """
 
     _AUGMENTATION_SPACE = {
@@ -581,6 +587,10 @@ class TrivialAugmentWide(_AutoAugmentBase):
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
         fill (sequence or number, optional): Pixel fill value for the area outside the transformed
             image. If given a number, the value is used for all bands respectively.
+        inplace (bool, optional): whether to apply the transform in place. Default value is False
+        num_chunks (int, optional): number of chunks to split the batched input into. Default value is 1
+        permute_chunks (bool, optional): whether to permute the chunks. Default value is False
+        batch_transform (bool, optional): whether to apply the transform in batch mode. Default value is False
     """
 
     _AUGMENTATION_SPACE = {
@@ -701,6 +711,10 @@ class AugMix(_AutoAugmentBase):
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
         fill (sequence or number, optional): Pixel fill value for the area outside the transformed
             image. If given a number, the value is used for all bands respectively.
+        inplace (bool, optional): whether to apply the transform in place. Default value is False
+        num_chunks (int, optional): number of chunks to split the batched input into. Default value is 1
+        permute_chunks (bool, optional): whether to permute the chunks. Default value is False
+        batch_transform (bool, optional): whether to apply the transform in batch mode. Default value is False
     """
 
     _PARTIAL_AUGMENTATION_SPACE = {
@@ -771,7 +785,7 @@ class AugMix(_AutoAugmentBase):
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
         fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = None,
     ) -> None:
-        super().__init__(interpolation=interpolation, fill=fill)
+        super().__init__(interpolation=interpolation, fill=fill, batch_transform=True)
         self._PARAMETER_MAX = 10
         if not (1 <= severity <= self._PARAMETER_MAX):
             raise ValueError(
@@ -806,7 +820,9 @@ class AugMix(_AutoAugmentBase):
         )
 
         orig_dims = list(image_or_video.shape)
-        expected_ndim = 5 if isinstance(orig_image_or_video, ta_tensors.Video) else 4
+        expected_ndim = (
+            5 if isinstance(orig_image_or_video, ta_tensors.BatchVideos) else 4
+        )
         batch = image_or_video.reshape(
             [1] * max(expected_ndim - image_or_video.ndim, 0) + orig_dims
         )
@@ -859,7 +875,9 @@ class AugMix(_AutoAugmentBase):
             mix.add_(combined_weights[:, i].reshape(batch_dims) * aug)
         mix = mix.reshape(orig_dims).to(dtype=image_or_video.dtype)
 
-        if isinstance(orig_image_or_video, (ta_tensors.Image, ta_tensors.Video)):
-            mix = tv_tensors.wrap(mix, like=orig_image_or_video)
+        if isinstance(
+            orig_image_or_video, (ta_tensors.BatchImages, ta_tensors.BatchVideos)
+        ):
+            mix = ta_tensors.wrap(mix, like=orig_image_or_video)
 
         return self._unflatten_and_insert_image_or_video(flat_inputs_with_spec, mix)

@@ -320,7 +320,6 @@ class RandomApplyTransform(nn.Module):
                             ):
                                 transform_inpt[chunk_indices] = chunk_output
                             output = transform_inpt
-
             transform_outputs.append(output)
 
         if not transform_all:
@@ -346,6 +345,12 @@ class RandomApplyTransform(nn.Module):
             flat_outputs = flat_pre_outputs
         else:
             flat_outputs = transform_outputs
+
+        flat_outputs = [
+            flat_output.contiguous()
+            for flat_output, needs_transform in zip(flat_outputs, needs_transform_list)
+            if needs_transform
+        ]
 
         return flat_outputs
 

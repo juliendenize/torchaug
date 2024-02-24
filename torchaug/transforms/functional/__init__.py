@@ -1,7 +1,5 @@
 from torchvision.transforms import InterpolationMode
 
-from torchvision.transforms.v2.functional import is_pure_tensor
-
 from ._augment import erase, erase_image, erase_video
 from ._color import (
     adjust_brightness,
@@ -159,4 +157,4 @@ from ._misc import (
 from ._temporal import uniform_temporal_subsample, uniform_temporal_subsample_video
 from ._type_conversion import to_batch_images, to_image
 
-from ._utils import register_kernel
+from ._utils import is_pure_tensor, register_kernel
