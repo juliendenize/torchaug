@@ -6,8 +6,7 @@ import torch
 from torchaug import ta_tensors
 from . import functional as F
 from ._transform import Transform
-
-from .functional import is_pure_tensor
+from ._utils import is_pure_tensor
 
 
 class ToImage(Transform):
@@ -17,7 +16,7 @@ class ToImage(Transform):
     This transform does not support torchscript.
     """
 
-    _transformed_types = (is_pure_tensor, np.ndarray)
+    _transformed_types = (is_pure_tensor, np.ndarray, ta_tensors.BatchImages)
 
     def _transform(
         self, inpt: Union[torch.Tensor, np.ndarray], params: Dict[str, Any]
@@ -32,13 +31,14 @@ class ToBatchImages(Transform):
     This transform does not support torchscript.
     """
 
-    _transformed_types = (is_pure_tensor, ta_tensors.Image, np.ndarray)
+    _transformed_types = (is_pure_tensor, ta_tensors.Image)
 
     def _transform(
-        self, inpt: Union[torch.Tensor, ta_tensors.Image, np.ndarray], params: Dict[str, Any]
+        self,
+        inpt: Union[torch.Tensor, ta_tensors.Image, np.ndarray],
+        params: Dict[str, Any],
     ) -> ta_tensors.BatchImages:
         return F.to_batch_images(inpt)
-
 
 
 class ToPureTensor(Transform):
@@ -47,7 +47,7 @@ class ToPureTensor(Transform):
     This doesn't scale or change the values, only the type.
     """
 
-    _transformed_types = (ta_tensors.TATensor)
+    _transformed_types = ta_tensors.TATensor
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> torch.Tensor:
         return inpt.as_subclass(torch.Tensor)

@@ -48,7 +48,14 @@ def horizontal_flip_mask(mask: torch.Tensor) -> torch.Tensor:
     return horizontal_flip_image(mask)
 
 
-horizontal_flip_bounding_boxes = TVF.horizontal_flip_bounding_boxes
+def horizontal_flip_bounding_boxes(
+    bounding_boxes: torch.Tensor,
+    format: ta_tensors.BoundingBoxFormat,
+    canvas_size: Tuple[int, int],
+) -> torch.Tensor:
+    return TVF.horizontal_flip_bounding_boxes(
+        bounding_boxes=bounding_boxes, format=format, canvas_size=canvas_size
+    )
 
 
 @_register_kernel_internal(
@@ -96,7 +103,14 @@ def vertical_flip_mask(mask: torch.Tensor) -> torch.Tensor:
     return vertical_flip_image(mask)
 
 
-vertical_flip_bounding_boxes = TVF.vertical_flip_bounding_boxes
+def vertical_flip_bounding_boxes(
+    bounding_boxes: torch.Tensor,
+    format: ta_tensors.BoundingBoxFormat,
+    canvas_size: Tuple[int, int],
+) -> torch.Tensor:
+    return TVF.vertical_flip_bounding_boxes(
+        bounding_boxes=bounding_boxes, format=format, canvas_size=canvas_size
+    )
 
 
 @_register_kernel_internal(
@@ -168,7 +182,10 @@ def resize_image(
     )
 
 
-resize_mask = TVF.resize_mask
+def resize_mask(
+    mask: torch.Tensor, size: List[int], max_size: Optional[int] = None
+) -> torch.Tensor:
+    return TVF.resize_mask(mask=mask, size=size, max_size=max_size)
 
 
 @_register_kernel_internal(resize, ta_tensors.Mask, ta_tensor_wrapper=False)
@@ -183,7 +200,18 @@ def _resize_mask_dispatch(
     return ta_tensors.wrap(output, like=inpt)
 
 
-resize_bounding_boxes = TVF.resize_bounding_boxes
+def resize_bounding_boxes(
+    bounding_boxes: torch.Tensor,
+    canvas_size: Tuple[int, int],
+    size: List[int],
+    max_size: Optional[int] = None,
+) -> Tuple[torch.Tensor, Tuple[int, int]]:
+    return TVF.resize_bounding_boxes(
+        bounding_boxes=bounding_boxes,
+        canvas_size=canvas_size,
+        size=size,
+        max_size=max_size,
+    )
 
 
 @_register_kernel_internal(resize, ta_tensors.BoundingBoxes, ta_tensor_wrapper=False)
@@ -283,7 +311,26 @@ def affine_image(
     )
 
 
-affine_bounding_boxes = TVF.affine_bounding_boxes
+def affine_bounding_boxes(
+    bounding_boxes: torch.Tensor,
+    format: ta_tensors.BoundingBoxFormat,
+    canvas_size: Tuple[int, int],
+    angle: Union[int, float],
+    translate: List[float],
+    scale: float,
+    shear: List[float],
+    center: Optional[List[float]] = None,
+) -> torch.Tensor:
+    return TVF.affine_bounding_boxes(
+        bounding_boxes=bounding_boxes,
+        format=format,
+        canvas_size=canvas_size,
+        angle=angle,
+        translate=translate,
+        scale=scale,
+        shear=shear,
+        center=center,
+    )
 
 
 @_register_kernel_internal(affine, ta_tensors.BoundingBoxes, ta_tensor_wrapper=False)
@@ -312,7 +359,24 @@ def _affine_bounding_boxes_dispatch(
     return ta_tensors.wrap(output, like=inpt)
 
 
-affine_mask = TVF.affine_mask
+def affine_mask(
+    mask: torch.Tensor,
+    angle: Union[int, float],
+    translate: List[float],
+    scale: float,
+    shear: List[float],
+    fill: _FillTypeJIT = None,
+    center: Optional[List[float]] = None,
+) -> torch.Tensor:
+    return TVF.affine_mask(
+        mask=mask,
+        angle=angle,
+        translate=translate,
+        scale=scale,
+        shear=shear,
+        fill=fill,
+        center=center,
+    )
 
 
 @_register_kernel_internal(affine, ta_tensors.Mask, ta_tensor_wrapper=False)
@@ -416,7 +480,22 @@ def rotate_image(
     )
 
 
-rotate_bounding_boxes = TVF.rotate_bounding_boxes
+def rotate_bounding_boxes(
+    bounding_boxes: torch.Tensor,
+    format: ta_tensors.BoundingBoxFormat,
+    canvas_size: Tuple[int, int],
+    angle: float,
+    expand: bool = False,
+    center: Optional[List[float]] = None,
+) -> Tuple[torch.Tensor, Tuple[int, int]]:
+    return TVF.rotate_bounding_boxes(
+        bounding_boxes=bounding_boxes,
+        format=format,
+        canvas_size=canvas_size,
+        angle=angle,
+        expand=expand,
+        center=center,
+    )
 
 
 @_register_kernel_internal(rotate, ta_tensors.BoundingBoxes, ta_tensor_wrapper=False)
@@ -441,7 +520,20 @@ def _rotate_bounding_boxes_dispatch(
     return ta_tensors.wrap(output, like=inpt, canvas_size=canvas_size)
 
 
-rotate_mask = TVF.rotate_mask
+def rotate_mask(
+    mask: torch.Tensor,
+    angle: float,
+    expand: bool = False,
+    center: Optional[List[float]] = None,
+    fill: _FillTypeJIT = None,
+) -> torch.Tensor:
+    return TVF.rotate_mask(
+        mask=mask,
+        angle=angle,
+        expand=expand,
+        center=center,
+        fill=fill,
+    )
 
 
 @_register_kernel_internal(rotate, ta_tensors.Mask, ta_tensor_wrapper=False)
@@ -527,7 +619,20 @@ def pad_mask(
     )
 
 
-pad_bounding_boxes = TVF.pad_bounding_boxes
+def pad_bounding_boxes(
+    bounding_boxes: torch.Tensor,
+    format: ta_tensors.BoundingBoxFormat,
+    canvas_size: Tuple[int, int],
+    padding: List[int],
+    padding_mode: str = "constant",
+) -> Tuple[torch.Tensor, Tuple[int, int]]:
+    return TVF.pad_bounding_boxes(
+        bounding_boxes=bounding_boxes,
+        format=format,
+        canvas_size=canvas_size,
+        padding=padding,
+        padding_mode=padding_mode,
+    )
 
 
 @_register_kernel_internal(pad, ta_tensors.BoundingBoxes, ta_tensor_wrapper=False)
@@ -581,7 +686,22 @@ def crop_image(
     return TVF.crop_image(image=image, top=top, left=left, height=height, width=width)
 
 
-crop_bounding_boxes = TVF.crop_bounding_boxes
+def crop_bounding_boxes(
+    bounding_boxes: torch.Tensor,
+    format: ta_tensors.BoundingBoxFormat,
+    top: int,
+    left: int,
+    height: int,
+    width: int,
+) -> Tuple[torch.Tensor, Tuple[int, int]]:
+    return TVF.crop_bounding_boxes(
+        bounding_boxes=bounding_boxes,
+        format=format,
+        top=top,
+        left=left,
+        height=height,
+        width=width,
+    )
 
 
 @_register_kernel_internal(crop, ta_tensors.BoundingBoxes, ta_tensor_wrapper=False)
@@ -613,7 +733,7 @@ def crop_mask(
 def crop_video(
     video: torch.Tensor, top: int, left: int, height: int, width: int
 ) -> torch.Tensor:
-    return crop_image(video=video, top=top, left=left, height=height, width=width)
+    return crop_image(image=video, top=top, left=left, height=height, width=width)
 
 
 def perspective(
@@ -669,7 +789,22 @@ def perspective_image(
     )
 
 
-perspective_bounding_boxes = TVF.perspective_bounding_boxes
+def perspective_bounding_boxes(
+    bounding_boxes: torch.Tensor,
+    format: ta_tensors.BoundingBoxFormat,
+    canvas_size: Tuple[int, int],
+    startpoints: Optional[List[List[int]]],
+    endpoints: Optional[List[List[int]]],
+    coefficients: Optional[List[float]] = None,
+) -> torch.Tensor:
+    return TVF.perspective_bounding_boxes(
+        bounding_boxes=bounding_boxes,
+        format=format,
+        canvas_size=canvas_size,
+        startpoints=startpoints,
+        endpoints=endpoints,
+        coefficients=coefficients,
+    )
 
 
 @_register_kernel_internal(
@@ -696,7 +831,20 @@ def _perspective_bounding_boxes_dispatch(
     return ta_tensors.wrap(output, like=inpt)
 
 
-perspective_mask = TVF.perspective_mask
+def perspective_mask(
+    mask: torch.Tensor,
+    startpoints: Optional[List[List[int]]],
+    endpoints: Optional[List[List[int]]],
+    fill: _FillTypeJIT = None,
+    coefficients: Optional[List[float]] = None,
+) -> torch.Tensor:
+    return TVF.perspective_mask(
+        mask=mask,
+        startpoints=startpoints,
+        endpoints=endpoints,
+        fill=fill,
+        coefficients=coefficients,
+    )
 
 
 @_register_kernel_internal(perspective, ta_tensors.Mask, ta_tensor_wrapper=False)
@@ -768,7 +916,10 @@ def elastic_batch(
     """See :class:`~torchvision.transforms.v2.ElasticTransform` for details."""
     if torch.jit.is_scripting():
         return elastic_batch_images(
-            inpt, displacement=displacement, interpolation=interpolation, fill=fill
+            inpt,
+            displacement=displacement,
+            interpolation=interpolation,
+            fill=fill,
         )
 
     _log_api_usage_once(elastic_batch)
@@ -797,7 +948,7 @@ def _create_identity_grid_batch(
     batch_size: int, size: Tuple[int, int], device: torch.device, dtype: torch.dtype
 ) -> torch.Tensor:
     sy, sx = size
-    base_grid = torch.empty(batch_size, 1, sy, sx, 2, device=device, dtype=dtype)
+    base_grid = torch.empty(batch_size, sy, sx, 2, device=device, dtype=dtype)
     x_grid = torch.linspace(
         (-sx + 1) / sx, (sx - 1) / sx, sx, device=device, dtype=dtype
     )
@@ -825,19 +976,24 @@ def _apply_grid_transform_batch(
 
     images = images.reshape(batch_size, -1, num_channels, input_height, input_width)
     squashed_dim = images.shape[1]
+    images = images.reshape(-1, num_channels, input_height, input_width)
 
     # We are using context knowledge that grid should have float dtype
     fp = images.dtype == grid.dtype
     float_images = images if fp else images.to(grid.dtype)
-
     if squashed_dim > 1:
         # Apply same grid to a batch of images
-        grid = grid.expand(batch_size, squashed_dim, -1, -1, -1)
-
+        grid = grid.repeat_interleave(squashed_dim, dim=0)
     # Append a dummy mask for customized fill colors, should be faster than grid_sample() twice
+
     if fill is not None:
         mask = torch.ones(
-            (batch_size, squashed_dim, 1, input_height, input_width),
+            (
+                batch_size * squashed_dim,
+                1,
+                input_height,
+                input_width,
+            ),
             dtype=float_images.dtype,
             device=float_images.device,
         )
@@ -895,8 +1051,7 @@ def elastic_batch_images(
     # We are aware that if input images dtype is uint8 and displacement is float64 then
     # displacement will be cast to float32 and all computations will be done with float32
     # We can fix this later if needed
-
-    expected_shape = (1, height, width, 2)
+    expected_shape = (batch_size, height, width, 2)
     if expected_shape != displacement.shape:
         raise ValueError(
             f"Argument displacement shape should be {expected_shape}, but given {displacement.shape}"
@@ -913,7 +1068,18 @@ def elastic_batch_images(
     return output
 
 
-elastic_bounding_boxes = TVF.elastic_bounding_boxes
+def elastic_bounding_boxes(
+    bounding_boxes: torch.Tensor,
+    format: ta_tensors.BoundingBoxFormat,
+    canvas_size: Tuple[int, int],
+    displacement: torch.Tensor,
+) -> torch.Tensor:
+    return TVF.elastic_bounding_boxes(
+        bounding_boxes=bounding_boxes,
+        format=format,
+        canvas_size=canvas_size,
+        displacement=displacement,
+    )
 
 
 def elastic_batch_bounding_boxes(
@@ -922,13 +1088,15 @@ def elastic_batch_bounding_boxes(
     canvas_size: Tuple[int, int],
     displacement: torch.Tensor,
 ) -> torch.Tensor:
-    expected_shape = (1, canvas_size[0], canvas_size[1], 2)
     if not isinstance(displacement, torch.Tensor):
         raise TypeError("Argument displacement should be a Tensor")
-    elif displacement.shape != expected_shape:
-        raise ValueError(
-            f"Argument displacement shape should be {expected_shape}, but given {displacement.shape}"
-        )
+    else:
+        batch_size = displacement.shape[0]
+        expected_shape = (batch_size, canvas_size[0], canvas_size[1], 2)
+        if displacement.shape != expected_shape:
+            raise ValueError(
+                f"Argument displacement shape should be {expected_shape}, but given {displacement.shape}"
+            )
 
     if bounding_boxes.numel() == 0:
         return bounding_boxes
@@ -954,33 +1122,42 @@ def elastic_batch_bounding_boxes(
         )
     ).reshape(-1, 4)
 
-    id_grid = _create_identity_grid_batch(canvas_size, device=device, dtype=dtype)
+    id_grid = _create_identity_grid_batch(
+        batch_size, canvas_size, device=device, dtype=dtype
+    )
     # We construct an approximation of inverse grid as inv_grid = id_grid - displacement
     # This is not an exact inverse of the grid
     inv_grid = id_grid.sub_(displacement)
 
     # Get points from bboxes
-    points = bounding_boxes[:, [[0, 1], [2, 1], [2, 3], [0, 3]]].reshape(-1, 2)
+    points = bounding_boxes[:, [[0, 1], [2, 1], [2, 3], [0, 3]]].reshape(
+        batch_size, -1, 2
+    )
     if points.is_floating_point():
         points = points.ceil_()
     index_xy = points.to(dtype=torch.long)
-    index_x, index_y = index_xy[:, 0], index_xy[:, 1]
+    index_x, index_y = index_xy[:, :, 0], index_xy[:, :, 1]
 
     # Transform points:
-    t_size = torch.tensor(
-        canvas_size[::-1], device=displacement.device, dtype=displacement.dtype
-    )
-    transformed_points = (
-        inv_grid[0, index_y, index_x, :].add_(1).mul_(0.5 * t_size).sub_(0.5)
-    )
+    out_bboxes = []
+    # TODO: vectorize this loop
+    for i in range(batch_size):
+        t_size = torch.tensor(
+            canvas_size[::-1], device=displacement.device, dtype=displacement.dtype
+        )
+        transformed_points_i = (
+            inv_grid[i, index_y[i], index_x[i], :].add_(1).mul_(0.5 * t_size).sub_(0.5)
+        )
+        transformed_points_i = transformed_points_i.reshape(-1, 4, 2)
 
-    transformed_points = transformed_points.reshape(-1, 4, 2)
-    out_bbox_mins, out_bbox_maxs = torch.aminmax(transformed_points, dim=1)
-    out_bboxes = clamp_bounding_boxes(
-        torch.cat([out_bbox_mins, out_bbox_maxs], dim=1).to(bounding_boxes.dtype),
-        format=ta_tensors.BoundingBoxFormat.XYXY,
-        canvas_size=canvas_size,
-    )
+        out_bbox_mins, out_bbox_maxs = torch.aminmax(transformed_points_i, dim=1)
+        out_bboxes_i = clamp_bounding_boxes(
+            torch.cat([out_bbox_mins, out_bbox_maxs], dim=1).to(bounding_boxes.dtype),
+            format=ta_tensors.BoundingBoxFormat.XYXY,
+            canvas_size=canvas_size,
+        )
+        out_bboxes.append(out_bboxes_i)
+    out_bboxes = torch.stack(out_bboxes, dim=0)
 
     return convert_bounding_box_format(
         out_bboxes,
@@ -1012,6 +1189,14 @@ def _elastic_bounding_boxes_dispatch(
 def _elastic_batch_bounding_boxes_dispatch(
     inpt: ta_tensors.BatchBoundingBoxes, displacement: torch.Tensor, **kwargs
 ) -> ta_tensors.BatchBoundingBoxes:
+    if not isinstance(displacement, torch.Tensor):
+        raise TypeError("Argument displacement should be a Tensor")
+
+    displacement = displacement.repeat_interleave(
+        torch.tensor([inpt.get_num_boxes_sample(i) for i in range(inpt.batch_size)]),
+        dim=0,
+    )
+
     output = elastic_batch_bounding_boxes(
         inpt.as_subclass(torch.Tensor),
         format=inpt.format,
@@ -1021,7 +1206,28 @@ def _elastic_batch_bounding_boxes_dispatch(
     return ta_tensors.wrap(output, like=inpt)
 
 
-elastic_mask = TVF.elastic_mask
+def elastic_mask(
+    mask: torch.Tensor,
+    displacement: torch.Tensor,
+    fill: _FillTypeJIT = None,
+) -> torch.Tensor:
+    if mask.ndim < 3:
+        mask = mask.unsqueeze(0)
+        needs_squeeze = True
+    else:
+        needs_squeeze = False
+
+    output = elastic_image(
+        mask,
+        displacement=displacement,
+        interpolation=InterpolationMode.NEAREST,
+        fill=fill,
+    )
+
+    if needs_squeeze:
+        output = output.squeeze(0)
+
+    return output
 
 
 def elastic_batch_masks(
@@ -1035,7 +1241,7 @@ def elastic_batch_masks(
     else:
         needs_squeeze = False
 
-    output = elastic_image(
+    output = elastic_batch_images(
         masks,
         displacement=displacement,
         interpolation=InterpolationMode.NEAREST,
@@ -1071,6 +1277,14 @@ def _elastic_batch_masks_dispatch(
     fill: _FillTypeJIT = None,
     **kwargs,
 ) -> ta_tensors.BatchMasks:
+    if not isinstance(displacement, torch.Tensor):
+        raise TypeError("Argument displacement should be a Tensor")
+
+    displacement = displacement.repeat_interleave(
+        torch.tensor([inpt.get_num_masks_sample(i) for i in range(inpt.batch_size)]),
+        dim=0,
+    )
+
     output = elastic_batch_masks(
         inpt.as_subclass(torch.Tensor), displacement=displacement, fill=fill
     )
@@ -1105,7 +1319,7 @@ def elastic_batch_videos(
 def center_crop(inpt: torch.Tensor, output_size: List[int]) -> torch.Tensor:
     """See :class:`~torchvision.transforms.v2.RandomCrop` for details."""
     if torch.jit.is_scripting():
-        return center_crop_image(inpt)
+        return center_crop_image(inpt, output_size=output_size)
 
     _log_api_usage_once(center_crop)
 
@@ -1117,10 +1331,21 @@ def center_crop(inpt: torch.Tensor, output_size: List[int]) -> torch.Tensor:
 @_register_kernel_internal(center_crop, ta_tensors.Image)
 @_register_kernel_internal(center_crop, ta_tensors.BatchImages)
 def center_crop_image(image: torch.Tensor, output_size: List[int]) -> torch.Tensor:
-    return TVF.center_crop(image=image, output_size=output_size)
+    return TVF.center_crop_image(image=image, output_size=output_size)
 
 
-center_crop_bounding_boxes = TVF.center_crop_bounding_boxes
+def center_crop_bounding_boxes(
+    bounding_boxes: torch.Tensor,
+    format: ta_tensors.BoundingBoxFormat,
+    canvas_size: Tuple[int, int],
+    output_size: List[int],
+) -> Tuple[torch.Tensor, Tuple[int, int]]:
+    return TVF.center_crop_bounding_boxes(
+        bounding_boxes=bounding_boxes,
+        format=format,
+        canvas_size=canvas_size,
+        output_size=output_size,
+    )
 
 
 @_register_kernel_internal(
@@ -1227,7 +1452,24 @@ def resized_crop_image(
     )
 
 
-resized_crop_bounding_boxes = TVF.resized_crop_bounding_boxes
+def resized_crop_bounding_boxes(
+    bounding_boxes: torch.Tensor,
+    format: ta_tensors.BoundingBoxFormat,
+    top: int,
+    left: int,
+    height: int,
+    width: int,
+    size: List[int],
+) -> Tuple[torch.Tensor, Tuple[int, int]]:
+    return TVF.resized_crop_bounding_boxes(
+        bounding_boxes=bounding_boxes,
+        format=format,
+        top=top,
+        left=left,
+        height=height,
+        width=width,
+        size=size,
+    )
 
 
 @_register_kernel_internal(
@@ -1257,20 +1499,35 @@ def _resized_crop_bounding_boxes_dispatch(
     return ta_tensors.wrap(output, like=inpt, canvas_size=canvas_size)
 
 
-resized_crop_mask = TVF.resized_crop_mask
+def resized_crop_mask(
+    mask: torch.Tensor,
+    top: int,
+    left: int,
+    height: int,
+    width: int,
+    size: List[int],
+) -> torch.Tensor:
+    return TVF.resized_crop_mask(
+        mask=mask,
+        top=top,
+        left=left,
+        height=height,
+        width=width,
+        size=size,
+    )
 
 
 @_register_kernel_internal(resized_crop, ta_tensors.Mask, ta_tensor_wrapper=False)
 @_register_kernel_internal(resized_crop, ta_tensors.BatchMasks, ta_tensor_wrapper=False)
 def _resized_crop_mask_dispatch(
-    inpt: ta_tensors.Mask,
+    inpt: ta_tensors.Mask | ta_tensors.BatchMasks,
     top: int,
     left: int,
     height: int,
     width: int,
     size: List[int],
     **kwargs,
-) -> ta_tensors.Mask:
+) -> ta_tensors.Mask | ta_tensors.BatchMasks:
     output = resized_crop_mask(
         inpt.as_subclass(torch.Tensor),
         top=top,

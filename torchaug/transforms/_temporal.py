@@ -2,7 +2,8 @@ from typing import Any, Dict
 
 import torch
 
-from . import functional as F, Transform
+from . import functional as F
+from ._transform import Transform
 
 
 class UniformTemporalSubsample(Transform):

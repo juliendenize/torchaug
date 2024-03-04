@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import math
-from typing import List, Optional
+from typing import List, Optional, Sequence
 
 import torch
 import torchvision.transforms.v2.functional as TVF
@@ -11,7 +11,7 @@ from torchaug import ta_tensors
 from torchaug.utils import _log_api_usage_once
 
 from ._utils._kernel import _get_kernel, _register_kernel_internal
-from ._utils._tensor import __transfer_tensor_on_device
+from ._utils._tensor import _transfer_tensor_on_device
 
 
 def normalize(
@@ -35,51 +35,11 @@ def normalize(
 @_register_kernel_internal(normalize, ta_tensors.BatchImages)
 def normalize_image(
     image: torch.Tensor,
-    mean: List[float] | torch.Tensor,
-    std: List[float] | torch.Tensor,
+    mean: List[float],
+    std: List[float],
     inplace: bool = False,
 ) -> torch.Tensor:
-    if not image.is_floating_point():
-        raise TypeError(f"Input tensor should be a float tensor. Got {image.dtype}.")
-
-    if image.ndim < 3:
-        raise ValueError(
-            f"Expected tensor to be a tensor image of size (..., C, H, W). Got {image.shape}."
-        )
-
-    if isinstance(std, (tuple, list)):
-        divzero = not all(std)
-    elif isinstance(std, (int, float)):
-        divzero = std == 0
-    else:
-        divzero = False
-    if divzero:
-        raise ValueError("std evaluated to zero, leading to division by zero.")
-
-    dtype = image.dtype
-    device = image.device
-
-    if not isinstance(mean, torch.Tensor):
-        mean = __transfer_tensor_on_device(mean, device, True)
-    else:
-        mean = torch.as_tensor(mean, dtype=dtype, device=device)
-
-    if isinstance(std, torch.Tensor):
-        std = __transfer_tensor_on_device(std, device, True)
-    else:
-        std = torch.as_tensor(std, dtype=dtype, device=device)
-
-    if mean.ndim == 1:
-        mean = mean.view(-1, 1, 1)
-    if std.ndim == 1:
-        std = std.view(-1, 1, 1)
-
-    if inplace:
-        image = image.sub_(mean)
-    else:
-        image = image.sub(mean)
-
-    return image.div_(std)
+    return TVF.normalize_image(image=image, mean=mean, std=std, inplace=inplace)
 
 
 @_register_kernel_internal(normalize, ta_tensors.Video)
@@ -93,7 +53,7 @@ def normalize_video(
 def gaussian_blur(
     inpt: torch.Tensor,
     kernel_size: List[int],
-    sigma: List[float] | torch.Tensor | None = None,
+    sigma: List[float] | None = None,
 ) -> torch.Tensor:
     """See :class:`~torchvision.transforms.v2.GaussianBlur` for details."""
     if torch.jit.is_scripting():
@@ -108,16 +68,19 @@ def gaussian_blur(
 def gaussian_blur_batch(
     inpt: torch.Tensor,
     kernel_size: List[int],
-    sigma: List[float] | torch.Tensor | None = None,
+    sigma: torch.Tensor | None = None,
+    value_check: bool = True,
 ) -> torch.Tensor:
     """See :class:`~torchvision.transforms.v2.GaussianBlur` for details."""
     if torch.jit.is_scripting():
-        return gaussian_blur_batch_images(inpt, kernel_size=kernel_size, sigma=sigma)
+        return gaussian_blur_batch_images(
+            inpt, kernel_size=kernel_size, sigma=sigma, value_check=value_check
+        )
 
     _log_api_usage_once(gaussian_blur_batch)
 
     kernel = _get_kernel(gaussian_blur_batch, type(inpt))
-    return kernel(inpt, kernel_size=kernel_size, sigma=sigma)
+    return kernel(inpt, kernel_size=kernel_size, sigma=sigma, value_check=value_check)
 
 
 def _get_gaussian_kernel1d(
@@ -125,11 +88,11 @@ def _get_gaussian_kernel1d(
 ) -> torch.Tensor:
     lim = (kernel_size - 1) / (2.0 * math.sqrt(2.0))
     x = torch.linspace(-lim, lim, steps=kernel_size, dtype=dtype, device=device)
-    if sigma.numel() == 1:
-        sigma = sigma.view(1)
-    else:
-        x = x.view(1, -1).expand(sigma.shape[0], -1)
-    kernel1d = torch.softmax((x / sigma).pow_(2).neg_(), dim=0)
+
+    sigma = sigma.view(-1, 1)
+    x = x.view(1, -1).expand(sigma.shape[0], -1)
+
+    kernel1d = torch.softmax((x / sigma).pow_(2).neg_(), dim=1)
     return kernel1d
 
 
@@ -139,13 +102,11 @@ def _get_gaussian_kernel2d(
     dtype: torch.dtype,
     device: torch.device,
 ) -> torch.Tensor:
-    kernel1d_x = _get_gaussian_kernel1d(
-        kernel_size[0], sigma[..., 0, None], dtype, device
-    )[..., None]
-    kernel1d_y = _get_gaussian_kernel1d(
-        kernel_size[1], sigma[..., 1, None], dtype, device
-    )[..., None]
-    kernel2d = kernel1d_y * kernel1d_x.view(-1, 1, kernel_size[0])
+    kernel1d_x = _get_gaussian_kernel1d(kernel_size[0], sigma[..., 0], dtype, device)
+    kernel1d_y = _get_gaussian_kernel1d(kernel_size[1], sigma[..., 1], dtype, device)
+    kernel2d = (
+        kernel1d_y.view(-1, kernel_size[1], 1) * kernel1d_x.view(-1, 1, kernel_size[0])
+    ).view(-1, kernel_size[1], kernel_size[0])
     return kernel2d
 
 
@@ -183,8 +144,6 @@ def gaussian_blur_image(
         elif isinstance(sigma, (int, float)):
             s = float(sigma)
             sigma = [s, s]
-        elif isinstance(sigma, torch.Tensor):
-            sigma = __transfer_tensor_on_device(sigma, image.device, True)
         else:
             raise TypeError(
                 f"sigma should be either float or sequence of floats. Got {type(sigma)}"
@@ -210,7 +169,8 @@ def gaussian_blur_image(
     kernel = _get_gaussian_kernel2d(
         kernel_size, sigma, dtype=dtype if fp else torch.float32, device=image.device
     )
-    kernel = kernel.expand(shape[-3], 1, kernel.shape[0], kernel.shape[1])
+
+    kernel = kernel.expand(shape[-3], 1, kernel.shape[1], kernel.shape[2])
 
     output = image if fp else image.to(dtype=torch.float32)
 
@@ -238,7 +198,7 @@ def gaussian_blur_image(
 @_register_kernel_internal(gaussian_blur, ta_tensors.Video)
 @_register_kernel_internal(gaussian_blur, ta_tensors.BatchVideos)
 def gaussian_blur_video(
-    video: torch.Tensor, kernel_size: List[int], sigma: Optional[List[float]] = None
+    video: torch.Tensor, kernel_size: List[int], sigma: List[float] | None = None
 ) -> torch.Tensor:
     return gaussian_blur_image(image=video, kernel_size=kernel_size, sigma=sigma)
 
@@ -248,9 +208,10 @@ def gaussian_blur_video(
 def gaussian_blur_batch_images(
     images: torch.Tensor,
     kernel_size: List[int],
-    sigma: List[float] | torch.Tensor | None = None,
+    sigma: torch.Tensor | None = None,
+    value_check: bool = True,
 ) -> torch.Tensor:
-    if isinstance(sigma, (int, float, None)) or sigma.numel() == 2:
+    if not isinstance(sigma, torch.Tensor):
         return gaussian_blur_image(image=images, kernel_size=kernel_size, sigma=sigma)
 
     if isinstance(kernel_size, int):
@@ -268,21 +229,38 @@ def gaussian_blur_batch_images(
     if images.numel() == 0:
         return images
 
-    sigma = __transfer_tensor_on_device(sigma, images.device, True)
+    sigma = _transfer_tensor_on_device(sigma, images.device, True)
+
+    if sigma.device.type == "cpu" or value_check:
+        if (sigma < 0).any():
+            raise ValueError(f"sigma should have positive values. Got {sigma}")
 
     dtype = images.dtype
     shape = images.shape
 
-    b, *rest_dims, h, w = shape
-    images = images.reshape(b, math.prod(rest_dims), h, w)
+    b, h, w = shape[0], shape[-2], shape[-1]
+    images = images.reshape(b, -1, h, w)
 
+    if sigma.ndim == 0 or sigma.ndim == 1 and (sigma.numel() == 1 or sigma.numel() > 2):
+        sigma = sigma.view(-1, 1)
+        sigma = sigma.expand(b, 2)
+    elif sigma.ndim in [1, 2] and sigma.numel() in [1, 2]:
+        sigma = sigma.view(1, -1)
+        sigma = sigma.expand(b, 2)
+    elif sigma.ndim == 2 and sigma.shape[0] != b:
+        raise ValueError(
+            f"sigma should have one element or the same length as the batch size. Got {sigma.shape[0]} and {b}"
+        )
+    elif sigma.ndim > 2:
+        raise ValueError(f"sigma should have 1 or 2 dimensions. Got {sigma.ndim}")
     fp = torch.is_floating_point(images)
     kernel = _get_gaussian_kernel2d(
         kernel_size, sigma, dtype=dtype if fp else torch.float32, device=images.device
     )
+
     kernel = kernel[:, None, ...]
-    kernel = kernel.expand(-1, images.shape[-3], kernel_size[0], kernel_size[1])
-    kernel = kernel.reshape(-1, 1, kernel_size[0], kernel_size[1])
+    kernel = kernel.expand(-1, images.shape[-3], kernel_size[1], kernel_size[0])
+    kernel = kernel.reshape(-1, 1, kernel_size[1], kernel_size[0])
 
     images = images if fp else images.to(dtype=torch.float32)
 
@@ -295,9 +273,10 @@ def gaussian_blur_batch_images(
     ]
 
     output = torch_pad(images, padding, mode="reflect")
-    output = conv2d(output, kernel, groups=shape[-3])
+    output = output.view(-1, kernel.shape[0], output.shape[-2], output.shape[-1])
+    output = conv2d(output, kernel, groups=output.shape[-3])
 
-    output = output.reshape(b, *rest_dims, h, w)
+    output = output.reshape(shape)
     if not fp:
         output = output.round_().to(dtype=dtype)
 
@@ -308,10 +287,11 @@ def gaussian_blur_batch_images(
 def gaussian_blur_batch_videos(
     videos: torch.Tensor,
     kernel_size: List[int],
-    sigma: float | None | torch.Tensor = None,
+    sigma: torch.Tensor | None = None,
+    value_check: bool = True,
 ) -> torch.Tensor:
     return gaussian_blur_batch_images(
-        images=videos, kernel_size=kernel_size, sigma=sigma
+        images=videos, kernel_size=kernel_size, sigma=sigma, value_check=value_check
     )
 
 

@@ -4,7 +4,6 @@ from typing import List
 
 import torch
 import torchvision.transforms.v2.functional as TVF
-from torch.nn.functional import conv2d
 from torchvision.transforms.v2.functional._color import (
     _hsv_to_rgb,
     _rgb_to_grayscale_image,
@@ -14,10 +13,30 @@ from torchvision.transforms.v2.functional._color import (
 from torchaug import ta_tensors
 
 from torchaug.utils import _log_api_usage_once
-
 from ._misc import to_dtype_image
+
 from ._utils._kernel import _get_kernel, _register_kernel_internal
-from ._utils._tensor import _get_positive_batch_factor, _max_value
+from ._utils._tensor import _get_batch_factor, _max_value
+
+
+def _rgb_to_grayscale_image(
+    image: torch.Tensor, num_output_channels: int = 1, preserve_dtype: bool = True
+) -> torch.Tensor:
+    # TODO: Maybe move the validation that num_output_channels is 1 or 3 to this function instead of callers.
+    if image.shape[-3] == 1 and num_output_channels == 1:
+        return image.clone()
+    if image.shape[-3] == 1 and num_output_channels == 3:
+        s = [1] * len(image.shape)
+        s[-3] = 3
+        return image.repeat(s)
+    r, g, b = image.unbind(dim=-3)
+    l_img = r.mul(0.2989).add_(g, alpha=0.587).add_(b, alpha=0.114)
+    l_img = l_img.unsqueeze(dim=-3)
+    if preserve_dtype:
+        l_img = l_img.to(image.dtype)
+    if num_output_channels == 3:
+        l_img = l_img.expand(image.shape)
+    return l_img
 
 
 def rgb_to_grayscale(inpt: torch.Tensor, num_output_channels: int = 1) -> torch.Tensor:
@@ -37,8 +56,8 @@ def rgb_to_grayscale(inpt: torch.Tensor, num_output_channels: int = 1) -> torch.
 def rgb_to_grayscale_image(
     image: torch.Tensor, num_output_channels: int = 1
 ) -> torch.Tensor:
-    return TVF.rgb_to_grayscale_image(
-        image=image, num_output_channels=num_output_channels
+    return _rgb_to_grayscale_image(
+        image=image, num_output_channels=num_output_channels, preserve_dtype=True
     )
 
 
@@ -56,40 +75,41 @@ def _batch_blend(
     ratio = ratio.float()
     fp = images1.is_floating_point()
     bound = _max_value(images1.dtype)
-    ratio = ratio.view(-1, *[1 for _ in range(images1.ndim - 1)])
+    while ratio.ndim < images1.ndim:
+        ratio = ratio.unsqueeze(-1)
     output = images1.mul(ratio).add_(images2.mul(1.0 - ratio)).clamp_(0, bound)
     return output if fp else output.to(images1.dtype)
 
 
 def adjust_brightness(
-    inpt: torch.Tensor, brightness_factor: torch.Tensor | float, *args, **kwargs
+    inpt: torch.Tensor, brightness_factor: torch.Tensor | float
 ) -> torch.Tensor:
     """Adjust brightness."""
     if torch.jit.is_scripting():
 
-        return adjust_brightness_image(
-            inpt, brightness_factor=brightness_factor, *args, **kwargs
-        )
+        return adjust_brightness_image(inpt, brightness_factor=brightness_factor)
 
     _log_api_usage_once(adjust_brightness)
 
     kernel = _get_kernel(adjust_brightness, type(inpt))
-    return kernel(inpt, brightness_factor=brightness_factor, *args, **kwargs)
+    return kernel(inpt, brightness_factor=brightness_factor)
 
 
 def adjust_brightness_batch(
-    inpt: torch.Tensor, brightness_factor: torch.Tensor | float, *args, **kwargs
+    inpt: torch.Tensor,
+    brightness_factor: float | torch.Tensor,
+    value_check: bool = False,
 ) -> torch.Tensor:
     """Adjust brightness."""
     if torch.jit.is_scripting():
         return adjust_brightness_batch_images(
-            inpt, brightness_factor=brightness_factor, *args, **kwargs
+            inpt, brightness_factor=brightness_factor, value_check=value_check
         )
 
     _log_api_usage_once(adjust_brightness_batch)
 
     kernel = _get_kernel(adjust_brightness_batch, type(inpt))
-    return kernel(inpt, brightness_factor=brightness_factor, *args, **kwargs)
+    return kernel(inpt, brightness_factor=brightness_factor, value_check=value_check)
 
 
 @_register_kernel_internal(adjust_brightness, torch.Tensor)
@@ -112,7 +132,9 @@ def adjust_brightness_video(
 @_register_kernel_internal(adjust_brightness_batch, torch.Tensor)
 @_register_kernel_internal(adjust_brightness_batch, ta_tensors.BatchImages)
 def adjust_brightness_batch_images(
-    images: torch.Tensor, brightness_factor: torch.Tensor, value_check: bool = False
+    images: torch.Tensor,
+    brightness_factor: float | torch.Tensor,
+    value_check: bool = False,
 ) -> torch.Tensor:
     c = images.shape[-3]
     if c not in [1, 3]:
@@ -120,7 +142,7 @@ def adjust_brightness_batch_images(
             f"Input image tensor permitted channel values are 1 or 3, but found {c}"
         )
 
-    brightness_factor = _get_positive_batch_factor(
+    brightness_factor = _get_batch_factor(
         brightness_factor, images.shape[0], images.device, None, value_check
     )
 
@@ -128,7 +150,8 @@ def adjust_brightness_batch_images(
     brightness_factor = brightness_factor.float()
     bound = _max_value(images.dtype)
 
-    brightness_factor = brightness_factor.view(-1, *[1 for _ in range(images.ndim - 1)])
+    while brightness_factor.ndim < images.ndim:
+        brightness_factor = brightness_factor.unsqueeze(-1)
 
     output = images.mul(brightness_factor).clamp_(0, bound)
 
@@ -137,41 +160,41 @@ def adjust_brightness_batch_images(
 
 @_register_kernel_internal(adjust_brightness_batch, ta_tensors.BatchVideos)
 def adjust_brightness_batch_videos(
-    videos: torch.Tensor, brightness_factor: torch.Tensor, value_check: bool = False
+    videos: torch.Tensor,
+    brightness_factor: float | torch.Tensor,
+    value_check: bool = False,
 ):
     return adjust_brightness_batch_images(
         images=videos, brightness_factor=brightness_factor, value_check=value_check
     )
 
 
-def adjust_saturation(
-    inpt: torch.Tensor, saturation_factor: torch.Tensor | float, *args, **kwargs
-) -> torch.Tensor:
+def adjust_saturation(inpt: torch.Tensor, saturation_factor: float) -> torch.Tensor:
     """Adjust saturation."""
     if torch.jit.is_scripting():
-        return adjust_saturation_image(
-            inpt, saturation_factor=saturation_factor, *args, **kwargs
-        )
+        return adjust_saturation_image(inpt, saturation_factor=saturation_factor)
 
     _log_api_usage_once(adjust_saturation)
 
     kernel = _get_kernel(adjust_saturation, type(inpt))
-    return kernel(inpt, saturation_factor=saturation_factor, *args, **kwargs)
+    return kernel(inpt, saturation_factor=saturation_factor)
 
 
 def adjust_saturation_batch(
-    inpt: torch.Tensor, saturation_factor: torch.Tensor | float, *args, **kwargs
+    inpt: torch.Tensor,
+    saturation_factor: float | torch.Tensor,
+    value_check: bool = False,
 ) -> torch.Tensor:
     """Adjust saturation."""
     if torch.jit.is_scripting():
         return adjust_saturation_batch_images(
-            inpt, saturation_factor=saturation_factor, *args, **kwargs
+            inpt, saturation_factor=saturation_factor, value_check=value_check
         )
 
     _log_api_usage_once(adjust_saturation_batch)
 
     kernel = _get_kernel(adjust_saturation_batch, type(inpt))
-    return kernel(inpt, saturation_factor=saturation_factor, *args, **kwargs)
+    return kernel(inpt, saturation_factor=saturation_factor, value_check=value_check)
 
 
 @_register_kernel_internal(adjust_saturation, torch.Tensor)
@@ -207,7 +230,7 @@ def adjust_saturation_batch_images(
     if c == 1:  # Match PIL behaviour
         return images
 
-    saturation_factor = _get_positive_batch_factor(
+    saturation_factor = _get_batch_factor(
         saturation_factor, images.shape[0], images.device, None, value_check
     )
 
@@ -216,41 +239,39 @@ def adjust_saturation_batch_images(
 
 @_register_kernel_internal(adjust_saturation_batch, ta_tensors.BatchVideos)
 def adjust_saturation_batch_videos(
-    video: torch.Tensor, saturation_factor: float, value_check: bool = False
+    video: torch.Tensor,
+    saturation_factor: float | torch.Tensor,
+    value_check: bool = False,
 ) -> torch.Tensor:
     return adjust_saturation_batch_images(
         video, saturation_factor=saturation_factor, value_check=value_check
     )
 
 
-def adjust_contrast(
-    inpt: torch.Tensor, contrast_factor: float | torch.Tensor, *args, **kwargs
-) -> torch.Tensor:
+def adjust_contrast(inpt: torch.Tensor, contrast_factor: float) -> torch.Tensor:
     """Adjust contrast."""
     if torch.jit.is_scripting():
-        return adjust_contrast_image(
-            inpt, contrast_factor=contrast_factor, *args, **kwargs
-        )
+        return adjust_contrast_image(inpt, contrast_factor=contrast_factor)
 
     _log_api_usage_once(adjust_contrast)
 
     kernel = _get_kernel(adjust_contrast, type(inpt))
-    return kernel(inpt, contrast_factor=contrast_factor, *args, **kwargs)
+    return kernel(inpt, contrast_factor=contrast_factor)
 
 
 def adjust_contrast_batch(
-    inpt: torch.Tensor, contrast_factor: float | torch.Tensor, *args, **kwargs
+    inpt: torch.Tensor, contrast_factor: float | torch.Tensor, value_check: bool = False
 ) -> torch.Tensor:
     """Adjust contrast."""
     if torch.jit.is_scripting():
         return adjust_contrast_batch_images(
-            inpt, contrast_factor=contrast_factor, *args, **kwargs
+            inpt, contrast_factor=contrast_factor, value_check=value_check
         )
 
     _log_api_usage_once(adjust_contrast_batch)
 
     kernel = _get_kernel(adjust_contrast_batch, type(inpt))
-    return kernel(inpt, contrast_factor=contrast_factor, *args, **kwargs)
+    return kernel(inpt, contrast_factor=contrast_factor, value_check=value_check)
 
 
 @_register_kernel_internal(adjust_contrast, torch.Tensor)
@@ -269,7 +290,9 @@ def adjust_contrast_video(video: torch.Tensor, contrast_factor: float) -> torch.
 @_register_kernel_internal(adjust_contrast_batch, torch.Tensor)
 @_register_kernel_internal(adjust_contrast_batch, ta_tensors.BatchImages)
 def adjust_contrast_batch_images(
-    images: torch.Tensor, contrast_factor: torch.Tensor, value_check: bool = False
+    images: torch.Tensor,
+    contrast_factor: float | torch.Tensor,
+    value_check: bool = False,
 ) -> torch.Tensor:
     c = images.shape[-3]
     if c not in [1, 3]:
@@ -277,7 +300,7 @@ def adjust_contrast_batch_images(
             f"Input image tensor permitted channel values are 1 or 3, but found {c}"
         )
 
-    contrast_factor = _get_positive_batch_factor(
+    contrast_factor = _get_batch_factor(
         contrast_factor, images.shape[0], images.device, None, value_check
     )
 
@@ -297,26 +320,20 @@ def adjust_contrast_batch_images(
 
 @_register_kernel_internal(adjust_contrast_batch, ta_tensors.BatchVideos)
 def adjust_contrast_batch_videos(
-    videos: torch.Tensor, contrast_factor: float, value_check: bool = False
+    videos: torch.Tensor, contrast_factor: float | torch.Tensor
 ) -> torch.Tensor:
-    return adjust_contrast_batch_images(
-        videos, contrast_factor=contrast_factor, value_check=value_check
-    )
+    return adjust_contrast_batch_images(videos, contrast_factor=contrast_factor)
 
 
-def adjust_sharpness(
-    inpt: torch.Tensor, sharpness_factor: float | torch.Tensor, *args, **kwargs
-) -> torch.Tensor:
+def adjust_sharpness(inpt: torch.Tensor, sharpness_factor: float) -> torch.Tensor:
     """See :class:`~torchvision.transforms.RandomAdjustSharpness`"""
     if torch.jit.is_scripting():
-        return adjust_sharpness_image(
-            inpt, sharpness_factor=sharpness_factor, *args, **kwargs
-        )
+        return adjust_sharpness_image(inpt, sharpness_factor=sharpness_factor)
 
     _log_api_usage_once(adjust_sharpness)
 
     kernel = _get_kernel(adjust_sharpness, type(inpt))
-    return kernel(inpt, sharpness_factor=sharpness_factor, *args, **kwargs)
+    return kernel(inpt, sharpness_factor=sharpness_factor)
 
 
 @_register_kernel_internal(adjust_sharpness, torch.Tensor)
@@ -336,30 +353,30 @@ def adjust_sharpness_video(
     return TVF.adjust_sharpness_image(image=video, sharpness_factor=sharpness_factor)
 
 
-def adjust_hue(
-    inpt: torch.Tensor, hue_factor: float | torch.Tensor, *args, **kwargs
-) -> torch.Tensor:
+def adjust_hue(inpt: torch.Tensor, hue_factor: float) -> torch.Tensor:
     """Adjust hue."""
     if torch.jit.is_scripting():
-        return adjust_hue_image(inpt, hue_factor=hue_factor, *args, **kwargs)
+        return adjust_hue_image(inpt, hue_factor=hue_factor)
 
     _log_api_usage_once(adjust_hue)
 
     kernel = _get_kernel(adjust_hue, type(inpt))
-    return kernel(inpt, hue_factor=hue_factor, *args, **kwargs)
+    return kernel(inpt, hue_factor=hue_factor)
 
 
 def adjust_hue_batch(
-    inpt: torch.Tensor, hue_factor: float | torch.Tensor, *args, **kwargs
+    inpt: torch.Tensor, hue_factor: float | torch.Tensor, value_check: bool = False
 ) -> torch.Tensor:
     """Adjust hue."""
     if torch.jit.is_scripting():
-        return adjust_hue_batch_images(inpt, hue_factor=hue_factor, *args, **kwargs)
+        return adjust_hue_batch_images(
+            inpt, hue_factor=hue_factor, value_check=value_check
+        )
 
     _log_api_usage_once(adjust_hue_batch)
 
     kernel = _get_kernel(adjust_hue_batch, type(inpt))
-    return kernel(inpt, hue_factor=hue_factor, *args, **kwargs)
+    return kernel(inpt, hue_factor=hue_factor, value_check=value_check)
 
 
 @_register_kernel_internal(adjust_hue, torch.Tensor)
@@ -393,23 +410,30 @@ def adjust_hue_batch_images(
         # exit earlier on empty images
         return images
 
-    hue_factor = _get_positive_batch_factor(
-        hue_factor, images.shape[0], images.device, None, value_check
+    hue_factor = _get_batch_factor(
+        hue_factor,
+        images.shape[0],
+        images.device,
+        None,
+        value_check,
+        min_value=-0.5,
+        max_value=0.5,
     )
 
     orig_dtype = images.dtype
-    images = TVF.to_dtype_image(images, torch.float32, scale=True)
+    images = to_dtype_image(images, torch.float32, scale=True)
 
     images = _rgb_to_hsv(images)
     h, s, v = images.unbind(dim=-3)
 
-    hue_factor = hue_factor.view(-1, *[1 for _ in range(h.ndim - 1)])
+    while hue_factor.ndim < (images.ndim - 1):
+        hue_factor = hue_factor.unsqueeze(-1)
 
     h = (h + hue_factor) % 1.0
     images = torch.stack((h, s, v), dim=-3)
     images_hue_adj = _hsv_to_rgb(images)
 
-    return TVF.to_dtype_image(images_hue_adj, orig_dtype, scale=True)
+    return to_dtype_image(images_hue_adj, orig_dtype, scale=True)
 
 
 @_register_kernel_internal(adjust_hue_batch, ta_tensors.BatchVideos)
@@ -423,19 +447,17 @@ def adjust_hue_batch_videos(
 
 def adjust_gamma(
     inpt: torch.Tensor,
-    gamma: float | torch.Tensor,
-    gain: float | torch.Tensor = 1,
-    *args,
-    **kwargs,
+    gamma: float,
+    gain: float = 1,
 ) -> torch.Tensor:
     """Adjust gamma."""
     if torch.jit.is_scripting():
-        return adjust_gamma_image(inpt, gamma=gamma, gain=gain, *args, **kwargs)
+        return adjust_gamma_image(inpt, gamma=gamma, gain=gain)
 
     _log_api_usage_once(adjust_gamma)
 
     kernel = _get_kernel(adjust_gamma, type(inpt))
-    return kernel(inpt, gamma=gamma, gain=gain, *args, **kwargs)
+    return kernel(inpt, gamma=gamma, gain=gain)
 
 
 @_register_kernel_internal(adjust_gamma, torch.Tensor)
@@ -479,7 +501,7 @@ def posterize_video(video: torch.Tensor, bits: int) -> torch.Tensor:
     return posterize_image(image=video, bits=bits)
 
 
-def solarize(inpt: torch.Tensor, threshold: float | torch.Tensor) -> torch.Tensor:
+def solarize(inpt: torch.Tensor, threshold: float) -> torch.Tensor:
     """See :class:`~torchvision.transforms.v2.RandomSolarize` for details."""
     if torch.jit.is_scripting():
         return solarize_image(inpt, threshold=threshold)
@@ -578,7 +600,7 @@ def invert_video(video: torch.Tensor) -> torch.Tensor:
 def permute_channels(inpt: torch.Tensor, permutation: List[int]) -> torch.Tensor:
     """Permute the channels of the input according to the given permutation."""
     if torch.jit.is_scripting():
-        return permute_channels(inpt, permutation=permutation)
+        return permute_channels_image(inpt, permutation=permutation)
 
     _log_api_usage_once(permute_channels)
 

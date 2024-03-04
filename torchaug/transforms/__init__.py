@@ -10,6 +10,7 @@ from ._color import (
     RandomAdjustSharpness,
     RandomAutocontrast,
     RandomChannelPermutation,
+    RandomColorJitter,
     RandomEqualize,
     RandomGrayscale,
     RandomInvert,
@@ -51,10 +52,11 @@ from ._misc import (
     Lambda,
     LinearTransformation,
     Normalize,
+    RandomGaussianBlur,
     SanitizeBoundingBoxes,
     ToDtype,
 )
 from ._temporal import UniformTemporalSubsample
 
-from ._transform import Transform
+from ._transform import RandomApplyTransform, Transform
 from ._type_conversion import ToBatchImages, ToImage, ToPureTensor

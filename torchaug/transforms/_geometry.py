@@ -30,16 +30,21 @@ from torchvision.transforms.v2._utils import (
     _setup_size,
     has_all,
     has_any,
+)
+from torchvision.transforms.v2.functional._geometry import _parse_pad_padding
+
+from torchaug import ta_tensors
+from torchaug.ta_tensors import set_return_type
+from torchaug.transforms.functional._utils._kernel import _FillType
+from . import functional as F
+
+from ._transform import RandomApplyTransform, Transform
+from ._utils import (
+    get_batch_bounding_boxes,
+    get_bounding_boxes,
     is_pure_tensor,
     query_size,
 )
-from torchvision.transforms.v2.functional._utils import _FillType
-
-from torchaug import ta_tensors
-from torchaug.transforms import functional as F, Transform
-
-from ._transform import RandomApplyTransform
-from ._utils import get_batch_bounding_boxes, get_bounding_boxes
 
 
 class RandomHorizontalFlip(RandomApplyTransform):
@@ -57,9 +62,11 @@ class RandomHorizontalFlip(RandomApplyTransform):
     """
 
     def __init__(
-        self, p: float = 0.5, inplace: bool = False, batch_transform: bool = False
+        self, p: float = 0.5, batch_inplace: bool = False, batch_transform: bool = False
     ) -> None:
-        super().__init__(p, inplace=inplace, batch_transform=batch_transform)
+        super().__init__(
+            p, batch_inplace=batch_inplace, batch_transform=batch_transform
+        )
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(F.horizontal_flip, inpt)
@@ -80,9 +87,11 @@ class RandomVerticalFlip(RandomApplyTransform):
     """
 
     def __init__(
-        self, p: float = 0.5, inplace: bool = False, batch_transform: bool = False
+        self, p: float = 0.5, batch_inplace: bool = False, batch_transform: bool = False
     ) -> None:
-        super().__init__(p, inplace=inplace, batch_transform=batch_transform)
+        super().__init__(
+            p, batch_inplace=batch_inplace, batch_transform=batch_transform
+        )
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(F.vertical_flip, inpt)
@@ -136,7 +145,6 @@ class Resize(Transform):
 
             The default value changed from ``None`` to ``True`` in
             v0.17, for the PIL and Tensor backends to be consistent.
-        batch_transform (bool, optional): whether to apply the transform in batch mode. Default value is False
     """
 
     _reshape_transform = True
@@ -147,9 +155,8 @@ class Resize(Transform):
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
         max_size: Optional[int] = None,
         antialias: Optional[bool] = True,
-        batch_transform: bool = False,
     ) -> None:
-        super().__init__(batch_transform=batch_transform)
+        super().__init__()
 
         if isinstance(size, int):
             size = [size]
@@ -160,7 +167,6 @@ class Resize(Transform):
                 f"size can either be an integer or a sequence of one or two integers, but got {size} instead."
             )
         self.size = size
-
         self.interpolation = interpolation
         self.max_size = max_size
         self.antialias = antialias
@@ -195,10 +201,8 @@ class CenterCrop(Transform):
 
     _reshape_transform = True
 
-    def __init__(
-        self, size: Union[int, Sequence[int]], batch_transform: bool = False
-    ) -> None:
-        super().__init__(batch_transform=batch_transform)
+    def __init__(self, size: Union[int, Sequence[int]]) -> None:
+        super().__init__()
 
         self.size = _setup_size(
             size, error_msg="Please provide only two dimensions (h, w) for size."
@@ -700,7 +704,7 @@ class RandomRotation(Transform):
         expand: bool = False,
         center: Optional[List[float]] = None,
         fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = 0,
-        inplace: bool = False,
+        batch_inplace: bool = False,
         num_chunks: int = 1,
         permute_chunks: bool = False,
         batch_transform: bool = False,
@@ -710,7 +714,7 @@ class RandomRotation(Transform):
 
         self._reshape_transform = expand
         super().__init__(
-            inplace=inplace,
+            batch_inplace=batch_inplace,
             num_chunks=num_chunks,
             permute_chunks=permute_chunks,
             batch_transform=batch_transform,
@@ -805,13 +809,13 @@ class RandomAffine(Transform):
         interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
         fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = 0,
         center: Optional[List[float]] = None,
-        inplace: bool = False,
+        batch_inplace: bool = False,
         num_chunks: int = 1,
         permute_chunks: bool = False,
         batch_transform: bool = False,
     ) -> None:
         super().__init__(
-            inplace=inplace,
+            batch_inplace=batch_inplace,
             num_chunks=num_chunks,
             permute_chunks=permute_chunks,
             batch_transform=batch_transform,
@@ -963,7 +967,7 @@ class RandomCrop(Transform):
                 _check_padding_arg(padding)
             _check_padding_mode_arg(padding_mode)
 
-        self.padding = F._geometry._parse_pad_padding(padding) if padding else None  # type: ignore[arg-type]
+        self.padding = _parse_pad_padding(padding) if padding else None  # type: ignore[arg-type]
         self.pad_if_needed = pad_if_needed
         self.fill = fill
         self._fill = _setup_fill_arg(fill)
@@ -1098,14 +1102,14 @@ class RandomPerspective(RandomApplyTransform):
         p: float = 0.5,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
         fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = 0,
-        inplace: bool = False,
+        batch_inplace: bool = False,
         num_chunks: int = 1,
         permute_chunks: bool = False,
         batch_transform: bool = False,
     ) -> None:
         super().__init__(
             p=p,
-            inplace=inplace,
+            batch_inplace=batch_inplace,
             num_chunks=num_chunks,
             permute_chunks=permute_chunks,
             batch_transform=batch_transform,
@@ -1227,10 +1231,10 @@ class ElasticTransform(Transform):
         sigma: Union[float, Sequence[float]] = 5.0,
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
         fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = 0,
-        inplace: bool = False,
+        batch_inplace: bool = False,
         batch_transform: bool = False,
     ) -> None:
-        super().__init__(inplace=inplace, batch_transform=batch_transform)
+        super().__init__(batch_inplace=batch_inplace, batch_transform=batch_transform)
         self.alpha = _setup_number_or_seq(alpha, "alpha")
         self.sigma = _setup_number_or_seq(sigma, "sigma")
 
@@ -1253,9 +1257,14 @@ class ElasticTransform(Transform):
         params = []
 
         for i in range(num_chunks):
-            lead_dims = (
-                [chunks_indices[i].shape[0], 1, 1] if self.batch_transform else [1, 1]
-            )
+            is_first_input_ta_tensor = isinstance(flat_inputs[0], ta_tensors.TATensor)
+            if is_first_input_ta_tensor:
+                with set_return_type("TATensor"):
+                    chunk_input = flat_inputs[0][chunks_indices]
+                chunk_batch_size = self._get_input_batch_size(chunk_input)
+            else:
+                chunk_batch_size = chunks_indices[0].shape[0]
+            lead_dims = [chunk_batch_size, 1] if self.batch_transform else [1, 1]
             dx = torch.rand(lead_dims + size, device=device) * 2 - 1
             if self.sigma[0] > 0.0:
                 kx = int(8 * self.sigma[0] + 1)
@@ -1274,7 +1283,7 @@ class ElasticTransform(Transform):
                 dy = self._call_kernel(gaussian_blur, dy, [ky, ky], list(self.sigma))
             dy = dy * self.alpha[1] / size[1]
             displacement = torch.concat([dx, dy], 1).permute(
-                [0, 1, 3, 4, 2] if self.batch_transform else [0, 2, 3, 1]
+                [0, 2, 3, 1]
             )  # B x H x W x 2
             params.append(dict(displacement=displacement))
         return params
@@ -1282,7 +1291,7 @@ class ElasticTransform(Transform):
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = _get_fill(self._fill, type(inpt))
         return self._call_kernel(
-            F.elastic if self.batch_transform else F.elastic_batch,
+            F.elastic if not self.batch_transform else F.elastic_batch,
             inpt,
             **params,
             fill=fill,

@@ -4,21 +4,17 @@ from typing import Any, Callable, cast, Dict, List, Optional, Sequence, Type, Un
 import torch
 from torch.utils._pytree import tree_flatten, tree_unflatten
 
-from torchvision import transforms as tv_tensors
-
-from torchvision.transforms.v2._utils import (
-    _parse_labels_getter,
-    _setup_number_or_seq,
-    _setup_size,
-    is_pure_tensor,
-)
+from torchvision.transforms.v2._utils import _setup_number_or_seq, _setup_size
 
 from torchaug import ta_tensors
 
-from torchaug.transforms import functional as F
-
-from ._transform import Transform
-from ._utils import get_batch_bounding_boxes, get_bounding_boxes
+from . import functional as F
+from ._transform import RandomApplyTransform, Transform
+from ._utils import (
+    _parse_labels_getter,
+    get_sample_or_batch_bounding_boxes,
+    is_pure_tensor,
+)
 
 
 # TODO: do we want/need to expose this?
@@ -48,6 +44,37 @@ class Lambda(Transform):
             return self.lambd(inpt)
         else:
             return inpt
+
+    def forward_single(self, flat_inputs: List[Any]) -> List[Any]:
+        if self.p == 1.0:
+            pass
+        elif self.p == 0.0 or torch.rand(1) >= self.p:
+            return flat_inputs
+
+        needs_transform_list = self._needs_transform_list(flat_inputs)
+        params = self._get_params(
+            [
+                inpt
+                for (inpt, needs_transform) in zip(flat_inputs, needs_transform_list)
+                if needs_transform
+            ],
+            num_chunks=1,
+            chunks_indices=[
+                torch.tensor(
+                    [0],
+                    device=flat_inputs[0].device
+                    if isinstance(flat_inputs[0], torch.Tensor)
+                    else "cpu",
+                )
+            ],
+        )[0]
+
+        flat_outputs = [
+            self._transform(inpt, params) if needs_transform else inpt
+            for (inpt, needs_transform) in zip(flat_inputs, needs_transform_list)
+        ]
+
+        return flat_outputs
 
     def extra_repr(self) -> str:
         extras = []
@@ -79,39 +106,29 @@ class LinearTransformation(Transform):
         batch_transform (bool, optional): whether to apply the transform in batch mode. Default value is False
     """
 
+    _transformed_types = (
+        is_pure_tensor,
+        ta_tensors.Image,
+        ta_tensors.Video,
+        ta_tensors.BatchImages,
+        ta_tensors.BatchVideos,
+    )
+
     def __init__(
         self,
         transformation_matrix: torch.Tensor,
         mean_vector: torch.Tensor,
-        inplace: bool = False,
-        batch_transform: bool = False,
     ):
-        super().__init__(inplace=inplace, batch_transform=batch_transform)
-        if not batch_transform and transformation_matrix.size(
-            0
-        ) != transformation_matrix.size(1):
+        super().__init__()
+        if transformation_matrix.size(0) != transformation_matrix.size(1):
             raise ValueError(
                 "transformation_matrix should be square. Got "
                 f"{tuple(transformation_matrix.size())} rectangular matrix."
             )
-        elif batch_transform and transformation_matrix.size(
-            1
-        ) != transformation_matrix.size(2):
-            raise ValueError(
-                "transformation_matrix should be square. Got "
-                f"{tuple(transformation_matrix.size())} rectangular matrix."
-            )
-
-        if not batch_transform and mean_vector.size(0) != transformation_matrix.size(0):
+        if mean_vector.size(0) != transformation_matrix.size(0):
             raise ValueError(
                 f"mean_vector should have the same length {mean_vector.size(0)}"
                 f" as any one of the dimensions of the transformation_matrix [{tuple(transformation_matrix.size())}]"
-            )
-
-        elif batch_transform and mean_vector.size(1) != transformation_matrix.size(2):
-            raise ValueError(
-                f"mean_vector should have the same length {mean_vector.size(1)}"
-                f" as any one of the dimensions of the transformation"
             )
 
         if transformation_matrix.device != mean_vector.device:
@@ -131,55 +148,22 @@ class LinearTransformation(Transform):
         shape = inpt.shape
         n = shape[-3] * shape[-2] * shape[-1]
 
-        if not self.batch_transform:
-            if n != self.transformation_matrix.shape[0]:
-                raise ValueError(
-                    "Input tensor and transformation matrix have incompatible shape."
-                    + f"[{shape[-3]} x {shape[-2]} x {shape[-1]}] != "
-                    + f"{self.transformation_matrix.shape[0]}"
-                )
-
-            if inpt.device != self.mean_vector.device.type:
-                raise ValueError(
-                    "Input tensor should be on the same device as transformation matrix and mean vector. "
-                    f"Got {inpt.device} vs {self.mean_vector.device}"
-                )
-
-            flat_inpt = inpt.reshape(-1, n) - self.mean_vector
-        else:
-            batch_size = inpt.shape[0]
-            other_dims = inpt.shape[1:-3]
-
-            if batch_size != self.transformation_matrix.shape[0]:
-                raise ValueError(
-                    "Input tensor and transformation matrix have incompatible shape."
-                    + f"{batch_size} != {self.transformation_matrix.shape[0]}"
-                )
-
-            if batch_size != self.mean_vector.shape[0]:
-                raise ValueError(
-                    "Input tensor and mean vector have incompatible shape."
-                    + f"{batch_size} != {self.mean_vector.shape[0]}"
-                )
-
-            if n != self.transformation_matrix.shape[1]:
-                raise ValueError(
-                    "Input tensor and transformation matrix have incompatible shape."
-                    + f"[{shape[-3]} x {shape[-2]} x {shape[-1]}] != "
-                    + f"{self.transformation_matrix.shape[1]}"
-                )
-
-            if inpt.device != self.mean_vector.device.type:
-                raise ValueError(
-                    "Input tensor should be on the same device as transformation matrix and mean vector. "
-                    f"Got {inpt.device} vs {self.mean_vector.device}"
-                )
-
-            flat_inpt = inpt.reshape(batch_size, n) - self.mean_vector.view(
-                batch_size, [1] * len(other_dims), n
+        if n != self.transformation_matrix.shape[0]:
+            raise ValueError(
+                "Input tensor and transformation matrix have incompatible shape."
+                + f"[{shape[-3]} x {shape[-2]} x {shape[-1]}] != "
+                + f"{self.transformation_matrix.shape[0]}"
             )
 
+        if inpt.device != self.mean_vector.device:
+            raise ValueError(
+                "Input tensor should be on the same device as transformation matrix and mean vector. "
+                f"Got {inpt.device} vs {self.mean_vector.device}"
+            )
+
+        flat_inpt = inpt.reshape(-1, n) - self.mean_vector
         transformation_matrix = self.transformation_matrix.to(flat_inpt.dtype)
+
         output = torch.mm(flat_inpt, transformation_matrix)
         output = output.reshape(shape)
 
@@ -212,16 +196,19 @@ class Normalize(Transform):
         mean (sequence): Sequence of means for each channel.
         std (sequence): Sequence of standard deviations for each channel.
         inplace (bool, optional): whether to apply the transform in place. Default value is False
-        batch_transform (bool, optional): whether to apply the transform in batch mode. Default value is False
 
     """
 
     def __init__(
-        self, mean: Sequence[float], std: Sequence[float], inplace: bool = False
+        self,
+        mean: Sequence[float],
+        std: Sequence[float],
+        inplace: bool = False,
     ):
-        super().__init__(inplace=inplace)
+        super().__init__()
         self.mean = list(mean)
         self.std = list(std)
+        self.inplace = inplace
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(
@@ -229,7 +216,7 @@ class Normalize(Transform):
         )
 
 
-class GaussianBlur(Transform):
+class RandomGaussianBlur(RandomApplyTransform):
     """Blurs image with randomly chosen Gaussian blur.
 
     If the input is a Tensor, it is expected
@@ -249,10 +236,13 @@ class GaussianBlur(Transform):
         self,
         kernel_size: Union[int, Sequence[int]],
         sigma: Union[int, float, Sequence[float]] = (0.1, 2.0),
-        inplace: bool = False,
+        p: float = 0.5,
+        batch_inplace: bool = False,
         batch_transform: bool = False,
     ) -> None:
-        super().__init__(inplace=inplace, batch_transform=batch_transform)
+        super().__init__(
+            p=p, batch_inplace=batch_inplace, batch_transform=batch_transform
+        )
         self.kernel_size = _setup_size(
             kernel_size, "Kernel size should be a tuple/list of two integers"
         )
@@ -287,9 +277,9 @@ class GaussianBlur(Transform):
                 sigma = (
                     torch.empty((batch_size, 1), device=device)
                     .uniform_(self.sigma[0], self.sigma[1])
-                    .expand(-1, 2)
+                    .expand(batch_size, 2)
                 )
-            return dict(sigma=sigma)
+            params.append(dict(sigma=sigma))
 
         return params
 
@@ -299,6 +289,38 @@ class GaussianBlur(Transform):
             inpt,
             self.kernel_size,
             **params,
+        )
+
+
+class GaussianBlur(RandomGaussianBlur):
+    """Blurs image with randomly chosen Gaussian blur.
+
+    If the input is a Tensor, it is expected
+    to have [..., C, H, W] shape, where ... means an arbitrary number of leading dimensions.
+
+    Args:
+        kernel_size (int or sequence): Size of the Gaussian kernel.
+        sigma (float or tuple of float (min, max)): Standard deviation to be used for
+            creating kernel to perform blurring. If float, sigma is fixed. If it is tuple
+            of float (min, max), sigma is chosen uniformly at random to lie in the
+            given range.
+        inplace (bool, optional): whether to apply the transform in place. Default value is False
+        batch_transform (bool, optional): whether to apply the transform in batch mode. Default value is False
+    """
+
+    def __init__(
+        self,
+        kernel_size: Union[int, Sequence[int]],
+        sigma: Union[int, float, Sequence[float]] = (0.1, 2.0),
+        batch_inplace: bool = False,
+        batch_transform: bool = False,
+    ) -> None:
+        super().__init__(
+            kernel_size=kernel_size,
+            sigma=sigma,
+            p=1,
+            batch_inplace=batch_inplace,
+            batch_transform=batch_transform,
         )
 
 
@@ -424,7 +446,6 @@ class SanitizeBoundingBoxes(Transform):
             This heuristic should work well with a lot of datasets, including the built-in torchvision datasets.
             It can also be a callable that takes the same input
             as the transform, and returns the labels.
-        batch_transform (bool, optional): whether to apply the transform in batch mode. Default value is False
     """
 
     def __init__(
@@ -433,9 +454,8 @@ class SanitizeBoundingBoxes(Transform):
         labels_getter: Union[
             Callable[[Any], Optional[torch.Tensor]], str, None
         ] = "default",
-        batch_transform: bool = False,
     ) -> None:
-        super().__init__(batch_transform=batch_transform)
+        super().__init__()
 
         if min_size < 1:
             raise ValueError(f"min_size must be >= 1, got {min_size}.")
@@ -454,24 +474,32 @@ class SanitizeBoundingBoxes(Transform):
             )
 
         flat_inputs, spec = tree_flatten(inputs)
-        boxes = (
-            get_bounding_boxes(flat_inputs)
-            if self.batch_transform
-            else get_batch_bounding_boxes(flat_inputs)
-        )
+        boxes = get_sample_or_batch_bounding_boxes(flat_inputs)
 
         if labels is not None and boxes.shape[0] != labels.shape[0]:
             raise ValueError(
                 f"Number of boxes (shape={boxes.shape}) and number of labels (shape={labels.shape}) do not match."
             )
 
-        boxes = cast(
-            tv_tensors.BoundingBoxes,
-            F.convert_bounding_box_format(
-                boxes,
-                new_format=tv_tensors.BoundingBoxFormat.XYXY,
-            ),
-        )
+        is_batch_boxes = isinstance(boxes, ta_tensors.BatchBoundingBoxes)
+
+        if not is_batch_boxes:
+            boxes = cast(
+                ta_tensors.BoundingBoxes,
+                F.convert_bounding_box_format(
+                    boxes,
+                    new_format=ta_tensors.BoundingBoxFormat.XYXY,
+                ),
+            )
+        else:
+            boxes = cast(
+                ta_tensors.BatchBoundingBoxes,
+                F.convert_bounding_box_format(
+                    boxes,
+                    new_format=ta_tensors.BoundingBoxFormat.XYXY,
+                ),
+            )
+
         ws, hs = boxes[:, 2] - boxes[:, 0], boxes[:, 3] - boxes[:, 1]
         valid = (ws >= self.min_size) & (hs >= self.min_size) & (boxes >= 0).all(dim=-1)
         # TODO: Do we really need to check for out of bounds here? All
@@ -492,16 +520,22 @@ class SanitizeBoundingBoxes(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         is_label = inpt is not None and inpt is params["labels"]
-        is_bounding_boxes_or_mask = isinstance(
-            inpt, (ta_tensors.BoundingBoxes, ta_tensors.Mask)
+        is_bounding_boxes = isinstance(
+            inpt, (ta_tensors.BoundingBoxes, ta_tensors.BatchBoundingBoxes)
         )
+        is_mask = isinstance(inpt, (ta_tensors.Mask, ta_tensors.BatchMasks))
+        is_bounding_boxes_or_mask = is_bounding_boxes or is_mask
 
         if not (is_label or is_bounding_boxes_or_mask):
             return inpt
 
-        output = inpt[params["valid"]]
+        if is_bounding_boxes or isinstance(inpt, ta_tensors.BatchMasks):
+            output = inpt.masked_remove(inpt, mask=~params["valid"])
+            return output
+        else:
+            output = inpt[params["valid"]]
 
         if is_label:
             return output
 
-        return tv_tensors.wrap(output, like=inpt)
+        return ta_tensors.wrap(output, like=inpt)

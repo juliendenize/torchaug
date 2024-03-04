@@ -67,7 +67,7 @@ def convert_batch_bboxes_to_bboxes(
             format=format,
             device=device,
         )
-        for i in range(idx_sample.shape[0] - 1)
+        for i in range(len(idx_sample) - 1)
     ]
 
     return list_bboxes
@@ -99,14 +99,13 @@ class BatchBoundingBoxes(TATensor):
 
     @property
     def batch_size(self) -> int:
-        return self.idx_sample[-1]
+        return len(self.idx_sample) - 1
 
     @property
     def num_boxes(self) -> int:
         return self.data.shape[0]
 
-    @property
-    def num_sample_boxes(self, idx: int) -> int:
+    def get_num_boxes_sample(self, idx: int) -> int:
         return self.idx_sample[idx + 1] - self.idx_sample[idx]
 
     @classmethod
@@ -142,9 +141,6 @@ class BatchBoundingBoxes(TATensor):
     ) -> BatchBoundingBoxes:
         tensor = cls._to_tensor(
             data, dtype=dtype, device=device, requires_grad=requires_grad
-        )
-        idx_sample = cls._to_tensor(
-            idx_sample, device=device, dtype=torch.long, requires_grad=False
         )
         return cls._wrap(
             tensor, format=format, canvas_size=canvas_size, idx_sample=idx_sample
@@ -195,6 +191,25 @@ class BatchBoundingBoxes(TATensor):
             )
         return output
 
+    def get_sample(self, idx: int) -> BoundingBoxes:
+        """Get the bounding boxes for a sample in the batch.
+
+        Args:
+            idx (int): The index of the sample to get.
+
+        Returns:
+            BoundingBoxes: The bounding boxes for the sample.
+        """
+
+        boxes = self[self.idx_sample[idx] : self.idx_sample[idx + 1]]
+        return BoundingBoxes(
+            boxes,
+            format=self.format,
+            canvas_size=self.canvas_size,
+            device=self.device,
+            requires_grad=self.requires_grad,
+        )
+
     def get_chunk(self, chunk_indices: torch.Tensor) -> BatchBoundingBoxes:
         """Get a chunk of the batch of  bounding boxes.
 
@@ -204,14 +219,15 @@ class BatchBoundingBoxes(TATensor):
         Returns:
             BatchBoundingBoxes: The chunk of the batch bounding boxes.
         """
+        chunk_idx_sample = torch.tensor(
+            [0]
+            + [
+                self.idx_sample[chunk_indice + 1] - self.idx_sample[chunk_indice]
+                for chunk_indice in chunk_indices
+            ]
+        )
 
-        chunk_idx_sample = torch.zeros(
-            chunk_indices.shape[0] + 1, device=self.device, dtype=torch.long
-        )
-        chunk_idx_sample[1:] = (
-            self.idx_sample[chunk_indices + 1] - self.idx_sample[chunk_indices]
-        )
-        chunk_idx_sample = chunk_idx_sample.cumsum(0)
+        chunk_idx_sample = chunk_idx_sample.cumsum(0).tolist()
 
         return BatchBoundingBoxes(
             self[chunk_indices],
@@ -247,6 +263,42 @@ class BatchBoundingBoxes(TATensor):
         self[chunk_indices] = chunk
 
         return self
+
+    @classmethod
+    def masked_remove(
+        cls, bboxes: BatchBoundingBoxes, mask: torch.Tensor
+    ) -> BatchBoundingBoxes:
+        """Remove boxes from the batch of bounding boxes.
+
+        Args:
+            bbox (BatchBoundingBoxes): The batch of bounding boxes to remove boxes from.
+            mask (torch.Tensor): A boolean mask to keep boxes.
+
+        Returns:
+            BatchBoundingBoxes: The updated batch of bounding boxes.
+        """
+        # Remove boxes
+        old_idx_sample = bboxes.idx_sample
+        data = bboxes.data[~mask]
+
+        cpu_mask = mask.cpu()
+
+        num_delete_per_sample = [
+            cpu_mask[old_idx_sample[i] : old_idx_sample[i + 1]].sum().item()
+            for i in range((len(old_idx_sample) - 1))
+        ]
+
+        new_idx_sample = [
+            old_idx_sample[i] - sum(num_delete_per_sample[: i + 1])
+            for i in range(len(old_idx_sample))
+        ]
+
+        return cls._wrap(
+            data,
+            format=bboxes.format,
+            canvas_size=bboxes.canvas_size,
+            idx_sample=new_idx_sample,
+        )
 
     def __repr__(self, *, tensor_contents: Any = None) -> str:  # type: ignore[override]
         return self._make_repr(

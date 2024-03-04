@@ -188,11 +188,11 @@ class SequentialTransform(Transform):
 
     Args:
         transforms (Sequence[RandomApplyTransform]): A list of transforms.
-        inplace (bool): Whether to perform the transforms in-place.
+        batch_inplace (bool): Whether to perform the transforms in-place.
     """
 
     def __init__(
-        self, transforms: List[RandomApplyTransform], inplace: bool = False
+        self, transforms: List[RandomApplyTransform], batch_inplace: bool = False
     ) -> None:
         super().__init__()
         _log_api_usage_once(self)
@@ -202,7 +202,7 @@ class SequentialTransform(Transform):
         self._prepare_transforms(transforms)
         self.transforms = nn.ModuleList(transforms)
 
-        self.inplace = inplace
+        self.batch_inplace = batch_inplace
 
     @staticmethod
     def _prepare_transform(transform: nn.Module):
@@ -211,10 +211,11 @@ class SequentialTransform(Transform):
         if isinstance(transform, RandomApplyTransform):
             init_signature = inspect.signature(transform.__init__)
             parameters = init_signature.parameters
-            has_inplace = "inplace" in parameters
+            for key in ["inplace", "batch_inplace"]:
+                has_key = key in parameters
+                if has_key:
+                    setattr(transform, key, True)
 
-            if has_inplace:
-                transform.inplace = True
             transform._receive_flatten_inputs = True
 
     @staticmethod
@@ -242,4 +243,6 @@ class SequentialTransform(Transform):
         format_string = []
         for t in self.transforms:
             format_string.append(f"    {t}")
-        return f"inplace={self.inplace}, transforms=\n" + "\n".join(format_string)
+        return f"batch_inplace={self.batch_inplace}, transforms=\n" + "\n".join(
+            format_string
+        )

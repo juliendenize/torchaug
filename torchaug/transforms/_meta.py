@@ -1,7 +1,9 @@
 from typing import Any, Dict, Union
 
 from torchaug import ta_tensors
-from . import functional as F, Transform
+
+from . import functional as F
+from ._transform import Transform
 
 
 class ConvertBoundingBoxFormat(Transform):

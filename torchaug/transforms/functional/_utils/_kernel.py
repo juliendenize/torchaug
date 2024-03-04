@@ -114,7 +114,7 @@ def _get_kernel(functional, input_type, *, allow_passthrough=False):
         elif cls is ta_tensors.TATensor:
             # We don't want user-defined tv_tensors to dispatch to the pure Tensor kernels, so we explicit stop the
             # MRO traversal before hitting torch.Tensor. We can even stop at ta_tensors.TATensor, since we don't
-            # allow kernels to be registered for tv_tensors.TVTensor anyway.
+            # allow kernels to be registered for ta_tensors.TATensor anyway.
             break
 
     if allow_passthrough:

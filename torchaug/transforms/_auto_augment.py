@@ -1,20 +1,24 @@
+from __future__ import annotations
+
 import math
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 import torch
 
 from torch.utils._pytree import tree_flatten, tree_unflatten, TreeSpec
+from torchvision.transforms import AutoAugmentPolicy, InterpolationMode
 
 from torchvision.transforms.v2._utils import _get_fill, _setup_fill_arg, check_type
 from torchvision.transforms.v2.functional._geometry import _check_interpolation
 
-import torchaug.transforms.functional as F
 from torchaug import ta_tensors
-from torchaug.transforms import AutoAugmentPolicy, InterpolationMode
-from ._transform import Transform, Transform
+
+from . import functional as F
+from ._transform import Transform
+from ._utils import is_pure_tensor
 from .functional._meta import get_size
 from .functional._utils._kernel import _FillType, _FillTypeJIT
-from .functional._utils._tensor import _max_value, is_pure_tensor
+from .functional._utils._tensor import _max_value
 
 
 ImageOrVideo = Union[
@@ -30,19 +34,11 @@ class _AutoAugmentBase(Transform):
     def __init__(
         self,
         *,
-        interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
-        fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = None,
-        inplace: bool = False,
-        num_chunks: int = 1,
-        permute_chunks: bool = False,
+        interpolation: InterpolationMode | int = InterpolationMode.NEAREST,
+        fill: _FillType | Dict[Type | str, _FillType] = None,
         batch_transform: bool = False,
     ) -> None:
-        super().__init__(
-            inplace=inplace,
-            num_chunks=num_chunks,
-            permute_chunks=permute_chunks,
-            batch_transform=batch_transform,
-        )
+        super().__init__(batch_transform=batch_transform)
         self.interpolation = _check_interpolation(interpolation)
         self.fill = fill
         self._fill = _setup_fill_arg(fill)
@@ -65,7 +61,9 @@ class _AutoAugmentBase(Transform):
         ),
     ) -> Tuple[Tuple[List[Any], TreeSpec, int], ImageOrVideo]:
         if self.batch_transform:
-            unsupported_types.extend([ta_tensors.Image, ta_tensors.Video])
+            unsupported_types = tuple(
+                list(unsupported_types) + [ta_tensors.Image, ta_tensors.Video]
+            )
         flat_inputs, spec = tree_flatten(inputs if len(inputs) > 1 else inputs[0])
         needs_transform_list = self._needs_transform_list(flat_inputs)
 
@@ -210,8 +208,7 @@ class _AutoAugmentBase(Transform):
             bound = (
                 _max_value(image.dtype) if isinstance(image, torch.Tensor) else 255.0
             )
-            solarize = F.solarize_batch if self.batch_transform else F.solarize
-            return solarize(image, threshold=bound * magnitude)
+            return F.solarize(image, threshold=bound * magnitude)
         elif transform_id == "AutoContrast":
             return F.autocontrast(image)
         elif transform_id == "Equalize":
@@ -240,10 +237,6 @@ class AutoAugment(_AutoAugmentBase):
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
         fill (sequence or number, optional): Pixel fill value for the area outside the transformed
             image. If given a number, the value is used for all bands respectively.
-        inplace (bool, optional): whether to apply the transform in place. Default value is False
-        num_chunks (int, optional): number of chunks to split the batched input into. Default value is 1
-        permute_chunks (bool, optional): whether to permute the chunks. Default value is False
-        batch_transform (bool, optional): whether to apply the transform in batch mode. Default value is False
     """
 
     _AUGMENTATION_SPACE = {
@@ -307,8 +300,8 @@ class AutoAugment(_AutoAugmentBase):
     def __init__(
         self,
         policy: AutoAugmentPolicy = AutoAugmentPolicy.IMAGENET,
-        interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
-        fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = None,
+        interpolation: InterpolationMode | int = InterpolationMode.NEAREST,
+        fill: _FillType | Dict[Type | str, _FillType] = None,
     ) -> None:
         super().__init__(interpolation=interpolation, fill=fill)
         self.policy = policy
@@ -531,8 +524,8 @@ class RandAugment(_AutoAugmentBase):
         num_ops: int = 2,
         magnitude: int = 9,
         num_magnitude_bins: int = 31,
-        interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
-        fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = None,
+        interpolation: InterpolationMode | int = InterpolationMode.NEAREST,
+        fill: _FillType | Dict[Type | str, _FillType] = None,
     ) -> None:
         super().__init__(interpolation=interpolation, fill=fill)
         self.num_ops = num_ops
@@ -650,8 +643,8 @@ class TrivialAugmentWide(_AutoAugmentBase):
     def __init__(
         self,
         num_magnitude_bins: int = 31,
-        interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
-        fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = None,
+        interpolation: InterpolationMode | int = InterpolationMode.NEAREST,
+        fill: _FillType | Dict[Type | str, _FillType] = None,
     ):
         super().__init__(interpolation=interpolation, fill=fill)
         self.num_magnitude_bins = num_magnitude_bins
@@ -754,7 +747,7 @@ class AugMix(_AutoAugmentBase):
         "Equalize": (lambda num_bins, height, width: None, False),
     }
     _AUGMENTATION_SPACE: Dict[
-        str, Tuple[Callable[[int, int, int], Optional[torch.Tensor]], bool]
+        str, Tuple[Callable[[int, int, int], torch.Tensor | None], bool]
     ] = {
         **_PARTIAL_AUGMENTATION_SPACE,
         "Brightness": (
@@ -782,8 +775,8 @@ class AugMix(_AutoAugmentBase):
         chain_depth: int = -1,
         alpha: float = 1.0,
         all_ops: bool = True,
-        interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-        fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = None,
+        interpolation: InterpolationMode | int = InterpolationMode.BILINEAR,
+        fill: _FillType | Dict[Type | str, _FillType] = None,
     ) -> None:
         super().__init__(interpolation=interpolation, fill=fill, batch_transform=True)
         self._PARAMETER_MAX = 10

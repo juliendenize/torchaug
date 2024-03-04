@@ -7,7 +7,7 @@ import torch
 from torchaug import ta_tensors
 
 
-def __transfer_tensor_on_device(
+def _transfer_tensor_on_device(
     tensor: torch.Tensor, device: torch.device, non_blocking: bool = False
 ) -> torch.Tensor:
     """Transfer a tensor to a device.
@@ -28,21 +28,30 @@ def __transfer_tensor_on_device(
     return tensor
 
 
-def _get_positive_batch_factor(
+def _get_batch_factor(
     factor: int | float | torch.Tensor,
     batch_size: int,
     device: torch.device,
     dtype: torch.dtype | None = None,
     value_check: bool = False,
+    min_value: float = 0.0,
+    max_value: float = torch.inf,
 ):
     if isinstance(factor, (int, float)):
-        if factor < 0.0:
-            raise ValueError("factor is not non-negative.")
-        factor = torch.tensor(factor, device=device, dtype=dtype).expand(batch_size)
+        factor = float(factor)
+        if factor < min_value or factor > max_value:
+            raise ValueError(
+                f"factor should be in the range [{min_value}, {max_value}]."
+            )
+        factor = torch.tensor([factor], device=device, dtype=dtype).expand(batch_size)
     elif isinstance(factor, torch.Tensor):
-        factor = __transfer_tensor_on_device(factor, device, True)
-        if value_check and not torch.all(torch.ge(factor, 0)):
-            raise ValueError("factor is not non-negative.")
+        factor = _transfer_tensor_on_device(factor, device, True)
+        if value_check and torch.any(
+            torch.logical_or(torch.lt(factor, min_value), torch.gt(factor, max_value))
+        ):
+            raise ValueError(
+                f"factor should be in the range [{min_value}, {max_value}]."
+            )
         if factor.numel() == 1:
             factor = factor.expand(batch_size)
         elif factor.numel() != batch_size:

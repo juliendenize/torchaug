@@ -7,18 +7,14 @@ import torch
 from torch.nn.functional import one_hot
 from torch.utils._pytree import tree_flatten, tree_unflatten
 from torchvision import tv_tensors
-from torchvision.transforms.v2._utils import (
-    _parse_labels_getter,
-    has_any,
-    is_pure_tensor,
-    query_chw,
-    query_size,
-)
+from torchvision.transforms.v2._utils import _parse_labels_getter, has_any, query_chw
 
 from torchaug import ta_tensors
 
 from . import functional as F
 from ._transform import RandomApplyTransform, Transform
+
+from ._utils import is_pure_tensor, query_chw, query_size
 
 
 class RandomErasing(RandomApplyTransform):
@@ -62,13 +58,14 @@ class RandomErasing(RandomApplyTransform):
         ratio: Tuple[float, float] = (0.3, 3.3),
         value: float = 0.0,
         inplace: bool = False,
+        batch_inplace: bool = False,
         num_chunks: int = 1,
         permute_chunks: bool = False,
         batch_transform: bool = False,
     ):
         super().__init__(
             p=p,
-            inplace=inplace,
+            batch_inplace=batch_inplace,
             num_chunks=num_chunks,
             permute_chunks=permute_chunks,
             batch_transform=batch_transform,
@@ -97,6 +94,7 @@ class RandomErasing(RandomApplyTransform):
             self.value = [float(v) for v in value]
         else:
             self.value = value
+        self.inplace = inplace
 
         self._log_ratio = torch.log(torch.tensor(self.ratio))
 
@@ -114,7 +112,7 @@ class RandomErasing(RandomApplyTransform):
         ):
             warnings.warn(
                 f"{type(self).__name__}() is currently passing through inputs of type "
-                f"tv_tensors.{type(inpt).__name__}. This will likely change in the future."
+                f"ta_tensors.{type(inpt).__name__}. This will likely change in the future."
             )
         return super()._call_kernel(functional, inpt, *args, **kwargs)
 
@@ -184,9 +182,7 @@ class _BaseMixUpCutMix(Transform):
     def __init__(
         self, *, alpha: float = 1.0, num_classes: int, labels_getter="default"
     ) -> None:
-        super().__init__(
-            inplace=False, num_chunks=1, permute_chunks=False, batch_transform=True
-        )
+        super().__init__(batch_transform=True)
         self.alpha = float(alpha)
         self._dist = torch.distributions.Beta(
             torch.tensor([alpha]), torch.tensor([alpha])
@@ -211,7 +207,7 @@ class _BaseMixUpCutMix(Transform):
             ta_tensors.BatchMasks,
         ):
             raise ValueError(
-                f"{type(self).__name__}() does not support bounding boxes and masks and only batch of images and videos."
+                f"{type(self).__name__}() supports only batch of images or videos."
             )
 
         labels = self._labels_getter(inputs)
@@ -268,11 +264,6 @@ class _BaseMixUpCutMix(Transform):
         if not label.dtype.is_floating_point:
             label = label.float()
         return label.roll(1, 0).mul_(1.0 - lam).add_(label.mul(lam))
-
-    def extra_repr(self) -> str:
-        return super().extra_repr(
-            exclude_names=["inplace", "num_chunks", "permute_chunks"]
-        )
 
 
 class MixUp(_BaseMixUpCutMix):

@@ -3,11 +3,11 @@ from itertools import permutations
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import torch
-from torchvision.transforms.v2._utils import query_chw
 
-from torchaug.transforms import functional as F
+from . import functional as F
 
 from ._transform import RandomApplyTransform, Transform
+from ._utils import query_chw
 
 
 class Grayscale(Transform):
@@ -31,7 +31,7 @@ class Grayscale(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(
-            F.rgb_to_grayscale_batch if self.batch_transform else F.rgb_to_grayscale,
+            F.rgb_to_grayscale,
             inpt,
             num_output_channels=self.num_output_channels,
         )
@@ -55,11 +55,11 @@ class RandomGrayscale(RandomApplyTransform):
     """
 
     def __init__(
-        self, p: float = 0.1, inplace: bool = False, batch_transform: bool = False
+        self, p: float = 0.1, batch_inplace: bool = False, batch_transform: bool = False
     ) -> None:
         super().__init__(
             p=p,
-            inplace=inplace,
+            batch_inplace=batch_inplace,
             batch_transform=batch_transform,
         )
 
@@ -117,7 +117,7 @@ class RandomColorJitter(RandomApplyTransform):
         saturation: Optional[Union[float, Sequence[float]]] = None,
         hue: Optional[Union[float, Sequence[float]]] = None,
         p: float = 0.5,
-        inplace: bool = False,
+        batch_inplace: bool = False,
         num_chunks: int = 1,
         permute_chunks: bool = False,
         batch_transform: bool = False,
@@ -127,7 +127,7 @@ class RandomColorJitter(RandomApplyTransform):
 
         super().__init__(
             p=p,
-            inplace=inplace,
+            batch_inplace=batch_inplace,
             num_chunks=num_chunks,
             permute_chunks=permute_chunks,
             batch_transform=batch_transform,
@@ -198,7 +198,7 @@ class RandomColorJitter(RandomApplyTransform):
         chunks_indices: List[torch.Tensor],
     ) -> List[Dict[str, Any]]:
         if num_chunks == 1:
-            idx_perms = [torch.randint(len(self._combinations)).item()]
+            idx_perms = [torch.randint(0, len(self._combinations), (1,)).item()]
         else:
             idx_perms = torch.randperm(len(self._combinations))[:num_chunks].tolist()
 
@@ -340,7 +340,7 @@ class ColorJitter(RandomColorJitter):
         contrast: Optional[Union[float, Sequence[float]]] = None,
         saturation: Optional[Union[float, Sequence[float]]] = None,
         hue: Optional[Union[float, Sequence[float]]] = None,
-        inplace: bool = False,
+        batch_inplace: bool = False,
         num_chunks: int = 1,
         permute_chunks: bool = False,
         batch_transform: bool = False,
@@ -351,7 +351,7 @@ class ColorJitter(RandomColorJitter):
             saturation=saturation,
             hue=hue,
             p=1.0,
-            inplace=inplace,
+            batch_inplace=batch_inplace,
             num_chunks=num_chunks,
             permute_chunks=permute_chunks,
             batch_transform=batch_transform,
@@ -375,14 +375,14 @@ class RandomChannelPermutation(RandomApplyTransform):
     def __init__(
         self,
         p: float = 1.0,
-        inplace: bool = False,
+        batch_inplace: bool = False,
         num_chunks: int = 1,
         permute_chunks: bool = False,
         batch_transform: bool = False,
     ):
         super().__init__(
             p=p,
-            inplace=inplace,
+            batch_inplace=batch_inplace,
             num_chunks=num_chunks,
             permute_chunks=permute_chunks,
             batch_transform=batch_transform,
@@ -442,14 +442,14 @@ class RandomPhotometricDistort(RandomApplyTransform):
         hue: Tuple[float, float] = (-0.05, 0.05),
         p_transform: float = 0.5,
         p: float = 0.5,
-        inplace: bool = False,
+        batch_inplace: bool = False,
         num_chunks: int = 1,
         permute_chunks: bool = False,
         batch_transform: bool = False,
     ):
         super().__init__(
             p=p,
-            inplace=inplace,
+            batch_inplace=batch_inplace,
             num_chunks=num_chunks,
             permute_chunks=permute_chunks,
             batch_transform=batch_transform,
@@ -555,11 +555,11 @@ class RandomEqualize(RandomApplyTransform):
     """
 
     def __init__(
-        self, p: float = 0.5, inplace: bool = False, batch_transform: bool = False
+        self, p: float = 0.5, batch_inplace: bool = False, batch_transform: bool = False
     ) -> None:
         super().__init__(
             p=p,
-            inplace=inplace,
+            batch_inplace=batch_inplace,
             batch_transform=batch_transform,
         )
 
@@ -584,11 +584,11 @@ class RandomInvert(RandomApplyTransform):
     """
 
     def __init__(
-        self, p: float = 0.5, inplace: bool = False, batch_transform: bool = False
+        self, p: float = 0.5, batch_inplace: bool = False, batch_transform: bool = False
     ) -> None:
         super().__init__(
             p=p,
-            inplace=inplace,
+            batch_inplace=batch_inplace,
             batch_transform=batch_transform,
         )
 
@@ -618,12 +618,12 @@ class RandomPosterize(RandomApplyTransform):
         self,
         bits: int,
         p: float = 0.5,
-        inplace: bool = False,
+        batch_inplace: bool = False,
         batch_transform: bool = False,
     ) -> None:
         super().__init__(
             p=p,
-            inplace=inplace,
+            batch_inplace=batch_inplace,
             batch_transform=batch_transform,
         )
         self.bits = bits
@@ -656,12 +656,12 @@ class RandomSolarize(RandomApplyTransform):
         self,
         threshold: float,
         p: float = 0.5,
-        inplace: bool = False,
+        batch_inplace: bool = False,
         batch_transform: bool = False,
     ) -> None:
         super().__init__(
             p=p,
-            inplace=inplace,
+            batch_inplace=batch_inplace,
             batch_transform=batch_transform,
         )
         self.threshold = threshold
@@ -691,11 +691,11 @@ class RandomAutocontrast(RandomApplyTransform):
     """
 
     def __init__(
-        self, p: float = 0.5, inplace: bool = False, batch_transform: bool = False
+        self, p: float = 0.5, batch_inplace: bool = False, batch_transform: bool = False
     ) -> None:
         super().__init__(
             p=p,
-            inplace=inplace,
+            batch_inplace=batch_inplace,
             batch_transform=batch_transform,
         )
 
@@ -725,12 +725,12 @@ class RandomAdjustSharpness(RandomApplyTransform):
         self,
         sharpness_factor: float,
         p: float = 0.5,
-        inplace: bool = False,
+        batch_inplace: bool = False,
         batch_transform: bool = False,
     ) -> None:
         super().__init__(
             p=p,
-            inplace=inplace,
+            batch_inplace=batch_inplace,
             batch_transform=batch_transform,
         )
         self.sharpness_factor = sharpness_factor

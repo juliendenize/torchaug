@@ -12,6 +12,7 @@ from ._bounding_boxes import BoundingBoxes, BoundingBoxFormat
 from ._image import Image
 from ._mask import Mask
 from ._ta_tensor import TATensor
+from ._torch_function_helpers import set_return_type
 from ._video import Video
 
 
@@ -40,6 +41,11 @@ def wrap(wrappee, *, like, **kwargs) -> TATensor:
             wrappee,
             format=kwargs.get("format", like.format),
             canvas_size=kwargs.get("canvas_size", like.canvas_size),
+            idx_sample=kwargs.get("idx_sample", like.idx_sample),
+        )
+    elif isinstance(like, BatchMasks):
+        return BatchMasks._wrap(
+            wrappee,
             idx_sample=kwargs.get("idx_sample", like.idx_sample),
         )
     else:

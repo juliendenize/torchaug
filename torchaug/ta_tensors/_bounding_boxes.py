@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any, Mapping, Sequence, Tuple
 
 import torch
+from torch.utils._pytree import tree_flatten
 from torchvision.tv_tensors import BoundingBoxFormat as TVBoundingBoxFormat
 
 from ._ta_tensor import TATensor
@@ -96,6 +97,20 @@ class BoundingBoxes(TATensor):
                 for part in output
             )
         return output
+
+    @classmethod
+    def masked_remove(cls, bboxes: BoundingBoxes, mask: torch.Tensor) -> BoundingBoxes:
+        """Remove boxes from the bounding boxes.
+
+        Args:
+            bboxes (BoundingBoxes): The bounding boxes to remove boxes from.
+            mask (torch.Tensor): A boolean mask to keep boxes.
+
+        Returns:
+            BoundingBoxes: The updated bounding boxes.
+        """
+        data = bboxes.data[~mask]
+        return cls._wrap(data, format=bboxes.format, canvas_size=bboxes.canvas_size)
 
     def __repr__(self, *, tensor_contents: Any = None) -> str:  # type: ignore[override]
         return self._make_repr(format=self.format, canvas_size=self.canvas_size)
