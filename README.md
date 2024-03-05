@@ -41,7 +41,6 @@ pip install torchaug
 
 ```python
 from torchaug.transforms import (
-    ImageWrapper,
     RandomColorJitter,
     RandomGaussianBlur,
     Compose

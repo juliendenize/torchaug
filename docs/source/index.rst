@@ -5,8 +5,8 @@
 
    include/speed_comparison.rst
    ta_tensors
-   transforms
-   functional
+   transforms/transforms.rst
+   functional/functional.rst
 
 
 .. include:: ../../README.md
