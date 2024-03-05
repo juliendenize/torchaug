@@ -69,7 +69,7 @@ def gaussian_blur_batch(
     inpt: torch.Tensor,
     kernel_size: List[int],
     sigma: torch.Tensor | None = None,
-    value_check: bool = True,
+    value_check: bool = False,
 ) -> torch.Tensor:
     """See :class:`~torchaug.transforms.RandomGaussianBlur` for details."""
     if torch.jit.is_scripting():
@@ -92,7 +92,7 @@ def _get_gaussian_kernel1d(
     sigma = sigma.view(-1, 1)
     x = x.view(1, -1).expand(sigma.shape[0], -1)
 
-    kernel1d = torch.softmax((x / sigma).pow_(2).neg_(), dim=1)
+    kernel1d = torch.softmax((x.div(sigma)).pow_(2).neg_(), dim=1)
     return kernel1d
 
 
@@ -209,7 +209,7 @@ def gaussian_blur_batch_images(
     images: torch.Tensor,
     kernel_size: List[int],
     sigma: torch.Tensor | None = None,
-    value_check: bool = True,
+    value_check: bool = False,
 ) -> torch.Tensor:
     if not isinstance(sigma, torch.Tensor):
         return gaussian_blur_image(image=images, kernel_size=kernel_size, sigma=sigma)
@@ -288,7 +288,7 @@ def gaussian_blur_batch_videos(
     videos: torch.Tensor,
     kernel_size: List[int],
     sigma: torch.Tensor | None = None,
-    value_check: bool = True,
+    value_check: bool = False,
 ) -> torch.Tensor:
     return gaussian_blur_batch_images(
         images=videos, kernel_size=kernel_size, sigma=sigma, value_check=value_check
