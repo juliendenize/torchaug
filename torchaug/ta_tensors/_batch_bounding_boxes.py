@@ -13,7 +13,7 @@ from ._ta_tensor import TATensor
 def convert_bboxes_to_batch_bboxes(
     bboxes: Sequence[BoundingBoxes],
 ) -> BatchBoundingBoxes:
-    """Convert a sequence of :class:`~torchvision.tv_tensors.BoundingBoxes` objects to a
+    """Convert a sequence of :class:`~torchaug.ta_tensors.BoundingBoxes` objects to a
     :class:`~torchaug.torchaug_tensors.BatchBoundingBoxes` object.
 
     Assumes all bboxes are valid.
@@ -51,7 +51,7 @@ def convert_batch_bboxes_to_bboxes(
     bboxes: BatchBoundingBoxes,
 ) -> list[BoundingBoxes]:
     """Convert :class:`~torchaug.torchaug_tensors.BatchBoundingBoxes` object to a list of
-    :class:`~torchvision.tv_tensors.BoundingBoxes` objects."""
+    :class:`~torchaug.ta_tensors.BoundingBoxes` objects."""
 
     canvas_size, format, device, idx_sample = (
         bboxes.canvas_size,
@@ -74,7 +74,7 @@ def convert_batch_bboxes_to_bboxes(
 
 
 class BatchBoundingBoxes(TATensor):
-    """:class:`torch.Tensor` subclass for bounding boxes.
+    """:class:`torch.Tensor` subclass for batch of bounding boxes.
 
     .. note::
         There should be only one :class:`~torchaug.ta_tensors.BatchBoundingBoxes`
@@ -82,14 +82,14 @@ class BatchBoundingBoxes(TATensor):
 
     Args:
         data: Any data that can be turned into a tensor with :func:`torch.as_tensor`.
-        format (BoundingBoxFormat, str): Format of the bounding box.
-        canvas_size (two-tuple of ints): Height and width of the corresponding batch of images or videos.
-        idx_sample (torch.Tensor): Each element is the index of the first bounding box of the corresponding sample in the batch of N samples. Contains N+1 elements whose last value is the number of bounding boxes.
-        dtype (torch.dtype, optional): Desired data type of the bounding box. If omitted, will be inferred from
+        format: Format of the bounding box.
+        canvas_size: Height and width of the corresponding batch of images or videos.
+        idx_sample: Each element is the index of the first bounding box of the corresponding sample in the batch of N samples. Contains N+1 elements whose last value is the number of bounding boxes.
+        dtype: Desired data type of the bounding box. If omitted, will be inferred from
             ``data``.
-        device (torch.device, optional): Desired device of the bounding box. If omitted and ``data`` is a
+        device: Desired device of the bounding box. If omitted and ``data`` is a
             :class:`torch.Tensor`, the device is taken from it. Otherwise, the bounding box is constructed on the CPU.
-        requires_grad (bool, optional): Whether autograd should record operations on the bounding box. If omitted and
+        requires_grad: Whether autograd should record operations on the bounding box. If omitted and
             ``data`` is a :class:`torch.Tensor`, the value is taken from it. Otherwise, defaults to ``False``.
     """
 
@@ -195,10 +195,10 @@ class BatchBoundingBoxes(TATensor):
         """Get the bounding boxes for a sample in the batch.
 
         Args:
-            idx (int): The index of the sample to get.
+            idx: The index of the sample to get.
 
         Returns:
-            BoundingBoxes: The bounding boxes for the sample.
+            The bounding boxes for the sample.
         """
 
         boxes = self[self.idx_sample[idx] : self.idx_sample[idx + 1]]

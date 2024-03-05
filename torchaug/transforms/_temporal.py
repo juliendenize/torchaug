@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Any, Dict
 
 import torch
@@ -15,7 +17,7 @@ class UniformTemporalSubsample(Transform):
     will sample frames based on nearest neighbor interpolation.
 
     Args:
-        num_samples (int): The number of equispaced samples to be selected
+        num_samples: The number of equispaced samples to be selected.
     """
 
     _transformed_types = (torch.Tensor,)

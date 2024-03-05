@@ -8,7 +8,7 @@ from torchaug import ta_tensors
 
 @torch.jit.unused
 def to_image(inpt: torch.Tensor | np.ndarray) -> ta_tensors.Image:
-    """See :class:`~torchvision.transforms.v2.ToImage` for details."""
+    """See :class:`~torchaug.transforms.ToImage` for details."""
     if isinstance(inpt, np.ndarray):
         output = torch.from_numpy(np.atleast_3d(inpt)).permute((2, 0, 1)).contiguous()
     elif isinstance(inpt, torch.Tensor):
@@ -22,7 +22,7 @@ def to_image(inpt: torch.Tensor | np.ndarray) -> ta_tensors.Image:
 
 @torch.jit.unused
 def to_batch_images(inpt: torch.Tensor) -> ta_tensors.BatchImages:
-    """See :class:`~torchvision.transforms.v2.ToImage` for details."""
+    """See :class:`~torchaug.transforms.ToBatchImages` for details."""
     if isinstance(inpt, torch.Tensor):
         output = inpt
     else:

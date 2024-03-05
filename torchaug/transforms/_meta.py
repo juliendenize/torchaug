@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Any, Dict, Union
 
 from torchaug import ta_tensors
@@ -10,8 +12,8 @@ class ConvertBoundingBoxFormat(Transform):
     """Convert bounding box coordinates to the given ``format``, eg from "CXCYWH" to "XYXY".
 
     Args:
-        format (str or tv_tensors.BoundingBoxFormat): output bounding box format.
-            Possible values are defined by :class:`~torchvision.tv_tensors.BoundingBoxFormat` and
+        format: output bounding box format.
+            Possible values are defined by :class:`~torchaug.ta_tensors.BoundingBoxFormat` and
             string values match the enums, e.g. "XYXY" or "XYWH" etc.
     """
 
@@ -33,7 +35,6 @@ class ClampBoundingBoxes(Transform):
     """Clamp bounding boxes to their corresponding image dimensions.
 
     The clamping is done according to the bounding boxes' ``canvas_size`` meta-data.
-
     """
 
     _transformed_types = (ta_tensors.BoundingBoxes, ta_tensors.BatchBoundingBoxes)

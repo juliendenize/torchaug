@@ -20,7 +20,7 @@ class Compose(Transform):
     Please, see the note below.
 
     Args:
-        transforms (list of ``Transform`` objects): list of transforms to compose.
+        transforms: list of transforms to compose.
 
     Example:
         >>> transforms.Compose([
@@ -30,16 +30,15 @@ class Compose(Transform):
         >>> ])
 
     .. note::
-        In order to script the transformations, please use ``torch.nn.Sequential`` as below.
+        In order to script the transformations, please use ``torch.nn.SequentialTransform`` as below.
 
-        >>> transforms = torch.nn.Sequential(
+        >>> transforms = torch.nn.SequentialTransform(
         >>>     transforms.CenterCrop(10),
         >>>     transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
         >>> )
         >>> scripted_transforms = torch.jit.script(transforms)
 
-        Make sure to use only scriptable transformations, i.e. that work with ``torch.Tensor``, does not require
-        `lambda` functions or ``PIL.Image``.
+        Make sure to use only scriptable transformations, i.e. that work with ``torch.Tensor``.
 
     """
 
@@ -81,8 +80,8 @@ class RandomApply(Transform):
         `lambda` functions or ``PIL.Image``.
 
     Args:
-        transforms (sequence or torch.nn.Module): list of transformations
-        p (float): probability of applying the list of transforms
+        transforms: list of transformations
+        p: probability of applying the list of transforms.
     """
 
     def __init__(
@@ -126,8 +125,8 @@ class RandomChoice(Transform):
     This transform does not support torchscript.
 
     Args:
-        transforms (sequence or torch.nn.Module): list of transformations
-        p (list of floats or None, optional): probability of each transform being picked.
+        transforms: list of transformations
+        p: probability of each transform being picked.
             If ``p`` doesn't sum to 1, it is automatically normalized. If ``None``
             (default), all transforms have the same probability.
     """
@@ -165,7 +164,7 @@ class RandomOrder(Transform):
     This transform does not support torchscript.
 
     Args:
-        transforms (sequence or torch.nn.Module): list of transformations
+        transforms: list of transformations
     """
 
     def __init__(self, transforms: Sequence[Callable]) -> None:
@@ -187,8 +186,8 @@ class SequentialTransform(Transform):
     """Sequentially apply a list of transforms.
 
     Args:
-        transforms (Sequence[RandomApplyTransform]): A list of transforms.
-        batch_inplace (bool): Whether to perform the transforms in-place.
+        transforms: A list of transforms.
+        batch_inplace: Whether to perform the transforms in-place.
     """
 
     def __init__(

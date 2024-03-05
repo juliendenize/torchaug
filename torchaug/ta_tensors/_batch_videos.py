@@ -11,12 +11,12 @@ class BatchVideos(TATensor):
     """:class:`torch.Tensor` subclass for batch of videos.
 
     Args:
-        data (tensor-like): Any data that can be turned into a tensor with :func:`torch.as_tensor`.
-        dtype (torch.dtype, optional): Desired data type. If omitted, will be inferred from
+        data: Any data that can be turned into a tensor with :func:`torch.as_tensor`.
+        dtype: Desired data type. If omitted, will be inferred from
             ``data``.
-        device (torch.device, optional): Desired device. If omitted and ``data`` is a
+        device: Desired device. If omitted and ``data`` is a
             :class:`torch.Tensor`, the device is taken from it. Otherwise, the video is constructed on the CPU.
-        requires_grad (bool, optional): Whether autograd should record operations. If omitted and
+        requires_grad: Whether autograd should record operations. If omitted and
             ``data`` is a :class:`torch.Tensor`, the value is taken from it. Otherwise, defaults to ``False``.
     """
 

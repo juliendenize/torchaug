@@ -30,8 +30,7 @@ class TATensor(torch.Tensor):
     """Base class for all TATensors.
 
     You probably don't want to use this class unless you're defining your own
-    custom TATensors. See
-    :ref:`sphx_glr_auto_examples_transforms_plot_custom_tv_tensors.py` for details.
+    custom TATensors.
     """
 
     @staticmethod

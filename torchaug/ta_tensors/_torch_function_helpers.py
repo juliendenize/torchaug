@@ -51,7 +51,6 @@ def set_return_type(return_type: str):
 
     Args:
         return_type (str): Can be "TATensor" or "Tensor" (case-insensitive).
-            Default is "Tensor" (i.e. pure :class:`torch.Tensor`).
     """
     global _TORCHFUNCTION_SUBCLASS
     to_restore = _TORCHFUNCTION_SUBCLASS

@@ -15,14 +15,15 @@ class BatchMasks(TATensor):
     """:class:`torch.Tensor` subclass for batch of segmentation and detection masks.
 
     Args:
-        data (tensor-like, PIL.Image.Image): Any data that can be turned into a tensor with :func:`torch.as_tensor`.
-        dtype (torch.dtype, optional): Desired data type. If omitted, will be inferred from
+        data: Any data that can be turned into a tensor with :func:`torch.as_tensor`.
+        dtype: Desired data type. If omitted, will be inferred from
             ``data``.
-        device (torch.device, optional): Desired device. If omitted and ``data`` is a
+        idx_sample: Each element is the index of the first mask of the corresponding sample in the batch of N samples. Contains N+1 elements whose last value is the number of masks.
+        device: Desired device. If omitted and ``data`` is a
             :class:`torch.Tensor`, the device is taken from it. Otherwise, the mask is constructed on the CPU.
-        requires_grad (bool, optional): Whether autograd should record operations. If omitted and
+        requires_grad: Whether autograd should record operations. If omitted and
             ``data`` is a :class:`torch.Tensor`, the value is taken from it. Otherwise, defaults to ``False``.
-        idx_
+
     """
 
     idx_sample: List[int]
@@ -112,10 +113,10 @@ class BatchMasks(TATensor):
         """Get the masks for a sample in the batch.
 
         Args:
-            idx (int): The index of the sample to get.
+            idx: The index of the sample to get.
 
         Returns:
-            Mask: The masks for the sample.
+            The masks for the sample.
         """
 
         masks = self[self.idx_sample[idx] : self.idx_sample[idx + 1]]
@@ -129,10 +130,10 @@ class BatchMasks(TATensor):
         """Get a chunk of the batch of masks.
 
         Args:
-            chunk_indices (torch.Tensor): The indices of the chunk to get.
+            chunk_indices: The indices of the chunk to get.
 
         Returns:
-            BatchMasks: The chunk of the batch of masks.
+            The chunk of the batch of masks.
         """
         chunk_idx_sample = torch.tensor(
             [0]
@@ -157,11 +158,11 @@ class BatchMasks(TATensor):
         """Update a chunk of the batch of masks.
 
         Args:
-            chunk (BatchMasks): The chunk update.
-            chunk_indices (torch.Tensor): The indices of the chunk to update.
+            chunk: The chunk update.
+            chunk_indices: The indices of the chunk to update.
 
         Returns:
-            BatchMasks: The updated batch of masks.
+            The updated batch of masks.
         """
         self[chunk_indices] = chunk
 
@@ -172,11 +173,11 @@ class BatchMasks(TATensor):
         """Remove masks from the batch of masks.
 
         Args:
-            masks (BatchMasks): The batch of masks to remove masks from.
-            mask (torch.Tensor): A boolean mask to keep masks.
+            masks: The batch of masks to remove masks from.
+            mask: A boolean mask to keep masks.
 
         Returns:
-            BatchMasks: The updated batch of masks.
+            The updated batch of masks.
         """
         old_idx_sample = masks.idx_sample
         data = masks.data[~mask]

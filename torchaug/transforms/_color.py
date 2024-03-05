@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import collections.abc
 from itertools import permutations
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
@@ -17,8 +19,8 @@ class Grayscale(Transform):
     to have [..., 3 or 1, H, W] shape, where ... means an arbitrary number of leading dimensions
 
     Args:
-        num_output_channels (int): (1 or 3) number of channels desired for output image
-        batch_transform (bool): whether to apply the transform in batch mode. Default value is False
+        num_output_channels: (1 or 3) number of channels desired for output image.
+        batch_transform: whether to apply the transform in batch mode.
     """
 
     _reshape_transform: bool = True
@@ -41,17 +43,17 @@ class Grayscale(Transform):
 
 
 class RandomGrayscale(RandomApplyTransform):
-    """Randomly convert image or videos to grayscale with a probability of p (default 0.1).
+    """Randomly convert image or videos to grayscale with a probability of p.
 
-    If the input is a :class:`torch.Tensor`, it is expected to have [..., 3 or 1, H, W] shape,
+    The input is expected to have [..., 3 or 1, H, W] shape,
     where ... means an arbitrary number of leading dimensions
 
     The output has the same number of channels as the input.
 
     Args:
-        p (float): probability that image should be converted to grayscale.
-        inplace (bool, optional): whether to apply the transform in place. Default value is False
-        batch_transform (bool, optional): whether to apply the transform in batch mode. Default value is False
+        p: probability that image should be converted to grayscale.
+        batch_inplace: whether to apply the batch transform in-place.
+        batch_transform: whether to apply the transform in batch mode.
     """
 
     def __init__(
@@ -83,42 +85,40 @@ class RandomGrayscale(RandomApplyTransform):
 class RandomColorJitter(RandomApplyTransform):
     """Randomly change the brightness, contrast, saturation and hue of an image or video.
 
-    If the input is a :class:`torch.Tensor`, it is expected
-    to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
-    If img is PIL Image, mode "1", "I", "F" and modes with transparency (alpha channel) are not supported.
+    The input is expected to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
 
     Args:
-        brightness (float or tuple of float (min, max)): How much to jitter brightness.
+        brightness: How much to jitter brightness.
             brightness_factor is chosen uniformly from [max(0, 1 - brightness), 1 + brightness]
             or the given [min, max]. Should be non negative numbers.
-        contrast (float or tuple of float (min, max)): How much to jitter contrast.
+        contrast: How much to jitter contrast.
             contrast_factor is chosen uniformly from [max(0, 1 - contrast), 1 + contrast]
             or the given [min, max]. Should be non-negative numbers.
-        saturation (float or tuple of float (min, max)): How much to jitter saturation.
+        saturation: How much to jitter saturation.
             saturation_factor is chosen uniformly from [max(0, 1 - saturation), 1 + saturation]
             or the given [min, max]. Should be non negative numbers.
-        hue (float or tuple of float (min, max)): How much to jitter hue.
+        hue: How much to jitter hue.
             hue_factor is chosen uniformly from [-hue, hue] or the given [min, max].
             Should have 0<= hue <= 0.5 or -0.5 <= min <= max <= 0.5.
             To jitter hue, the pixel values of the input image has to be non-negative for conversion to HSV space;
             thus it does not work if you normalize your image to an interval with negative values,
             or use an interpolation that generates negative values before using this function.
-        p (float): probability of image being color jittered. Default value is 0.5
-        inplace (bool): whether to apply the transform in place. Default value is False
-        num_chunks (int): number of chunks to split the input into. Default value is 1
-        permute_chunks (bool): whether to permute the chunks. Default value is False
-        batch_transform (bool): whether to apply the transform in batch mode. Default value is False
+        p: probability of image being color jittered.
+        batch_inplace: whether to apply the batch transform in-place.
+        num_chunks: number of chunks to split the input into.
+        permute_chunks: whether to permute the chunks.
+        batch_transform: whether to apply the transform in batch mode.
     """
 
     def __init__(
         self,
-        brightness: Optional[Union[float, Sequence[float]]] = None,
-        contrast: Optional[Union[float, Sequence[float]]] = None,
-        saturation: Optional[Union[float, Sequence[float]]] = None,
-        hue: Optional[Union[float, Sequence[float]]] = None,
+        brightness: Union[float, Sequence[float]] | None = None,
+        contrast: Union[float, Sequence[float]] | None = None,
+        saturation: Union[float, Sequence[float]] | None = None,
+        hue: Union[float, Sequence[float]] | None = None,
         p: float = 0.5,
         batch_inplace: bool = False,
-        num_chunks: int = 1,
+        num_chunks: int = -1,
         permute_chunks: bool = False,
         batch_transform: bool = False,
     ) -> None:
@@ -143,7 +143,7 @@ class RandomColorJitter(RandomApplyTransform):
 
     def _check_input(
         self,
-        value: Optional[Union[float, Sequence[float]]],
+        value: Union[float, Sequence[float]] | None,
         name: str,
         center: float = 1.0,
         bound: Tuple[float, float] = (0, float("inf")),
@@ -308,40 +308,39 @@ class RandomColorJitter(RandomApplyTransform):
 class ColorJitter(RandomColorJitter):
     """Randomly change the brightness, contrast, saturation and hue of an image or video.
 
-    If the input is a :class:`torch.Tensor`, it is expected
-    to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
-    If img is PIL Image, mode "1", "I", "F" and modes with transparency (alpha channel) are not supported.
+    The input is expected to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
 
     Args:
-        brightness (float or tuple of float (min, max)): How much to jitter brightness.
+        brightness: How much to jitter brightness.
             brightness_factor is chosen uniformly from [max(0, 1 - brightness), 1 + brightness]
             or the given [min, max]. Should be non negative numbers.
-        contrast (float or tuple of float (min, max)): How much to jitter contrast.
+        contrast: How much to jitter contrast.
             contrast_factor is chosen uniformly from [max(0, 1 - contrast), 1 + contrast]
             or the given [min, max]. Should be non-negative numbers.
-        saturation (float or tuple of float (min, max)): How much to jitter saturation.
+        saturation: How much to jitter saturation.
             saturation_factor is chosen uniformly from [max(0, 1 - saturation), 1 + saturation]
             or the given [min, max]. Should be non negative numbers.
-        hue (float or tuple of float (min, max)): How much to jitter hue.
+        hue: How much to jitter hue.
             hue_factor is chosen uniformly from [-hue, hue] or the given [min, max].
             Should have 0<= hue <= 0.5 or -0.5 <= min <= max <= 0.5.
             To jitter hue, the pixel values of the input image has to be non-negative for conversion to HSV space;
             thus it does not work if you normalize your image to an interval with negative values,
             or use an interpolation that generates negative values before using this function.
-        inplace (bool, optional): whether to apply the transform in place. Default value is False
-        num_chunks (int, optional): number of chunks to split the batched input into. Default value is 1
-        permute_chunks (bool, optional): whether to permute the chunks. Default value is False
-        batch_transform (bool, optional): whether to apply the transform in batch mode. Default value is False
+        p: probability of image being color jittered.
+        batch_inplace: whether to apply the batch transform in-place.
+        num_chunks: number of chunks to split the input into.
+        permute_chunks: whether to permute the chunks.
+        batch_transform: whether to apply the transform in batch mode.
     """
 
     def __init__(
         self,
-        brightness: Optional[Union[float, Sequence[float]]] = None,
-        contrast: Optional[Union[float, Sequence[float]]] = None,
-        saturation: Optional[Union[float, Sequence[float]]] = None,
-        hue: Optional[Union[float, Sequence[float]]] = None,
+        brightness: Union[float, Sequence[float]] | None = None,
+        contrast: Union[float, Sequence[float]] | None = None,
+        saturation: Union[float, Sequence[float]] | None = None,
+        hue: Union[float, Sequence[float]] | None = None,
         batch_inplace: bool = False,
-        num_chunks: int = 1,
+        num_chunks: int = -1,
         permute_chunks: bool = False,
         batch_transform: bool = False,
     ) -> None:
@@ -365,18 +364,18 @@ class RandomChannelPermutation(RandomApplyTransform):
     """Randomly permute the channels of an image or video
 
     Args:
-        p (float, optional): probability of the image being channel permuted. Default value is 0.5
-        inplace (bool, optional): whether to apply the transform in place. Default value is False
-        num_chunks (int, optional): number of chunks to split the batched input into. Default value is 1
-        permute_chunks (bool, optional): whether to permute the chunks. Default value is False
-        batch_transform (bool, optional): whether to apply the transform in batch mode. Default value is False
+        p: probability of the image being channel permuted.
+        batch_inplace: whether to apply the batch transform in-place.
+        num_chunks: number of chunks to split the batched input into.
+        permute_chunks: whether to permute the chunks.
+        batch_transform: whether to apply the transform in batch mode.
     """
 
     def __init__(
         self,
         p: float = 1.0,
         batch_inplace: bool = False,
-        num_chunks: int = 1,
+        num_chunks: int = -1,
         permute_chunks: bool = False,
         batch_transform: bool = False,
     ):
@@ -409,29 +408,28 @@ class RandomPhotometricDistort(RandomApplyTransform):
     """Randomly distorts the image or video as used in `SSD: Single Shot
     MultiBox Detector <https://arxiv.org/abs/1512.02325>`_.
 
-    This transform relies on :class:`~torchvision.transforms.v2.ColorJitter`
+    This transform relies on :class:`~torchaug.transforms.ColorJitter`
     under the hood to adjust the contrast, saturation, hue, brightness, and also
     randomly permutes channels.
 
     Args:
-        brightness (tuple of float (min, max), optional): How much to jitter brightness.
+        brightness: How much to jitter brightness.
             brightness_factor is chosen uniformly from [min, max]. Should be non negative numbers.
-        contrast (tuple of float (min, max), optional): How much to jitter contrast.
+        contrast: How much to jitter contrast.
             contrast_factor is chosen uniformly from [min, max]. Should be non-negative numbers.
-        saturation (tuple of float (min, max), optional): How much to jitter saturation.
+        saturation: How much to jitter saturation.
             saturation_factor is chosen uniformly from [min, max]. Should be non negative numbers.
-        hue (tuple of float (min, max), optional): How much to jitter hue.
+        hue: How much to jitter hue.
             hue_factor is chosen uniformly from [min, max].  Should have -0.5 <= min <= max <= 0.5.
             To jitter hue, the pixel values of the input image has to be non-negative for conversion to HSV space;
             thus it does not work if you normalize your image to an interval with negative values,
             or use an interpolation that generates negative values before using this function.
-        p_transform (float, optional) probability each distortion operation (contrast, saturation, ...) to be applied.
-            Default is 0.5.
-        p (float, optional): probability of the image being photometrically distorted. Default value is 0.5
-        inplace (bool, optional): whether to apply the transform in place. Default value is False
-        num_chunks (int, optional): number of chunks to split the batched input into. Default value is 1
-        permute_chunks (bool, optional): whether to permute the chunks. Default value is False
-        batch_transform (bool, optional): whether to apply the transform in batch mode. Default value is False
+        p_transform: probability each distortion operation (contrast, saturation, ...) to be applied.
+        p: probability of the image being photometrically distorted.
+        batch_inplace: whether to apply the batch transform in-place.
+        num_chunks: number of chunks to split the batched input into.
+        permute_chunks: whether to permute the chunks.
+        batch_transform: whether to apply the transform in batch mode.
     """
 
     def __init__(
@@ -443,7 +441,7 @@ class RandomPhotometricDistort(RandomApplyTransform):
         p_transform: float = 0.5,
         p: float = 0.5,
         batch_inplace: bool = False,
-        num_chunks: int = 1,
+        num_chunks: int = -1,
         permute_chunks: bool = False,
         batch_transform: bool = False,
     ):
@@ -544,14 +542,12 @@ class RandomPhotometricDistort(RandomApplyTransform):
 class RandomEqualize(RandomApplyTransform):
     """Equalize the histogram of the given image or video with a given probability.
 
-    If the input is a :class:`torch.Tensor`, it is expected
-    to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
-    If img is PIL Image, it is expected to be in mode "P", "L" or "RGB".
+    The input is expected to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
 
     Args:
-        p (float): probability of the image being equalized. Default value is 0.5
-        inplace (bool, optional): whether to apply the transform in place. Default value is False
-        batch_transform (bool, optional): whether to apply the transform in batch mode. Default value is False
+        p: probability of the image being equalized.
+        batch_inplace: whether to apply the batch transform in-place.
+        batch_transform: whether to apply the transform in batch mode.
     """
 
     def __init__(
@@ -573,14 +569,13 @@ class RandomEqualize(RandomApplyTransform):
 class RandomInvert(RandomApplyTransform):
     """Inverts the colors of the given image or video with a given probability.
 
-    If img is a Tensor, it is expected to be in [..., 1 or 3, H, W] format,
+    The input is expected to be in [..., 1 or 3, H, W] format,
     where ... means it can have an arbitrary number of leading dimensions.
-    If img is PIL Image, it is expected to be in mode "L" or "RGB".
 
     Args:
-        p (float): probability of the image being color inverted. Default value is 0.5
-        inplace (bool, optional): whether to apply the transform in place. Default value is False
-        batch_transform (bool, optional): whether to apply the transform in batch mode. Default value is False
+        p: probability of the image being color inverted.
+        batch_inplace: whether to apply the batch transform in-place.
+        batch_transform: whether to apply the transform in batch mode.
     """
 
     def __init__(
@@ -603,15 +598,13 @@ class RandomPosterize(RandomApplyTransform):
     """Posterize the image or video with a given probability by reducing the
     number of bits for each color channel.
 
-    If the input is a :class:`torch.Tensor`, it should be of type torch.uint8,
-    and it is expected to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
-    If img is PIL Image, it is expected to be in mode "L" or "RGB".
+    The input should be of type torch.uint8 and it is expected to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
 
     Args:
-        bits (int): number of bits to keep for each channel (0-8)
-        p (float): probability of the image being posterized. Default value is 0.5
-        inplace (bool, optional): whether to apply the transform in place. Default value is False
-        batch_transform (bool, optional): whether to apply the transform in batch mode. Default value is False
+        bits: number of bits to keep for each channel (0-8)
+        p: probability of the image being posterized.
+        batch_inplace: whether to apply the batch transform in-place.
+        batch_transform: whether to apply the transform in batch mode.
     """
 
     def __init__(
@@ -643,13 +636,14 @@ class RandomSolarize(RandomApplyTransform):
     """Solarize the image or video with a given probability by inverting all pixel
     values above a threshold.
 
-    If img is a Tensor, it is expected to be in [..., 1 or 3, H, W] format,
+    The input is expected to be in [..., 1 or 3, H, W] format,
     where ... means it can have an arbitrary number of leading dimensions.
-    If img is PIL Image, it is expected to be in mode "L" or "RGB".
 
     Args:
-        threshold (float): all pixels equal or above this value are inverted.
-        p (float): probability of the image being solarized. Default value is 0.5
+        threshold: all pixels equal or above this value are inverted.
+        p: probability of the image being solarized.
+        batch_inplace: whether to apply the batch transform in-place.
+        batch_transform: whether to apply the transform in batch mode.
     """
 
     def __init__(
@@ -660,9 +654,7 @@ class RandomSolarize(RandomApplyTransform):
         batch_transform: bool = False,
     ) -> None:
         super().__init__(
-            p=p,
-            batch_inplace=batch_inplace,
-            batch_transform=batch_transform,
+            p=p, batch_inplace=batch_inplace, batch_transform=batch_transform
         )
         self.threshold = threshold
 
@@ -680,14 +672,12 @@ class RandomSolarize(RandomApplyTransform):
 class RandomAutocontrast(RandomApplyTransform):
     """Autocontrast the pixels of the given image or video with a given probability.
 
-    If the input is a :class:`torch.Tensor`, it is expected
-    to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
-    If img is PIL Image, it is expected to be in mode "L" or "RGB".
+    The input is expected to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
 
     Args:
-        p (float): probability of the image being autocontrasted. Default value is 0.5
-        inplace (bool, optional): whether to apply the transform in place. Default value is False
-        batch_transform (bool, optional): whether to apply the transform in batch mode. Default value is False
+        p: probability of the image being autocontrasted.
+        batch_inplace: whether to apply the batch transform in-place.
+        batch_transform: whether to apply the transform in batch mode.
     """
 
     def __init__(
@@ -709,16 +699,13 @@ class RandomAutocontrast(RandomApplyTransform):
 class RandomAdjustSharpness(RandomApplyTransform):
     """Adjust the sharpness of the image or video with a given probability.
 
-    If the input is a :class:`torch.Tensor`,
-    it is expected to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
+    The input is expected to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
 
     Args:
-        sharpness_factor (float):  How much to adjust the sharpness. Can be
-            any non-negative number. 0 gives a blurred image, 1 gives the
-            original image while 2 increases the sharpness by a factor of 2.
-        p (float): probability of the image being sharpened. Default value is 0.5
-        inplace (bool, optional): whether to apply the transform in place. Default value is False
-        batch_transform (bool, optional): whether to apply the transform in batch mode. Default value is False
+        sharpness_factor: How much to adjust the sharpness. Can be any non-negative number. 0 gives a blurred image, 1 gives the original image while 2 increases the sharpness by a factor of 2.
+        p: probability of the image being sharpened.
+        batch_inplace: whether to apply the batch transform in-place.
+        batch_transform: whether to apply the transform in batch mode.
     """
 
     def __init__(

@@ -3,7 +3,7 @@ from __future__ import annotations
 import functools
 from typing import Callable, Dict, List, Optional, Sequence, Type, Union
 
-from torchvision.transforms.v2.functional._utils import _kernel_tv_tensor_wrapper
+import torch
 
 from torchaug import ta_tensors
 
@@ -15,6 +15,24 @@ _FillTypeJIT = Optional[List[float]]
 _KERNEL_REGISTRY: Dict[Callable, Dict[Type, Callable]] = {}
 
 
+def _kernel_ta_tensor_wrapper(kernel):
+    @functools.wraps(kernel)
+    def wrapper(inpt, *args, **kwargs):
+        # If you're wondering whether we could / should get rid of this wrapper,
+        # the answer is no: we want to pass pure Tensors to avoid the overhead
+        # of the __torch_function__ machinery. Note that this is always valid,
+        # regardless of whether we override __torch_function__ in our base class
+        # or not.
+        # Also, even if we didn't call `as_subclass` here, we would still need
+        # this wrapper to call wrap(), because the TVTensor type would be
+        # lost after the first operation due to our own __torch_function__
+        # logic.
+        output = kernel(inpt.as_subclass(torch.Tensor), *args, **kwargs)
+        return ta_tensors.wrap(output, like=inpt)
+
+    return wrapper
+
+
 def _register_kernel_internal(functional, input_type, *, ta_tensor_wrapper=True):
     registry = _KERNEL_REGISTRY.setdefault(functional, {})
     if input_type in registry:
@@ -24,7 +42,7 @@ def _register_kernel_internal(functional, input_type, *, ta_tensor_wrapper=True)
 
     def decorator(kernel):
         registry[input_type] = (
-            _kernel_tv_tensor_wrapper(kernel)
+            _kernel_ta_tensor_wrapper(kernel)
             if issubclass(input_type, ta_tensors.TATensor) and ta_tensor_wrapper
             else kernel
         )

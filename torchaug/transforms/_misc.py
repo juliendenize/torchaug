@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import warnings
 from typing import Any, Callable, cast, Dict, List, Optional, Sequence, Type, Union
 
@@ -29,7 +31,7 @@ class Lambda(Transform):
     This transform does not support torchscript.
 
     Args:
-        lambd (function): Lambda/function to be used for transform.
+        lambd: Lambda/function to be used for transform.
     """
 
     _transformed_types = (object,)
@@ -88,8 +90,7 @@ class Lambda(Transform):
 class LinearTransformation(Transform):
     """Transform a tensor image or video with a square transformation matrix and a mean_vector computed offline.
 
-    This transform does not support PIL Image.
-    Given transformation_matrix and mean_vector, will flatten the torch.*Tensor and
+    Given transformation_matrix and mean_vector, will flatten the `torch.Tensor` and
     subtract mean_vector from it which is then followed by computing the dot
     product with the transformation matrix and then reshaping the tensor to its
     original shape.
@@ -100,10 +101,10 @@ class LinearTransformation(Transform):
         perform SVD on this matrix and pass it as transformation_matrix.
 
     Args:
-        transformation_matrix (Tensor): tensor [D x D] or [B x D X D], D = C x H x W
-        mean_vector (Tensor): tensor [D] or [B X D], D = C x H x W
-        inplace (bool, optional): whether to apply the transform in place. Default value is False
-        batch_transform (bool, optional): whether to apply the transform in batch mode. Default value is False
+        transformation_matrix: tensor [D x D] or [B x D X D], D = C x H x W
+        mean_vector: tensor [D] or [B X D], D = C x H x W
+        batch_inplace: whether to apply the batch transform in-place.
+        batch_transform: whether to apply the transform in batch mode.
     """
 
     _transformed_types = (
@@ -183,7 +184,6 @@ class LinearTransformation(Transform):
 class Normalize(Transform):
     """Normalize a tensor image or video with mean and standard deviation.
 
-    This transform does not support PIL Image.
     Given mean: ``(mean[1],...,mean[n])`` and std: ``(std[1],..,std[n])`` for ``n``
     channels, this transform will normalize each channel of the input
     ``torch.*Tensor`` i.e.,
@@ -193,10 +193,9 @@ class Normalize(Transform):
         This transform acts out of place, i.e., it does not mutate the input tensor.
 
     Args:
-        mean (sequence): Sequence of means for each channel.
-        std (sequence): Sequence of standard deviations for each channel.
-        inplace (bool, optional): whether to apply the transform in place. Default value is False
-
+        mean: Sequence of means for each channel.
+        std: Sequence of standard deviations for each channel.
+        inplace: whether to apply the transform in-place.
     """
 
     def __init__(
@@ -219,17 +218,18 @@ class Normalize(Transform):
 class RandomGaussianBlur(RandomApplyTransform):
     """Blurs image with randomly chosen Gaussian blur.
 
-    If the input is a Tensor, it is expected
+    The input is expected
     to have [..., C, H, W] shape, where ... means an arbitrary number of leading dimensions.
 
     Args:
-        kernel_size (int or sequence): Size of the Gaussian kernel.
-        sigma (float or tuple of float (min, max)): Standard deviation to be used for
+        kernel_size: Size of the Gaussian kernel.
+        sigma: Standard deviation to be used for
             creating kernel to perform blurring. If float, sigma is fixed. If it is tuple
             of float (min, max), sigma is chosen uniformly at random to lie in the
             given range.
-        inplace (bool, optional): whether to apply the transform in place. Default value is False
-        batch_transform (bool, optional): whether to apply the transform in batch mode. Default value is False
+        p: probability of applying the transform.
+        batch_inplace: whether to apply the batch transform in-place.
+        batch_transform: whether to apply the transform in batch mode.
     """
 
     def __init__(
@@ -299,13 +299,13 @@ class GaussianBlur(RandomGaussianBlur):
     to have [..., C, H, W] shape, where ... means an arbitrary number of leading dimensions.
 
     Args:
-        kernel_size (int or sequence): Size of the Gaussian kernel.
-        sigma (float or tuple of float (min, max)): Standard deviation to be used for
+        kernel_size: Size of the Gaussian kernel.
+        sigma: Standard deviation to be used for
             creating kernel to perform blurring. If float, sigma is fixed. If it is tuple
             of float (min, max), sigma is chosen uniformly at random to lie in the
             given range.
-        inplace (bool, optional): whether to apply the transform in place. Default value is False
-        batch_transform (bool, optional): whether to apply the transform in batch mode. Default value is False
+        batch_inplace: whether to apply the batch transform in-place.
+        batch_transform: whether to apply the transform in batch mode.
     """
 
     def __init__(
@@ -331,14 +331,13 @@ class ToDtype(Transform):
         ``ToDtype(dtype, scale=True)`` is the recommended replacement for ``ConvertImageDtype(dtype)``.
 
     Args:
-        dtype (``torch.dtype`` or dict of ``TVTensor`` -> ``torch.dtype``): The dtype to convert to.
+        dtype: The dtype to convert to.
             If a ``torch.dtype`` is passed, e.g. ``torch.float32``, only images and videos will be converted
             to that dtype: this is for compatibility with :class:`~torchvision.transforms.v2.ConvertImageDtype`.
             A dict can be passed to specify per-tv_tensor conversions, e.g.
             ``dtype={tv_tensors.Image: torch.float32, tv_tensors.Mask: torch.int64, "others":None}``. The "others"
             key can be used as a catch-all for any other tv_tensor type, and ``None`` means no conversion.
-        scale (bool, optional): Whether to scale the values for images or videos. See :ref:`range_and_dtype`.
-            Default: ``False``.
+        scale: Whether to scale the values for images or videos.
     """
 
     def __init__(
@@ -439,8 +438,8 @@ class SanitizeBoundingBoxes(Transform):
     cases.
 
     Args:
-        min_size (float, optional) The size below which bounding boxes are removed. Default is 1.
-        labels_getter (callable or str or None, optional): indicates how to identify the labels in the input.
+        min_size The size below which bounding boxes are removed.
+        labels_getter: indicates how to identify the labels in the input.
             By default, this will try to find a "labels" key in the input (case-insensitive), if
             the input is a dict or it is a tuple whose second element is a dict.
             This heuristic should work well with a lot of datasets, including the built-in torchvision datasets.

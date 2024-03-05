@@ -158,7 +158,7 @@ def convert_bounding_box_format(
     new_format: ta_tensors.BoundingBoxFormat | None = None,
     inplace: bool = False,
 ) -> torch.Tensor:
-    """See :func:`~torchvision.transforms.v2.ConvertBoundingBoxFormat` for details."""
+    """See :func:`~torchaug.transforms.ConvertBoundingBoxFormat` for details."""
     # This being a kernel / functional hybrid, we need an option to pass `old_format` explicitly for pure tensor
     # inputs as well as extract it from `tv_tensors.BoundingBoxes` inputs. However, putting a default value on
     # `old_format` means we also need to put one on `new_format` to have syntactically correct Python. Here we mimic the
@@ -235,7 +235,7 @@ def clamp_bounding_boxes(
     format: ta_tensors.BoundingBoxFormat | None = None,
     canvas_size: Tuple[int, int] | None = None,
 ) -> torch.Tensor:
-    """See :func:`~torchvision.transforms.v2.ClampBoundingBoxes` for details."""
+    """See :func:`~torchaug.transforms.ClampBoundingBoxes` for details."""
     if not torch.jit.is_scripting():
         _log_api_usage_once(clamp_bounding_boxes)
 

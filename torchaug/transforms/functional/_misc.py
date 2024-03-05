@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import math
-from typing import List, Optional, Sequence
+from typing import List
 
 import torch
 import torchvision.transforms.v2.functional as TVF
@@ -20,7 +20,7 @@ def normalize(
     std: List[float],
     inplace: bool = False,
 ) -> torch.Tensor:
-    """See :class:`~torchvision.transforms.v2.Normalize` for details."""
+    """See :class:`~torchaug.transforms.Normalize` for details."""
     if torch.jit.is_scripting():
         return normalize_image(inpt, mean=mean, std=std, inplace=inplace)
 
@@ -55,7 +55,7 @@ def gaussian_blur(
     kernel_size: List[int],
     sigma: List[float] | None = None,
 ) -> torch.Tensor:
-    """See :class:`~torchvision.transforms.v2.GaussianBlur` for details."""
+    """See :class:`~torchaug.transforms.RandomGaussianBlur` for details."""
     if torch.jit.is_scripting():
         return gaussian_blur_image(inpt, kernel_size=kernel_size, sigma=sigma)
 
@@ -71,7 +71,7 @@ def gaussian_blur_batch(
     sigma: torch.Tensor | None = None,
     value_check: bool = True,
 ) -> torch.Tensor:
-    """See :class:`~torchvision.transforms.v2.GaussianBlur` for details."""
+    """See :class:`~torchaug.transforms.RandomGaussianBlur` for details."""
     if torch.jit.is_scripting():
         return gaussian_blur_batch_images(
             inpt, kernel_size=kernel_size, sigma=sigma, value_check=value_check
@@ -298,7 +298,7 @@ def gaussian_blur_batch_videos(
 def to_dtype(
     inpt: torch.Tensor, dtype: torch.dtype = torch.float, scale: bool = False
 ) -> torch.Tensor:
-    """See :func:`~torchvision.transforms.v2.ToDtype` for details."""
+    """See :func:`~torchaug.transforms.ToDtype` for details."""
     if torch.jit.is_scripting():
         return to_dtype_image(inpt, dtype=dtype, scale=scale)
 

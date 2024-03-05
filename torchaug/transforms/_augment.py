@@ -20,35 +20,20 @@ from ._utils import is_pure_tensor, query_chw, query_size
 class RandomErasing(RandomApplyTransform):
     """Randomly select a rectangle region in the input image or video and erase its pixels.
 
-    This transform does not support PIL Image.
     'Random Erasing Data Augmentation' by Zhong et al. See https://arxiv.org/abs/1708.04896
 
     Args:
-        p (float, optional): probability that the random erasing operation will be performed.
-        scale (tuple of float, optional): range of proportion of erased area against input image.
-        ratio (tuple of float, optional): range of aspect ratio of erased area.
-        value (number or tuple of numbers): erasing value. Default is 0. If a single int, it is used to
+        p: probability that the random erasing operation will be performed.
+        scale: range of proportion of erased area against input image.
+        ratio: range of aspect ratio of erased area.
+        value: erasing value. If a single int, it is used to
             erase all pixels. If a tuple of length 3, it is used to erase
             R, G, B channels respectively.
             If a str of 'random', erasing each pixel with random values.
-        inplace (bool, optional): whether to apply the transform in place. Default value is False
-        num_chunks (int, optional): number of chunks to split the batched input into. Default value is 1
-        permute_chunks (bool, optional): whether to permute the chunks. Default value is False
-        batch_transform (bool, optional): whether to apply the transform in batch mode. Default value is False
-
-    Returns:
-        Erased input.
-
-    Example:
-        >>> from torchvision.transforms import v2 as transforms
-        >>>
-        >>> transform = transforms.Compose([
-        >>>   transforms.RandomHorizontalFlip(),
-        >>>   transforms.PILToTensor(),
-        >>>   transforms.ConvertImageDtype(torch.float),
-        >>>   transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
-        >>>   transforms.RandomErasing(),
-        >>> ])
+        batch_inplace: whether to apply the batch transform in-place.
+        num_chunks: number of chunks to split the batched input into.
+        permute_chunks: whether to permute the chunks.
+        batch_transform: whether to apply the transform in batch mode.
     """
 
     def __init__(
@@ -59,7 +44,7 @@ class RandomErasing(RandomApplyTransform):
         value: float = 0.0,
         inplace: bool = False,
         batch_inplace: bool = False,
-        num_chunks: int = 1,
+        num_chunks: int = -1,
         permute_chunks: bool = False,
         batch_transform: bool = False,
     ):
@@ -273,9 +258,7 @@ class MixUp(_BaseMixUpCutMix):
 
     .. note::
         This transform is meant to be used on **batches** of samples, not
-        individual images. See
-        :ref:`sphx_glr_auto_examples_transforms_plot_cutmix_mixup.py` for detailed usage
-        examples.
+        individual images.
         The sample pairing is deterministic and done by matching consecutive
         samples in the batch, so the batch needs to be shuffled (this is an
         implementation detail, not a guaranteed convention.)
@@ -284,9 +267,9 @@ class MixUp(_BaseMixUpCutMix):
     into a tensor of shape ``(batch_size, num_classes)``.
 
     Args:
-        alpha (float, optional): hyperparameter of the Beta distribution used for mixup. Default is 1.
-        num_classes (int): number of classes in the batch. Used for one-hot-encoding.
-        labels_getter (callable or "default", optional): indicates how to identify the labels in the input.
+        alpha: hyperparameter of the Beta distribution used for mixup.
+        num_classes: number of classes in the batch. Used for one-hot-encoding.
+        labels_getter: indicates how to identify the labels in the input.
             By default, this will pick the second parameter as the labels if it's a tensor. This covers the most
             common scenario where this transform is called as ``MixUp()(imgs_batch, labels_batch)``.
             It can also be a callable that takes the same input as the transform, and returns the labels.
@@ -333,9 +316,7 @@ class CutMix(_BaseMixUpCutMix):
 
     .. note::
         This transform is meant to be used on **batches** of samples, not
-        individual images. See
-        :ref:`sphx_glr_auto_examples_transforms_plot_cutmix_mixup.py` for detailed usage
-        examples.
+        individual images.
         The sample pairing is deterministic and done by matching consecutive
         samples in the batch, so the batch needs to be shuffled (this is an
         implementation detail, not a guaranteed convention.)
@@ -344,9 +325,9 @@ class CutMix(_BaseMixUpCutMix):
     into a tensor of shape ``(batch_size, num_classes)``.
 
     Args:
-        alpha (float, optional): hyperparameter of the Beta distribution used for mixup. Default is 1.
-        num_classes (int): number of classes in the batch. Used for one-hot-encoding.
-        labels_getter (callable or "default", optional): indicates how to identify the labels in the input.
+        alpha: hyperparameter of the Beta distribution used for mixup.
+        num_classes: number of classes in the batch. Used for one-hot-encoding.
+        labels_getter: indicates how to identify the labels in the input.
             By default, this will pick the second parameter as the labels if it's a tensor. This covers the most
             common scenario where this transform is called as ``CutMix()(imgs_batch, labels_batch)``.
             It can also be a callable that takes the same input as the transform, and returns the labels.

@@ -3,88 +3,126 @@ Transforms
 
 .. currentmodule:: torchaug.transforms
 
-In this section are defined the classes and functions to transform an image or video.
+In this section are defined the classes to transform an image or a video. 
 
-.. note:: Whilst some of these augmentations accept batched data, it will only sample random parameters once which might be detrimental to an effective learning.
+.. note:: Lots of transforms are based on `Torchvision transforms v2 <https://pytorch.org/vision/main/auto_examples/transforms/plot_transforms_getting_started.html#sphx-glr-auto-examples-transforms-plot-transforms-getting-started-py>`_
 
-.. note:: Some transforms rely on Torchvision functional.
 
-Wrappers and Bases
-------------------
-
-List of wrappers of the data augmentations.
-
-.. autosummary::
-    :toctree: generated/
-    :template: class.rst
-
-    Wrapper
-    ImageWrapper
-    VideoWrapper
-
-List of bases for the data augmentations and wrappers.
-
-.. autosummary::
-    :toctree: generated/
-    :template: class.rst
-
-    RandomTransform
-    VideoBase
-
-Transforms
+Augment
 ----------
+.. autosummary::
+    :toctree: generated/
+    :template: class.rst
 
-List of the data augmentations.
+    CutMix
+    MixUp
+    RandomErasing
+
+Auto-Augment
+-------------
+.. autosummary::
+    :toctree: generated/
+    :template: class.rst
+
+    AugMix
+    AutoAugment
+    RandAugment
+    TrivialAugmentWide
 
 Color
-^^^^^
+----------
 .. autosummary::
     :toctree: generated/
     :template: class.rst
 
+    ColorJitter
+    Grayscale
+    RandomAdjustSharpness
+    RandomAutocontrast
+    RandomChannelPermutation
     RandomColorJitter
+    RandomEqualize
     RandomGrayscale
+    RandomInvert
+    RandomPhotometricDistort
+    RandomPosterize
     RandomSolarize
 
-Misc
-^^^^
+Container
+----------
 .. autosummary::
     :toctree: generated/
     :template: class.rst
 
-    Div255
-    MixUp
-    Mul255
-    Normalize
+    Compose
     RandomApply
-    RandomGaussianBlur
-    VideoNormalize
+    RandomChoice
+    RandomOrder
+    SequentialTransform
 
-Functional
+Geometry
 ----------
-
-.. currentmodule:: torchaug.transforms.functional
-
-List of the functions to make the data augmentations.
-
-Color
-^^^^^
 .. autosummary::
     :toctree: generated/
-    :template: function.rst
+    :template: class.rst
 
-    adjust_hue
-    solarize
+    CenterCrop
+    ElasticTransform
+    FiveCrop
+    Pad
+    RandomAffine
+    RandomCrop
+    RandomHorizontalFlip
+    RandomIoUCrop
+    RandomPerspective
+    RandomResize
+    RandomResizedCrop
+    RandomRotation
+    RandomShortestSize
+    RandomVerticalFlip
+    RandomZoomOut
+    Resize
+    ScaleJitter
+    TenCrop
+
+Meta
+----------
+.. autosummary::
+    :toctree: generated/
+    :template: class.rst
+
+    ClampBoundingBoxes
+    ConvertBoundingBoxFormat
 
 Misc
-^^^^
-
+------
 .. autosummary::
     :toctree: generated/
-    :template: function.rst
+    :template: class.rst
 
-    div_255
-    gaussian_blur
-    mixup
-    mul_255
-    normalize
+    GaussianBlur
+    Identity
+    Lambda
+    LinearTransformation
+    Normalize
+    RandomGaussianBlur
+    SanitizeBoundingBoxes
+    ToDtype
+
+Temporal
+--------
+.. autosummary::
+    :toctree: generated/
+    :template: class.rst
+
+    UniformTemporalSubsample
+
+Type Conversion 
+----------------
+.. autosummary::
+    :toctree: generated/
+    :template: class.rst
+
+    ToBatchImages
+    ToImage
+    ToPureTensor

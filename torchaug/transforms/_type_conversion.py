@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Any, Dict, Union
 
 import numpy as np
@@ -10,7 +12,7 @@ from ._utils import is_pure_tensor
 
 
 class ToImage(Transform):
-    """Convert a tensor, ndarray, to :class:`~torchvision.tv_tensors.Image`
+    """Convert a tensor, ndarray, to :class:`~torchaug.ta_tensors.Image`
     ; this does not scale values.
 
     This transform does not support torchscript.
@@ -25,7 +27,7 @@ class ToImage(Transform):
 
 
 class ToBatchImages(Transform):
-    """Convert a tensor, ndarray to :class:`~torchvision.tv_tensors.Image`
+    """Convert a tensor, ndarray to :class:`~torchaug.ta_tensors.Image`
     ; this does not scale values.
 
     This transform does not support torchscript.
@@ -42,7 +44,7 @@ class ToBatchImages(Transform):
 
 
 class ToPureTensor(Transform):
-    """Convert all TVTensors to pure tensors, removing associated metadata (if any).
+    """Convert all TATensors to pure tensors, removing associated metadata (if any).
 
     This doesn't scale or change the values, only the type.
     """

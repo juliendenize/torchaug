@@ -227,15 +227,14 @@ class AutoAugment(_AutoAugmentBase):
 
     If the input is :class:`torch.Tensor`, it should be of type ``torch.uint8``, and it is expected
     to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
-    If img is PIL Image, it is expected to be in mode "L" or "RGB".
 
     Args:
-        policy (AutoAugmentPolicy, optional): Desired policy enum defined by
-            :class:`torchvision.transforms.autoaugment.AutoAugmentPolicy`. Default is ``AutoAugmentPolicy.IMAGENET``.
-        interpolation (InterpolationMode, optional): Desired interpolation enum defined by
-            :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
+        policy: Desired policy enum defined by
+            :class:`torchvision.transforms.autoaugment.AutoAugmentPolicy`.
+        interpolation: Desired interpolation enum defined by
+            :class:`torchvision.transforms.InterpolationMode`.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
-        fill (sequence or number, optional): Pixel fill value for the area outside the transformed
+        fill: Pixel fill value for the area outside the transformed
             image. If given a number, the value is used for all bands respectively.
     """
 
@@ -447,18 +446,14 @@ class RandAugment(_AutoAugmentBase):
     If img is PIL Image, it is expected to be in mode "L" or "RGB".
 
     Args:
-        num_ops (int, optional): Number of augmentation transformations to apply sequentially.
-        magnitude (int, optional): Magnitude for all the transformations.
-        num_magnitude_bins (int, optional): The number of different magnitude values.
-        interpolation (InterpolationMode, optional): Desired interpolation enum defined by
-            :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
-            If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
-        fill (sequence or number, optional): Pixel fill value for the area outside the transformed
+        num_ops: Number of augmentation transformations to apply sequentially.
+        magnitude: Magnitude for all the transformations.
+        num_magnitude_bins: The number of different magnitude values.
+        interpolation: Desired interpolation enum defined by
+            :class:`torchvision.transforms.InterpolationMode`.
+            Only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
+        fill: Pixel fill value for the area outside the transformed
             image. If given a number, the value is used for all bands respectively.
-        inplace (bool, optional): whether to apply the transform in place. Default value is False
-        num_chunks (int, optional): number of chunks to split the batched input into. Default value is 1
-        permute_chunks (bool, optional): whether to permute the chunks. Default value is False
-        batch_transform (bool, optional): whether to apply the transform in batch mode. Default value is False
     """
 
     _AUGMENTATION_SPACE = {
@@ -574,16 +569,12 @@ class TrivialAugmentWide(_AutoAugmentBase):
     If img is PIL Image, it is expected to be in mode "L" or "RGB".
 
     Args:
-        num_magnitude_bins (int, optional): The number of different magnitude values.
-        interpolation (InterpolationMode, optional): Desired interpolation enum defined by
-            :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
-            If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
-        fill (sequence or number, optional): Pixel fill value for the area outside the transformed
+        num_magnitude_bins: The number of different magnitude values.
+        interpolation: Desired interpolation enum defined by
+            :class:`torchvision.transforms.InterpolationMode`.
+            Only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
+        fill: Pixel fill value for the area outside the transformed
             image. If given a number, the value is used for all bands respectively.
-        inplace (bool, optional): whether to apply the transform in place. Default value is False
-        num_chunks (int, optional): number of chunks to split the batched input into. Default value is 1
-        permute_chunks (bool, optional): whether to permute the chunks. Default value is False
-        batch_transform (bool, optional): whether to apply the transform in batch mode. Default value is False
     """
 
     _AUGMENTATION_SPACE = {
@@ -693,21 +684,16 @@ class AugMix(_AutoAugmentBase):
     If img is PIL Image, it is expected to be in mode "L" or "RGB".
 
     Args:
-        severity (int, optional): The severity of base augmentation operators. Default is ``3``.
-        mixture_width (int, optional): The number of augmentation chains. Default is ``3``.
-        chain_depth (int, optional): The depth of augmentation chains. A negative value denotes stochastic depth sampled from the interval [1, 3].
-            Default is ``-1``.
-        alpha (float, optional): The hyperparameter for the probability distributions. Default is ``1.0``.
-        all_ops (bool, optional): Use all operations (including brightness, contrast, color and sharpness). Default is ``True``.
-        interpolation (InterpolationMode, optional): Desired interpolation enum defined by
-            :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
-            If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
-        fill (sequence or number, optional): Pixel fill value for the area outside the transformed
+        severity: The severity of base augmentation operators.
+        mixture_width: The number of augmentation chains.
+        chain_depth: The depth of augmentation chains. A negative value denotes stochastic depth sampled from the interval [1, 3].
+        alpha: The hyperparameter for the probability distributions.
+        all_ops: Use all operations (including brightness, contrast, color and sharpness).
+        interpolation: Desired interpolation enum defined by
+            :class:`torchvision.transforms.InterpolationMode`.
+            Only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
+        fill: Pixel fill value for the area outside the transformed
             image. If given a number, the value is used for all bands respectively.
-        inplace (bool, optional): whether to apply the transform in place. Default value is False
-        num_chunks (int, optional): number of chunks to split the batched input into. Default value is 1
-        permute_chunks (bool, optional): whether to permute the chunks. Default value is False
-        batch_transform (bool, optional): whether to apply the transform in batch mode. Default value is False
     """
 
     _PARTIAL_AUGMENTATION_SPACE = {

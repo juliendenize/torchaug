@@ -11,7 +11,7 @@ from ._utils._kernel import _get_kernel, _register_kernel_internal
 
 
 def uniform_temporal_subsample(inpt: torch.Tensor, num_samples: int) -> torch.Tensor:
-    """See :class:`~torchvision.transforms.v2.UniformTemporalSubsample` for details."""
+    """See :class:`~torchaug.transforms.UniformTemporalSubsample` for details."""
     if torch.jit.is_scripting():
         return uniform_temporal_subsample_video(inpt, num_samples=num_samples)
 

@@ -22,13 +22,13 @@ class BoundingBoxes(TATensor):
 
     Args:
         data: Any data that can be turned into a tensor with :func:`torch.as_tensor`.
-        format (BoundingBoxFormat, str): Format of the bounding box.
-        canvas_size (two-tuple of ints): Height and width of the corresponding image or video.
-        dtype (torch.dtype, optional): Desired data type of the bounding box. If omitted, will be inferred from
+        format: Format of the bounding box.
+        canvas_size: Height and width of the corresponding image or video.
+        dtype: Desired data type of the bounding box. If omitted, will be inferred from
             ``data``.
-        device (torch.device, optional): Desired device of the bounding box. If omitted and ``data`` is a
+        device: Desired device of the bounding box. If omitted and ``data`` is a
             :class:`torch.Tensor`, the device is taken from it. Otherwise, the bounding box is constructed on the CPU.
-        requires_grad (bool, optional): Whether autograd should record operations on the bounding box. If omitted and
+        requires_grad: Whether autograd should record operations on the bounding box. If omitted and
             ``data`` is a :class:`torch.Tensor`, the value is taken from it. Otherwise, defaults to ``False``.
     """
 
@@ -103,11 +103,11 @@ class BoundingBoxes(TATensor):
         """Remove boxes from the bounding boxes.
 
         Args:
-            bboxes (BoundingBoxes): The bounding boxes to remove boxes from.
-            mask (torch.Tensor): A boolean mask to keep boxes.
+            bboxes: The bounding boxes to remove boxes from.
+            mask: A boolean mask to keep boxes.
 
         Returns:
-            BoundingBoxes: The updated bounding boxes.
+            The updated bounding boxes.
         """
         data = bboxes.data[~mask]
         return cls._wrap(data, format=bboxes.format, canvas_size=bboxes.canvas_size)

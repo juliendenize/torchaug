@@ -14,20 +14,18 @@
 
 ## Introduction
 
-Torchaug is a data augmentation library for the Pytorch ecosystem. It is meant to deal efficiently with tensors that are either on CPU or GPU and either per-samples or on batches.
+**Torchaug is a data augmentation library for the Pytorch ecosystem**. It is meant to deal efficiently with tensors that are either on CPU or GPU and either per sample or on batches.
 
-It seeks to improve Torchvision performance that has been implemented over Pytorch and Pillow to, among other things, perform data augmentations. However, because it has been implemented first with per-sample CPU data augmentations in mind, it has several drawbacks to make it efficient:
+It **enriches [Torchvision (v2)](https://pytorch.org/vision/stable/index.html)** that has been implemented over Pytorch and Pillow to, among other things, perform data augmentations. Because it has been implemented first with per-sample CPU data augmentations in mind, it has several drawbacks to make it efficient:
 
-- For data augmentations on GPU, some CPU/GPU synchronizations cannot be avoided.
-- For data augmentations applied on batch, the randomness is sampled for the whole batch and not each sample.
+- For data augmentations on GPU, some *CPU/GPU synchronizations* cannot be avoided.
+- For data augmentations applied on batch, the *randomness is sampled for the whole batch* and not each sample.
 
-Torchaug removes these issues and is meant to be used complimentary with Torchvision. It follows the same nomenclature as Torchvision with *functional* augmentations and *transforms* class wrappers. It is split into two packages:
-- **transforms** for per-sample data augmentations
-- **batch_transfroms** for batched data augmentations.
+Torchaug removes these issues and is meant to be used in place of Torchvision. It is based on the code base of Torchvision and therefore follows the same nomenclature as Torchvision with *functional* augmentations and *transforms* class wrappers. We made speed comparison [here](./docs/source/include/comparison.md).
+
+To be sure to retrieve the same data augmentations as Torchvision, **the components are tested to match Torchvision outputs**. However we suggest you to **perform at least some qualitative testing of your own** especially for bouding boxes and masks to be sure we implemented things right.
 
 More details can be found in the [documentation](https://torchaug.readthedocs.io/en/stable/).
-
-To be sure to retrieve the same data augmentations as Torchvision, it has been tested on each of its components to match Torchvision outputs.
 
 ## How to use
 
@@ -39,28 +37,22 @@ To be sure to retrieve the same data augmentations as Torchvision, it has been t
 pip install torchaug
 ```
 
-2. Import data augmentations either from `torchaug.transforms` or `torchaug.batch_transforms` packages. To ease with handling multiple sequential augmentations, wrappers have been defined.
+2. Import data augmentations from the `torchaug.transforms` package just as for Torchvision.
 
 ```python
 from torchaug.transforms import (
     ImageWrapper,
     RandomColorJitter,
-    RandomGaussianBlur
-)
-from torchaug.batch_transforms import (
-    BatchImageWrapper,
-    BatchRandomColorJitter,
-    BatchRandomHorizontalFlip
+    RandomGaussianBlur,
+    Compose
 )
 
-transform = ImageWrapper(
-    [RandomColorJitter(...), RandomGaussianBlur(...)],
-)
 
-batch_transform = BatchImageWrapper(
-    [BatchRandomColorJitter(...), BatchRandomHorizontalFlip(...)],
-    inplace=True
-)
+transform = Compose([
+    RandomColorJitter(..., batch_transform=True),
+    RandomGaussianBlur(..., batch_transform=True)
+])
+
 ```
 
 ## How to contribute

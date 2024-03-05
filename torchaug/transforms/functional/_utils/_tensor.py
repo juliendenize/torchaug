@@ -10,16 +10,6 @@ from torchaug import ta_tensors
 def _transfer_tensor_on_device(
     tensor: torch.Tensor, device: torch.device, non_blocking: bool = False
 ) -> torch.Tensor:
-    """Transfer a tensor to a device.
-
-    Args:
-        tensor (Tensor): The tensor to transfer.
-        device (torch.device): The device to transfer on.
-        non_blocking (bool, optional): Whether to perform asynchronous transfer. Useful for cuda. Defaults to False.
-
-    Returns:
-        Tensor: The tensor transferred on the device.
-    """
     if non_blocking and not tensor.device == device and device.type == "cuda":
         tensor = tensor.pin_memory(device=device)
 
@@ -63,16 +53,6 @@ def _get_batch_factor(
 
 
 def _max_value(dtype: torch.dtype) -> int:
-    """Get the maximum value of a torch dtype.
-
-    From Torchvision.
-
-    Args:
-        dtype: the dtype to analyze.
-
-    Returns:
-        The maximum value for the dtype.
-    """
     if dtype == torch.uint8:
         return 255
     elif dtype == torch.int8:

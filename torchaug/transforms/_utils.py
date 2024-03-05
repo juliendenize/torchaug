@@ -86,10 +86,10 @@ def get_bounding_boxes(flat_inputs: List[Any]) -> ta_tensors.BoundingBoxes:
     """Get the bounding boxes from a list of inputs.
 
     Args:
-        flat_inputs (List[Any]): The list of inputs.
+        flat_inputs: The list of inputs.
 
     Returns:
-        ta_tensors.BoundingBoxes: The bounding boxes.
+        The bounding boxes.
     """
     # This assumes there is only one bbox per sample as per the general convention
     try:
@@ -104,10 +104,10 @@ def get_batch_bounding_boxes(flat_inputs: List[Any]) -> ta_tensors.BatchBounding
     """Get the batch of bounding boxes from a list of inputs.
 
     Args:
-        flat_inputs (List[Any]): The list of inputs.
+        flat_inputs: The list of inputs.
 
     Returns:
-        ta_tensors.BatchBoundingBoxes: The batch of bounding boxes.
+        The batch of bounding boxes.
     """
     # This assumes there is only one bbox per sample as per the general convention
     try:
@@ -126,10 +126,10 @@ def get_sample_or_batch_bounding_boxes(
     """Get the bounding boxes from a list of inputs.
 
     Args:
-        flat_inputis_pure_tensors (List[Any]): The list of inputs.
+        flat_inputis_pure_tensors: The list of inputs.
 
     Returns:
-        ta_tensors.BoundingBoxes | ta_tensors.BatchBoundingBoxes: The bounding boxes.
+        The bounding boxes.
     """
     # This assumes there is only one bbox per sample as per the general convention
     try:
