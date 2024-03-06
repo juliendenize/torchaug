@@ -37,7 +37,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     # "sphinx.ext.doctest",
-    # "sphinx.ext.intersphinx",
+    "sphinx.ext.intersphinx",
     "sphinx.ext.todo",
     # "sphinx.ext.mathjax",
     "sphinx.ext.napoleon",
@@ -59,10 +59,9 @@ extensions = [
 #     "remove_config_comments": True,
 # }
 
+docstring_default_arg_substitution = "Default: "
+autodoc_preserve_defaults = True
 napoleon_use_ivar = True
-napoleon_numpy_docstring = False
-napoleon_google_docstring = True
-autosummary_generate = True
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -101,12 +100,3 @@ html_theme_options = {
     "source_branch": "main",
     "source_directory": "docs/source/",
 }
-
-
-rst_prolog = (
-    """
-.. |default| raw:: html
-
-    <div class="default-value-section">"""
-    + ' <span class="default-value-label">Default:</span>'
-)

@@ -1,7 +1,4 @@
 furo
 myst-parser
 sphinx
-sphinx_autodoc_defaultargs
-sphinx_autodoc_typehints
-torch == 2.2.*
-torchvision == 0.17.*
+torchvision == 0.17.1
