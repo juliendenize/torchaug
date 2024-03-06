@@ -6,7 +6,7 @@ import torchaug.transforms as transforms
 import torchaug.transforms.functional as F
 from torch import nn
 
-from ...utils import (
+from ..utils import (
     assert_equal,
     check_batch_transform,
     check_functional,

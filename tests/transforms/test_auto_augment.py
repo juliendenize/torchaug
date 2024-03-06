@@ -6,7 +6,7 @@ import torchvision.transforms.v2 as tv_transforms
 from torchaug import ta_tensors
 from torchaug.transforms.functional._utils import is_pure_tensor
 
-from ...utils import (
+from ..utils import (
     BATCH_IMAGES_TENSOR_AND_MAKERS,
     check_transform,
     check_type,

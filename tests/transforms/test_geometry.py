@@ -13,7 +13,7 @@ from torchaug import ta_tensors
 from torchvision.ops.boxes import box_iou
 from torchvision.transforms.functional import _get_perspective_coeffs
 
-from ...utils import (
+from ..utils import (
     adapt_fill,
     ALL_IMAGES_MAKERS,
     assert_equal,

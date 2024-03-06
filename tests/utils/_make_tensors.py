@@ -1,6 +1,7 @@
 import torch
 from torchaug import ta_tensors
 from torchaug.transforms.functional._utils._tensor import _max_value as get_max_value
+from torchvision.transforms.v2.functional._type_conversion import to_pil_image
 
 BATCH_DEFAULT_SIZE = (2,)
 DEFAULT_SIZE = (17, 11)
@@ -12,6 +13,10 @@ NUM_CHANNELS_MAP = {
     "RGB": 3,
     "RGBA": 4,
 }
+
+
+def make_image_pil(*args, **kwargs):
+    return to_pil_image(make_image(*args, **kwargs))
 
 
 def make_image(

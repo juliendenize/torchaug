@@ -18,7 +18,7 @@ from torchaug import ta_tensors
 from torchaug.transforms.functional._utils import is_pure_tensor
 from torchvision.transforms.v2._utils import check_type
 
-from ...utils import (
+from ..utils import (
     ALL_IMAGES_MAKERS,
     assert_equal,
     BATCH_IMAGES_TENSOR_AND_MAKERS,

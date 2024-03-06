@@ -11,7 +11,7 @@ import torchvision.transforms.v2.functional as TVF
 from torch import nn
 from torchaug import ta_tensors
 
-from ...utils import (
+from ..utils import (
     assert_equal,
     BOUNDING_BOXES_MAKERS,
     check_batch_transform,

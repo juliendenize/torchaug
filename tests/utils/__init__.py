@@ -34,6 +34,7 @@ from ._make_tensors import (
     make_bounding_boxes,
     make_detection_masks,
     make_image,
+    make_image_pil,
     make_image_tensor,
     make_segmentation_mask,
     make_video,

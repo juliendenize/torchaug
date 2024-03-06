@@ -9,7 +9,7 @@ import torchvision.transforms.v2.functional as TVF
 from torchaug import ta_tensors
 from torchaug.transforms.functional._utils._tensor import _max_value as get_max_value
 
-from ...utils import (
+from ..utils import (
     assert_equal,
     check_batch_transform,
     check_functional,

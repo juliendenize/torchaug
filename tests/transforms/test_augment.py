@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader
 from torch.utils.data.dataloader import default_collate
 from torchaug import ta_tensors
 
-from ...utils import (
+from ..utils import (
     assert_equal,
     check_functional,
     check_functional_kernel_signature_match,

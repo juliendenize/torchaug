@@ -8,9 +8,12 @@ import contextlib
 from collections import defaultdict
 from copy import copy
 
+import PIL.Image
+
 import torch
 
 from torchvision import datasets
+from torchvision.transforms.v2.functional._type_conversion import pil_to_tensor
 
 from torchaug import ta_tensors
 from torchaug.transforms import functional as F
@@ -380,6 +383,9 @@ def coco_dectection_wrapper_factory(dataset, target_keys):
         image_id = dataset.ids[idx]
 
         image, target = sample
+        if isinstance(image, PIL.Image.Image):
+            pil_to_tensor(image)
+        image = F.to_image(image)
 
         if not target:
             return image, dict(image_id=image_id)
@@ -470,6 +476,9 @@ def voc_detection_wrapper_factory(dataset, target_keys):
 
     def wrapper(idx, sample):
         image, target = sample
+        if isinstance(image, PIL.Image.Image):
+            pil_to_tensor(image)
+        image = F.to_image(image)
 
         batched_instances = list_of_dicts_to_dict_of_lists(
             target["annotation"]["object"]
@@ -518,6 +527,9 @@ def celeba_wrapper_factory(dataset, target_keys):
 
     def wrapper(idx, sample):
         image, target = sample
+        if isinstance(image, PIL.Image.Image):
+            pil_to_tensor(image)
+        image = F.to_image(image)
 
         target = wrap_target_by_type(
             target,
@@ -576,6 +588,9 @@ def kitti_wrapper_factory(dataset, target_keys):
 
     def wrapper(idx, sample):
         image, target = sample
+        if isinstance(image, PIL.Image.Image):
+            pil_to_tensor(image)
+        image = F.to_image(image)
 
         if target is None:
             return image, target
@@ -607,6 +622,9 @@ def kitti_wrapper_factory(dataset, target_keys):
 def oxford_iiit_pet_wrapper_factor(dataset, target_keys):
     def wrapper(idx, sample):
         image, target = sample
+        if isinstance(image, PIL.Image.Image):
+            pil_to_tensor(image)
+        image = F.to_image(image)
 
         if target is not None:
             target = wrap_target_by_type(
@@ -646,6 +664,9 @@ def cityscapes_wrapper_factory(dataset, target_keys):
 
     def wrapper(idx, sample):
         image, target = sample
+        if isinstance(image, PIL.Image.Image):
+            pil_to_tensor(image)
+        image = F.to_image(image)
 
         target = wrap_target_by_type(
             target,
@@ -679,6 +700,9 @@ def widerface_wrapper(dataset, target_keys):
 
     def wrapper(idx, sample):
         image, target = sample
+        if isinstance(image, PIL.Image.Image):
+            pil_to_tensor(image)
+        image = F.to_image(image)
 
         if target is None:
             return image, target
