@@ -7,8 +7,57 @@ from torch import Tensor
 from torch.utils._pytree import tree_flatten
 
 from ._mask import Mask
-
 from ._ta_tensor import TATensor
+
+
+def convert_masks_to_batch_masks(
+    masks: Sequence[Mask],
+) -> BatchMasks:
+    """Convert a sequence of :class:`~torchaug.ta_tensors.Mask` objects to a
+    :class:`~torchaug.torchaug_tensors.BatchMasks` object.
+
+    Assumes all masks are valid.
+    """
+
+    if not all(mask.shape[-2:] == masks[0][-2:] for mask in masks):
+        raise ValueError
+
+    masks_data = torch.cat([mask.as_subclass(Tensor) for mask in masks])
+    idx_sample = (
+        torch.tensor([0] + [mask.shape[0] for mask in masks], dtype=torch.int32)
+        .cumsum(0)
+        .tolist()
+    )
+
+    batch_masks = BatchMasks(
+        masks_data,
+        idx_sample=idx_sample,
+        dtype=masks[0].dtype,
+        requires_grad=masks[0].requires_grad,
+    )
+
+    return batch_masks
+
+
+def convert_batch_masks_to_masks(
+    batch_masks: BatchMasks,
+) -> list[Mask]:
+    """Convert :class:`~torchaug.torchaug_tensors.BatchMasks` object to a list of
+    :class:`~torchaug.ta_tensors.Mask` objects."""
+
+    idx_sample = batch_masks.idx_sample
+
+    list_masks = [
+        Mask(
+            batch_masks[idx_sample[i] : idx_sample[i + 1]],
+            device=batch_masks.device,
+            dtype=batch_masks.dtype,
+            requires_grad=batch_masks.requires_grad,
+        )
+        for i in range(len(idx_sample) - 1)
+    ]
+
+    return list_masks
 
 
 class BatchMasks(TATensor):
