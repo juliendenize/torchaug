@@ -1,40 +1,20 @@
-import functools
-import itertools
-import math
-import re
-
-import numpy as np
 import pytest
 import torch
 import torchaug.transforms as transforms
 import torchaug.transforms.functional as F
-import torchvision
 import torchvision.transforms.v2.functional as TVF
-from torch import nn
 from torchaug import ta_tensors
-from torchaug.transforms.functional._utils import is_pure_tensor
-from torchvision.transforms.v2._utils import check_type
 
 from ..utils import (
     assert_equal,
-    BOUNDING_BOXES_MAKERS,
-    check_batch_transform,
     check_functional,
     check_functional_kernel_signature_match,
     check_kernel,
     check_transform,
     cpu_and_cuda,
-    freeze_rng_state,
-    IMAGE_MAKERS,
-    make_batch_bounding_boxes,
-    make_batch_images,
-    make_batch_images_tensor,
     make_batch_videos,
-    make_bounding_boxes,
-    make_image,
     make_video,
     make_video_tensor,
-    needs_cuda,
     transform_cls_to_functional,
     VIDEO_MAKERS,
 )

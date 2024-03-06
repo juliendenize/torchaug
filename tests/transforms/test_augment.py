@@ -3,7 +3,6 @@ import torch
 import torchaug.transforms as transforms
 import torchaug.transforms.functional as F
 import torchvision.transforms.v2 as tv_transforms
-import torchvision.transforms.v2.functional as TVF
 from torch.utils.data import DataLoader
 from torch.utils.data.dataloader import default_collate
 from torchaug import ta_tensors
