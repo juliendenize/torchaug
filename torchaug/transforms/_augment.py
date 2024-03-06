@@ -44,7 +44,7 @@ class RandomErasing(RandomApplyTransform):
         value: float = 0.0,
         inplace: bool = False,
         batch_inplace: bool = False,
-        num_chunks: int = -1,
+        num_chunks: int = 1,
         permute_chunks: bool = False,
         batch_transform: bool = False,
     ):

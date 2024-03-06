@@ -118,7 +118,7 @@ class RandomColorJitter(RandomApplyTransform):
         hue: Union[float, Sequence[float]] | None = None,
         p: float = 0.5,
         batch_inplace: bool = False,
-        num_chunks: int = -1,
+        num_chunks: int = 1,
         permute_chunks: bool = False,
         batch_transform: bool = False,
     ) -> None:
@@ -340,7 +340,7 @@ class ColorJitter(RandomColorJitter):
         saturation: Union[float, Sequence[float]] | None = None,
         hue: Union[float, Sequence[float]] | None = None,
         batch_inplace: bool = False,
-        num_chunks: int = -1,
+        num_chunks: int = 1,
         permute_chunks: bool = False,
         batch_transform: bool = False,
     ) -> None:
@@ -375,7 +375,7 @@ class RandomChannelPermutation(RandomApplyTransform):
         self,
         p: float = 1.0,
         batch_inplace: bool = False,
-        num_chunks: int = -1,
+        num_chunks: int = 1,
         permute_chunks: bool = False,
         batch_transform: bool = False,
     ):
@@ -441,7 +441,7 @@ class RandomPhotometricDistort(RandomApplyTransform):
         p_transform: float = 0.5,
         p: float = 0.5,
         batch_inplace: bool = False,
-        num_chunks: int = -1,
+        num_chunks: int = 1,
         permute_chunks: bool = False,
         batch_transform: bool = False,
     ):

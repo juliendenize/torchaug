@@ -239,7 +239,7 @@ class RandomResizedCrop(Transform):
         ratio: Tuple[float, float] = (3.0 / 4.0, 4.0 / 3.0),
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
         antialias: bool = True,
-        num_chunks: int = -1,
+        num_chunks: int = 1,
         permute_chunks: bool = False,
         batch_transform: bool = False,
     ) -> None:
@@ -670,7 +670,7 @@ class RandomRotation(Transform):
         center: Optional[List[float]] = None,
         fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = 0,
         batch_inplace: bool = False,
-        num_chunks: int = -1,
+        num_chunks: int = 1,
         permute_chunks: bool = False,
         batch_transform: bool = False,
     ) -> None:
@@ -774,7 +774,7 @@ class RandomAffine(Transform):
         fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = 0,
         center: Optional[List[float]] = None,
         batch_inplace: bool = False,
-        num_chunks: int = -1,
+        num_chunks: int = 1,
         permute_chunks: bool = False,
         batch_transform: bool = False,
     ) -> None:
@@ -1063,7 +1063,7 @@ class RandomPerspective(RandomApplyTransform):
         interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
         fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = 0,
         batch_inplace: bool = False,
-        num_chunks: int = -1,
+        num_chunks: int = 1,
         permute_chunks: bool = False,
         batch_transform: bool = False,
     ) -> None:

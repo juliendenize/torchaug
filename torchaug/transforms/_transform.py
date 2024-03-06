@@ -30,9 +30,6 @@ class RandomApplyTransform(nn.Module):
         permute_chunks: bool = False,
         batch_transform: bool = False,
     ) -> None:
-        if num_chunks == -1 and not batch_transform:
-            num_chunks = 1
-
         if not (0.0 <= p <= 1.0):
             raise ValueError(
                 "`p` should be a floating point value in the interval [0.0, 1.0]."
