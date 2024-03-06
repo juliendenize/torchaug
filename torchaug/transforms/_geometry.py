@@ -59,7 +59,7 @@ class RandomHorizontalFlip(RandomApplyTransform):
 
     Args:
         p: probability of the input being flipped.
-        batch_inplace: whether to apply the batch transform in-place.
+        batch_inplace: whether to apply the batch transform in-place. Does not prevent functionals to make copy but can reduce time and memory consumption.
         batch_transform: whether to apply the transform in batch mode.
     """
 
@@ -84,7 +84,7 @@ class RandomVerticalFlip(RandomApplyTransform):
 
     Args:
         p probability of the input being flipped.
-        batch_inplace: whether to apply the batch transform in-place.
+        batch_inplace: whether to apply the batch transform in-place. Does not prevent functionals to make copy but can reduce time and memory consumption.
         batch_transform: whether to apply the transform in batch mode.
     """
 
@@ -653,7 +653,7 @@ class RandomRotation(Transform):
             Fill value can be also a dictionary mapping data type to the fill value, e.g.
             ``fill={tv_tensors.Image: 127, tv_tensors.Mask: 0}`` where ``Image`` will be filled with 127 and
             ``Mask`` will be filled with 0.
-        batch_inplace: whether to apply the batch transform in-place.
+        batch_inplace: whether to apply the batch transform in-place. Does not prevent functionals to make copy but can reduce time and memory consumption.
         num_chunks: number of chunks to split the batched input into.
         permute_chunks: whether to permute the chunks.
         batch_transform: whether to apply the transform in batch mode.
@@ -755,7 +755,7 @@ class RandomAffine(Transform):
             ``Mask`` will be filled with 0.
         center: Optional center of rotation, (x, y). Origin is the upper left corner.
             Default is the center of the image.
-        batch_inplace: whether to apply the batch transform in-place.
+        batch_inplace: whether to apply the batch transform in-place. Does not prevent functionals to make copy but can reduce time and memory consumption.
         num_chunks: number of chunks to split the batched input into.
         permute_chunks: whether to permute the chunks.
         batch_transform: whether to apply the transform in batch mode.
@@ -1050,7 +1050,7 @@ class RandomPerspective(RandomApplyTransform):
             Fill value can be also a dictionary mapping data type to the fill value, e.g.
             ``fill={ta_tensors.Image: 127, ta_tensors.Mask: 0}`` where ``Image`` will be filled with 127 and
             ``Mask`` will be filled with 0.
-        batch_inplace: whether to apply the batch transform in-place.
+        batch_inplace: whether to apply the batch transform in-place. Does not prevent functionals to make copy but can reduce time and memory consumption.
         num_chunks: number of chunks to split the batched input into.
         permute_chunks: whether to permute the chunks.
         batch_transform: whether to apply the transform in batch mode.
@@ -1181,7 +1181,7 @@ class ElasticTransform(Transform):
             Fill value can be also a dictionary mapping data type to the fill value, e.g.
             ``fill={ta_tensors.Image: 127, ta_tensors.Mask: 0}`` where ``Image`` will be filled with 127 and
             ``Mask`` will be filled with 0.
-        batch_inplace: whether to apply the batch transform in-place.
+        batch_inplace: whether to apply the batch transform in-place. Does not prevent functionals to make copy but can reduce time and memory consumption.
         batch_transform: whether to apply the transform in batch mode.
     """
 

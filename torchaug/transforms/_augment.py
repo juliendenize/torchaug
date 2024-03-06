@@ -30,7 +30,7 @@ class RandomErasing(RandomApplyTransform):
             erase all pixels. If a tuple of length 3, it is used to erase
             R, G, B channels respectively.
             If a str of 'random', erasing each pixel with random values.
-        batch_inplace: whether to apply the batch transform in-place.
+        batch_inplace: whether to apply the batch transform in-place. Does not prevent functionals to make copy but can reduce time and memory consumption.
         num_chunks: number of chunks to split the batched input into.
         permute_chunks: whether to permute the chunks.
         batch_transform: whether to apply the transform in batch mode.

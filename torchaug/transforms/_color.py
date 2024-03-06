@@ -52,7 +52,7 @@ class RandomGrayscale(RandomApplyTransform):
 
     Args:
         p: probability that image should be converted to grayscale.
-        batch_inplace: whether to apply the batch transform in-place.
+        batch_inplace: whether to apply the batch transform in-place. Does not prevent functionals to make copy but can reduce time and memory consumption.
         batch_transform: whether to apply the transform in batch mode.
     """
 
@@ -104,7 +104,7 @@ class RandomColorJitter(RandomApplyTransform):
             thus it does not work if you normalize your image to an interval with negative values,
             or use an interpolation that generates negative values before using this function.
         p: probability of image being color jittered.
-        batch_inplace: whether to apply the batch transform in-place.
+        batch_inplace: whether to apply the batch transform in-place. Does not prevent functionals to make copy but can reduce time and memory consumption.
         num_chunks: number of chunks to split the input into.
         permute_chunks: whether to permute the chunks.
         batch_transform: whether to apply the transform in batch mode.
@@ -327,7 +327,7 @@ class ColorJitter(RandomColorJitter):
             thus it does not work if you normalize your image to an interval with negative values,
             or use an interpolation that generates negative values before using this function.
         p: probability of image being color jittered.
-        batch_inplace: whether to apply the batch transform in-place.
+        batch_inplace: whether to apply the batch transform in-place. Does not prevent functionals to make copy but can reduce time and memory consumption.
         num_chunks: number of chunks to split the input into.
         permute_chunks: whether to permute the chunks.
         batch_transform: whether to apply the transform in batch mode.
@@ -365,7 +365,7 @@ class RandomChannelPermutation(RandomApplyTransform):
 
     Args:
         p: probability of the image being channel permuted.
-        batch_inplace: whether to apply the batch transform in-place.
+        batch_inplace: whether to apply the batch transform in-place. Does not prevent functionals to make copy but can reduce time and memory consumption.
         num_chunks: number of chunks to split the batched input into.
         permute_chunks: whether to permute the chunks.
         batch_transform: whether to apply the transform in batch mode.
@@ -426,7 +426,7 @@ class RandomPhotometricDistort(RandomApplyTransform):
             or use an interpolation that generates negative values before using this function.
         p_transform: probability each distortion operation (contrast, saturation, ...) to be applied.
         p: probability of the image being photometrically distorted.
-        batch_inplace: whether to apply the batch transform in-place.
+        batch_inplace: whether to apply the batch transform in-place. Does not prevent functionals to make copy but can reduce time and memory consumption.
         num_chunks: number of chunks to split the batched input into.
         permute_chunks: whether to permute the chunks.
         batch_transform: whether to apply the transform in batch mode.
@@ -546,7 +546,7 @@ class RandomEqualize(RandomApplyTransform):
 
     Args:
         p: probability of the image being equalized.
-        batch_inplace: whether to apply the batch transform in-place.
+        batch_inplace: whether to apply the batch transform in-place. Does not prevent functionals to make copy but can reduce time and memory consumption.
         batch_transform: whether to apply the transform in batch mode.
     """
 
@@ -574,7 +574,7 @@ class RandomInvert(RandomApplyTransform):
 
     Args:
         p: probability of the image being color inverted.
-        batch_inplace: whether to apply the batch transform in-place.
+        batch_inplace: whether to apply the batch transform in-place. Does not prevent functionals to make copy but can reduce time and memory consumption.
         batch_transform: whether to apply the transform in batch mode.
     """
 
@@ -603,7 +603,7 @@ class RandomPosterize(RandomApplyTransform):
     Args:
         bits: number of bits to keep for each channel (0-8)
         p: probability of the image being posterized.
-        batch_inplace: whether to apply the batch transform in-place.
+        batch_inplace: whether to apply the batch transform in-place. Does not prevent functionals to make copy but can reduce time and memory consumption.
         batch_transform: whether to apply the transform in batch mode.
     """
 
@@ -642,7 +642,7 @@ class RandomSolarize(RandomApplyTransform):
     Args:
         threshold: all pixels equal or above this value are inverted.
         p: probability of the image being solarized.
-        batch_inplace: whether to apply the batch transform in-place.
+        batch_inplace: whether to apply the batch transform in-place. Does not prevent functionals to make copy but can reduce time and memory consumption.
         batch_transform: whether to apply the transform in batch mode.
     """
 
@@ -676,7 +676,7 @@ class RandomAutocontrast(RandomApplyTransform):
 
     Args:
         p: probability of the image being autocontrasted.
-        batch_inplace: whether to apply the batch transform in-place.
+        batch_inplace: whether to apply the batch transform in-place. Does not prevent functionals to make copy but can reduce time and memory consumption.
         batch_transform: whether to apply the transform in batch mode.
     """
 
@@ -704,7 +704,7 @@ class RandomAdjustSharpness(RandomApplyTransform):
     Args:
         sharpness_factor: How much to adjust the sharpness. Can be any non-negative number. 0 gives a blurred image, 1 gives the original image while 2 increases the sharpness by a factor of 2.
         p: probability of the image being sharpened.
-        batch_inplace: whether to apply the batch transform in-place.
+        batch_inplace: whether to apply the batch transform in-place. Does not prevent functionals to make copy but can reduce time and memory consumption.
         batch_transform: whether to apply the transform in batch mode.
     """
 

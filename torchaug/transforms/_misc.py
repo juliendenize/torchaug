@@ -103,7 +103,7 @@ class LinearTransformation(Transform):
     Args:
         transformation_matrix: tensor [D x D] or [B x D X D], D = C x H x W
         mean_vector: tensor [D] or [B X D], D = C x H x W
-        batch_inplace: whether to apply the batch transform in-place.
+        batch_inplace: whether to apply the batch transform in-place. Does not prevent functionals to make copy but can reduce time and memory consumption.
         batch_transform: whether to apply the transform in batch mode.
     """
 
@@ -228,7 +228,7 @@ class RandomGaussianBlur(RandomApplyTransform):
             of float (min, max), sigma is chosen uniformly at random to lie in the
             given range.
         p: probability of applying the transform.
-        batch_inplace: whether to apply the batch transform in-place.
+        batch_inplace: whether to apply the batch transform in-place. Does not prevent functionals to make copy but can reduce time and memory consumption.
         batch_transform: whether to apply the transform in batch mode.
     """
 
@@ -304,7 +304,7 @@ class GaussianBlur(RandomGaussianBlur):
             creating kernel to perform blurring. If float, sigma is fixed. If it is tuple
             of float (min, max), sigma is chosen uniformly at random to lie in the
             given range.
-        batch_inplace: whether to apply the batch transform in-place.
+        batch_inplace: whether to apply the batch transform in-place. Does not prevent functionals to make copy but can reduce time and memory consumption.
         batch_transform: whether to apply the transform in batch mode.
     """
 
