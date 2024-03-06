@@ -6,7 +6,7 @@ from typing import Any, Callable, Dict, List, Tuple
 import torch
 from torch.nn.functional import one_hot
 from torch.utils._pytree import tree_flatten, tree_unflatten
-from torchvision import tv_tensors
+from torchaug import ta_tensors
 from torchvision.transforms.v2._utils import _parse_labels_getter, has_any, query_chw
 
 from torchaug import ta_tensors
@@ -301,7 +301,7 @@ class MixUp(_BaseMixUpCutMix):
                     ta_tensors.BatchVideos,
                 ),
             ):
-                output = tv_tensors.wrap(output, like=inpt)
+                output = ta_tensors.wrap(output, like=inpt)
 
             return output
         else:

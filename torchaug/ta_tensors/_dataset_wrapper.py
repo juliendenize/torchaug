@@ -11,6 +11,7 @@ from copy import copy
 import torch
 
 from torchvision import datasets
+
 from torchaug import ta_tensors
 from torchaug.transforms import functional as F
 
@@ -90,7 +91,10 @@ def wrap_dataset_for_transforms_v2(dataset, target_keys=None):
     if not (
         target_keys is None
         or target_keys == "all"
-        or (isinstance(target_keys, collections.abc.Collection) and all(isinstance(key, str) for key in target_keys))
+        or (
+            isinstance(target_keys, collections.abc.Collection)
+            and all(isinstance(key, str) for key in target_keys)
+        )
     ):
         raise ValueError(
             f"`target_keys` can be None, 'all', or a collection of strings denoting the keys to be returned, "
@@ -101,7 +105,11 @@ def wrap_dataset_for_transforms_v2(dataset, target_keys=None):
     # "WrappedImageNet" at runtime that doubly inherits from VisionDatasetTATensorWrapper (see below) as well as the
     # original ImageNet class. This allows the user to do regular isinstance(wrapped_dataset, datasets.ImageNet) checks,
     # while we can still inject everything that we need.
-    wrapped_dataset_cls = type(f"Wrapped{type(dataset).__name__}", (VisionDatasetTATensorWrapper, type(dataset)), {})
+    wrapped_dataset_cls = type(
+        f"Wrapped{type(dataset).__name__}",
+        (VisionDatasetTATensorWrapper, type(dataset)),
+        {},
+    )
     # Since VisionDatasetTATensorWrapper comes before ImageNet in the MRO, calling the class hits
     # VisionDatasetTATensorWrapper.__init__ first. Since we are never doing super().__init__(...), the constructor of
     # ImageNet is never hit. That is by design, since we don't want to create the dataset instance again, but rather
@@ -262,7 +270,8 @@ def wrap_target_by_type(target, *, target_types, type_wrappers):
         target = [target]
 
     wrapped_target = tuple(
-        type_wrappers.get(target_type, identity)(item) for target_type, item in zip(target_types, target)
+        type_wrappers.get(target_type, identity)(item)
+        for target_type, item in zip(target_types, target)
     )
 
     if len(wrapped_target) == 1:
@@ -440,7 +449,9 @@ VOC_DETECTION_CATEGORIES = [
     "train",
     "tvmonitor",
 ]
-VOC_DETECTION_CATEGORY_TO_IDX = dict(zip(VOC_DETECTION_CATEGORIES, range(len(VOC_DETECTION_CATEGORIES))))
+VOC_DETECTION_CATEGORY_TO_IDX = dict(
+    zip(VOC_DETECTION_CATEGORIES, range(len(VOC_DETECTION_CATEGORIES)))
+)
 
 
 @WRAPPER_FACTORIES.register(datasets.VOCDetection)
@@ -460,7 +471,9 @@ def voc_detection_wrapper_factory(dataset, target_keys):
     def wrapper(idx, sample):
         image, target = sample
 
-        batched_instances = list_of_dicts_to_dict_of_lists(target["annotation"]["object"])
+        batched_instances = list_of_dicts_to_dict_of_lists(
+            target["annotation"]["object"]
+        )
 
         if "annotation" not in target_keys:
             target = {}
@@ -477,7 +490,10 @@ def voc_detection_wrapper_factory(dataset, target_keys):
 
         if "labels" in target_keys:
             target["labels"] = torch.tensor(
-                [VOC_DETECTION_CATEGORY_TO_IDX[category] for category in batched_instances["name"]]
+                [
+                    VOC_DETECTION_CATEGORY_TO_IDX[category]
+                    for category in batched_instances["name"]
+                ]
             )
 
         return image, target
@@ -496,7 +512,9 @@ def sbd_wrapper(dataset, target_keys):
 @WRAPPER_FACTORIES.register(datasets.CelebA)
 def celeba_wrapper_factory(dataset, target_keys):
     if any(target_type in dataset.target_type for target_type in ["attr", "landmarks"]):
-        raise_not_supported("`CelebA` dataset with `target_type=['attr', 'landmarks', ...]`")
+        raise_not_supported(
+            "`CelebA` dataset with `target_type=['attr', 'landmarks', ...]`"
+        )
 
     def wrapper(idx, sample):
         image, target = sample
@@ -521,7 +539,17 @@ def celeba_wrapper_factory(dataset, target_keys):
     return wrapper
 
 
-KITTI_CATEGORIES = ["Car", "Van", "Truck", "Pedestrian", "Person_sitting", "Cyclist", "Tram", "Misc", "DontCare"]
+KITTI_CATEGORIES = [
+    "Car",
+    "Van",
+    "Truck",
+    "Pedestrian",
+    "Person_sitting",
+    "Cyclist",
+    "Tram",
+    "Misc",
+    "DontCare",
+]
 KITTI_CATEGORY_TO_IDX = dict(zip(KITTI_CATEGORIES, range(len(KITTI_CATEGORIES))))
 
 
@@ -563,7 +591,9 @@ def kitti_wrapper_factory(dataset, target_keys):
             )
 
         if "labels" in target_keys:
-            target["labels"] = torch.tensor([KITTI_CATEGORY_TO_IDX[category] for category in batched_target["type"]])
+            target["labels"] = torch.tensor(
+                [KITTI_CATEGORY_TO_IDX[category] for category in batched_target["type"]]
+            )
 
         for target_key in target_keys - {"boxes", "labels"}:
             target[target_key] = batched_target[target_key]
@@ -595,7 +625,9 @@ def oxford_iiit_pet_wrapper_factor(dataset, target_keys):
 @WRAPPER_FACTORIES.register(datasets.Cityscapes)
 def cityscapes_wrapper_factory(dataset, target_keys):
     if any(target_type in dataset.target_type for target_type in ["polygon", "color"]):
-        raise_not_supported("`Cityscapes` dataset with `target_type=['polygon', 'color', ...]`")
+        raise_not_supported(
+            "`Cityscapes` dataset with `target_type=['polygon', 'color', ...]`"
+        )
 
     def instance_segmentation_wrapper(mask):
         # See https://github.com/mcordts/cityscapesScripts/blob/8da5dd00c9069058ccc134654116aac52d4f6fa2/cityscapesscripts/preparation/json2instanceImg.py#L7-L21
@@ -608,7 +640,9 @@ def cityscapes_wrapper_factory(dataset, target_keys):
             if label >= 1_000:
                 label //= 1_000
             labels.append(label)
-        return dict(masks=ta_tensors.Mask(torch.stack(masks)), labels=torch.stack(labels))
+        return dict(
+            masks=ta_tensors.Mask(torch.stack(masks)), labels=torch.stack(labels)
+        )
 
     def wrapper(idx, sample):
         image, target = sample
@@ -654,7 +688,9 @@ def widerface_wrapper(dataset, target_keys):
         if "bbox" in target_keys:
             target["bbox"] = F.convert_bounding_box_format(
                 ta_tensors.BoundingBoxes(
-                    target["bbox"], format=ta_tensors.BoundingBoxFormat.XYWH, canvas_size=(image.height, image.width)
+                    target["bbox"],
+                    format=ta_tensors.BoundingBoxFormat.XYWH,
+                    canvas_size=(image.height, image.width),
                 ),
                 new_format=ta_tensors.BoundingBoxFormat.XYXY,
             )

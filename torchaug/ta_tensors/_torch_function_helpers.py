@@ -24,7 +24,7 @@ def set_return_type(return_type: str):
 
     .. warning::
 
-        We recommend using :class:`~torchvision.transforms.v2.ToPureTensor` at
+        We recommend using :class:`torchvision.transforms.v2.ToPureTensor` at
         the end of your transform pipelines if you use
         ``set_return_type("TATensor")``. This will avoid the
         ``__torch_function__`` overhead in the models ``forward()``.

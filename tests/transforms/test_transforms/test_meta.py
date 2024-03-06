@@ -235,7 +235,7 @@ class TestClampBoundingBoxes:
         ]:
             with pytest.raises(
                 ValueError,
-                match="For bounding box tv_tensor inputs, `format` and `canvas_size` must not be passed.",
+                match="For bounding box ta_tensor inputs, `format` and `canvas_size` must not be passed.",
             ):
                 F.clamp_bounding_boxes(
                     input_ta_tensor, format=format_, canvas_size=canvas_size_

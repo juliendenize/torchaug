@@ -9,6 +9,7 @@ from ._batch_images import BatchImages
 from ._batch_masks import BatchMasks
 from ._batch_videos import BatchVideos
 from ._bounding_boxes import BoundingBoxes, BoundingBoxFormat
+from ._dataset_wrapper import wrap_dataset_for_transforms_v2
 from ._image import Image
 from ._mask import Mask
 from ._ta_tensor import TATensor
@@ -18,16 +19,16 @@ from ._video import Video
 
 @torch.compiler.disable
 def wrap(wrappee, *, like, **kwargs) -> TATensor:
-    """Convert a :class:`torch.Tensor` (``wrappee``) into the same :class:`~torchvision.tv_tensors.TVTensor` subclass as ``like``.
+    """Convert a :class:`torch.Tensor` (``wrappee``) into the same :class:`torchaug.ta_tensors.TATensor` subclass as ``like``.
 
-    If ``like`` is a :class:`~torchvision.tv_tensors.BoundingBoxes`, the ``format`` and ``canvas_size`` of
+    If ``like`` is a :class:`torchaug.ta_tensors.BoundingBoxes`, the ``format`` and ``canvas_size`` of
     ``like`` are assigned to ``wrappee``, unless they are passed as ``kwargs``.
 
     Args:
         wrappee (Tensor): The tensor to convert.
-        like (:class:`~torchvision.tv_tensors.TVTensor`): The reference.
+        like (:class:`torchaug.ta_tensors.TATensor`): The reference.
             ``wrappee`` will be converted into the same subclass as ``like``.
-        kwargs: Can contain "format" and "canvas_size" if ``like`` is a :class:`~torchvision.tv_tensor.BoundingBoxes`.
+        kwargs: Can contain "format" and "canvas_size" if ``like`` is a :class:`torchaug.ta_tensors.BoundingBoxes`.
             Ignored otherwise.
     """
     if isinstance(like, BoundingBoxes):

@@ -331,8 +331,8 @@ class RandomResizedCrop(Transform):
 class FiveCrop(Transform):
     """Crop the image or video into four corners and the central crop.
 
-    If the input is a :class:`torch.Tensor` or a :class:`~torchvision.tv_tensors.Image` or a
-    :class:`~torchvision.tv_tensors.Video` it can have arbitrary number of leading batch dimensions.
+    If the input is a :class:`torch.Tensor` or a :class:`torchaug.ta_tensors.Image` or a
+    :class:`torchaug.ta_tensors.Video` it can have arbitrary number of leading batch dimensions.
     For example, the image can have ``[..., C, H, W]`` shape.
 
     .. Note::
@@ -347,15 +347,15 @@ class FiveCrop(Transform):
 
     Example:
         >>> class BatchMultiCrop(transforms.Transform):
-        ...     def forward(self, sample: Tuple[Tuple[Union[tv_tensors.Image, tv_tensors.Video], ...], int]):
+        ...     def forward(self, sample: Tuple[Tuple[Union[ta_tensors.Image, ta_tensors.Video], ...], int]):
         ...         images_or_videos, labels = sample
         ...         batch_size = len(images_or_videos)
         ...         image_or_video = images_or_videos[0]
-        ...         images_or_videos = tv_tensors.wrap(torch.stack(images_or_videos), like=image_or_video)
+        ...         images_or_videos = ta_tensors.wrap(torch.stack(images_or_videos), like=image_or_video)
         ...         labels = torch.full((batch_size,), label, device=images_or_videos.device)
         ...         return images_or_videos, labels
         ...
-        >>> image = tv_tensors.Image(torch.rand(3, 256, 256))
+        >>> image = ta_tensors.Image(torch.rand(3, 256, 256))
         >>> label = 3
         >>> transform = transforms.Compose([transforms.FiveCrop(224), BatchMultiCrop()])
         >>> images, labels = transform(image, label)
@@ -387,7 +387,7 @@ class FiveCrop(Transform):
         ):
             warnings.warn(
                 f"{type(self).__name__}() is currently passing through inputs of type "
-                f"tv_tensors.{type(inpt).__name__}. This will likely change in the future."
+                f"ta_tensors.{type(inpt).__name__}. This will likely change in the future."
             )
         return super()._call_kernel(functional, inpt, *args, **kwargs)
 
@@ -411,11 +411,11 @@ class TenCrop(Transform):
     """Crop the image or video into four corners and the central crop plus the flipped version of
     these (horizontal flipping is used by default).
 
-    If the input is a :class:`torch.Tensor` or a :class:`~torchvision.tv_tensors.Image` or a
-    :class:`~torchvision.tv_tensors.Video` it can have arbitrary number of leading batch dimensions.
+    If the input is a :class:`torch.Tensor` or a :class:`torchaug.ta_tensors.Image` or a
+    :class:`torchaug.ta_tensors.Video` it can have arbitrary number of leading batch dimensions.
     For example, the image can have ``[..., C, H, W]`` shape.
 
-    See :class:`~torchvision.transforms.v2.FiveCrop` for an example.
+    See :class:`torchvision.transforms.v2.FiveCrop` for an example.
 
     .. Note::
          This transform returns a tuple of images and there may be a mismatch in the number of
@@ -454,7 +454,7 @@ class TenCrop(Transform):
         ):
             warnings.warn(
                 f"{type(self).__name__}() is currently passing through inputs of type "
-                f"tv_tensors.{type(inpt).__name__}. This will likely change in the future."
+                f"ta_tensors.{type(inpt).__name__}. This will likely change in the future."
             )
         return super()._call_kernel(functional, inpt, *args, **kwargs)
 
@@ -651,7 +651,7 @@ class RandomRotation(Transform):
         fill: Pixel fill value used when the  ``padding_mode`` is constant.
              If a tuple of length 3, it is used to fill R, G, B channels respectively.
             Fill value can be also a dictionary mapping data type to the fill value, e.g.
-            ``fill={tv_tensors.Image: 127, tv_tensors.Mask: 0}`` where ``Image`` will be filled with 127 and
+            ``fill={ta_tensors.Image: 127, ta_tensors.Mask: 0}`` where ``Image`` will be filled with 127 and
             ``Mask`` will be filled with 0.
         batch_inplace: whether to apply the batch transform in-place. Does not prevent functionals to make copy but can reduce time and memory consumption.
         num_chunks: number of chunks to split the batched input into.
@@ -751,7 +751,7 @@ class RandomAffine(Transform):
         fill: Pixel fill value used when the  ``padding_mode`` is constant.
             If a tuple of length 3, it is used to fill R, G, B channels respectively.
             Fill value can be also a dictionary mapping data type to the fill value, e.g.
-            ``fill={tv_tensors.Image: 127, tv_tensors.Mask: 0}`` where ``Image`` will be filled with 127 and
+            ``fill={ta_tensors.Image: 127, ta_tensors.Mask: 0}`` where ``Image`` will be filled with 127 and
             ``Mask`` will be filled with 0.
         center: Optional center of rotation, (x, y). Origin is the upper left corner.
             Default is the center of the image.
@@ -892,7 +892,7 @@ class RandomCrop(Transform):
         fill: Pixel fill value used when the  ``padding_mode`` is constant.
             If a tuple of length 3, it is used to fill R, G, B channels respectively.
             Fill value can be also a dictionary mapping data type to the fill value, e.g.
-            ``fill={tv_tensors.Image: 127, tv_tensors.Mask: 0}`` where ``Image`` will be filled with 127 and
+            ``fill={ta_tensors.Image: 127, ta_tensors.Mask: 0}`` where ``Image`` will be filled with 127 and
             ``Mask`` will be filled with 0.
         padding_mode: Type of padding. Should be: constant, edge, reflect or symmetric.
             - constant: pads with a constant value, this value is specified with fill
@@ -1263,11 +1263,11 @@ class RandomIoUCrop(Transform):
     """Random IoU crop transformation from
     `"SSD: Single Shot MultiBox Detector" <https://arxiv.org/abs/1512.02325>`_.
 
-    This transformation requires an image or video data and ``tv_tensors.BoundingBoxes`` in the input.
+    This transformation requires an image or video data and ``ta_tensors.BoundingBoxes`` in the input.
 
     .. warning::
         In order to properly remove the bounding boxes below the IoU threshold, `RandomIoUCrop`
-        must be followed by :class:`~torchvision.transforms.v2.SanitizeBoundingBoxes`, either immediately
+        must be followed by :class:`torchvision.transforms.v2.SanitizeBoundingBoxes`, either immediately
         after or later in the transforms pipeline.
 
     If the input is a :class:`torch.Tensor` or a ``TATensor`` (e.g. :class:`~torchaug.ta_tensors.Image`,

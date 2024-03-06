@@ -86,9 +86,9 @@ _BUILTIN_DATAPOINT_TYPES = {
 
 
 def register_kernel(functional, ta_tensor_cls):
-    """Decorate a kernel to register it for a functional and a (custom) tv_tensor type.
+    """Decorate a kernel to register it for a functional and a (custom) ta_tensor type.
 
-    See :ref:`sphx_glr_auto_examples_transforms_plot_custom_tv_tensors.py` for usage
+    See :ref:`sphx_glr_auto_examples_transforms_plot_custom_ta_tensors.py` for usage
     details.
     """
     if isinstance(functional, str):
@@ -115,7 +115,7 @@ def register_kernel(functional, ta_tensor_cls):
 
     if ta_tensor_cls in _BUILTIN_DATAPOINT_TYPES:
         raise ValueError(
-            f"Kernels cannot be registered for the builtin tv_tensor classes, but got {ta_tensor_cls}"
+            f"Kernels cannot be registered for the builtin ta_tensor classes, but got {ta_tensor_cls}"
         )
 
     return _register_kernel_internal(functional, ta_tensor_cls, ta_tensor_wrapper=False)
@@ -130,7 +130,7 @@ def _get_kernel(functional, input_type, *, allow_passthrough=False):
         if cls in registry:
             return registry[cls]
         elif cls is ta_tensors.TATensor:
-            # We don't want user-defined tv_tensors to dispatch to the pure Tensor kernels, so we explicit stop the
+            # We don't want user-defined ta_tensors to dispatch to the pure Tensor kernels, so we explicit stop the
             # MRO traversal before hitting torch.Tensor. We can even stop at ta_tensors.TATensor, since we don't
             # allow kernels to be registered for ta_tensors.TATensor anyway.
             break

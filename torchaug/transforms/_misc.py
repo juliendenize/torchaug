@@ -333,10 +333,10 @@ class ToDtype(Transform):
     Args:
         dtype: The dtype to convert to.
             If a ``torch.dtype`` is passed, e.g. ``torch.float32``, only images and videos will be converted
-            to that dtype: this is for compatibility with :class:`~torchvision.transforms.v2.ConvertImageDtype`.
-            A dict can be passed to specify per-tv_tensor conversions, e.g.
-            ``dtype={tv_tensors.Image: torch.float32, tv_tensors.Mask: torch.int64, "others":None}``. The "others"
-            key can be used as a catch-all for any other tv_tensor type, and ``None`` means no conversion.
+            to that dtype: this is for compatibility with :class:`torchvision.transforms.v2.ConvertImageDtype`.
+            A dict can be passed to specify per-ta_tensor conversions, e.g.
+            ``dtype={ta_tensors.Image: torch.float32, ta_tensors.Mask: torch.int64, "others":None}``. The "others"
+            key can be used as a catch-all for any other ta_tensor type, and ``None`` means no conversion.
         scale: Whether to scale the values for images or videos.
     """
 
@@ -366,9 +366,9 @@ class ToDtype(Transform):
             )
         ):
             warnings.warn(
-                "Got `dtype` values for `torch.Tensor` and either `tv_tensors.Image` or `tv_tensors.Video`. "
+                "Got `dtype` values for `torch.Tensor` and either `ta_tensors.Image` or `ta_tensors.Video`. "
                 "Note that a plain `torch.Tensor` will *not* be transformed by this (or any other transformation) "
-                "in case a `tv_tensors.Image` or `tv_tensors.Video` is present in the input."
+                "in case a `ta_tensors.Image` or `ta_tensors.Video` is present in the input."
             )
         self.dtype = dtype
         self.scale = scale
@@ -399,7 +399,7 @@ class ToDtype(Transform):
                 "If you only need to convert the dtype of images or videos, you can just pass e.g. dtype=torch.float32. "
                 "If you're passing a dict as dtype, "
                 'you can use "others" as a catch-all key '
-                'e.g. dtype={tv_tensors.Mask: torch.int64, "others": None} to pass-through the rest of the inputs.'
+                'e.g. dtype={ta_tensors.Mask: torch.int64, "others": None} to pass-through the rest of the inputs.'
             )
 
         supports_scaling = is_pure_tensor(inpt) or isinstance(
@@ -428,11 +428,11 @@ class SanitizeBoundingBoxes(Transform):
 
     - are below a given ``min_size``: by default this also removes degenerate boxes that have e.g. X2 <= X1.
     - have any coordinate outside of their corresponding image. You may want to
-      call :class:`~torchvision.transforms.v2.ClampBoundingBoxes` first to avoid undesired removals.
+      call :class:`torchvision.transforms.v2.ClampBoundingBoxes` first to avoid undesired removals.
 
     It is recommended to call it at the end of a pipeline, before passing the
     input to the models. It is critical to call this transform if
-    :class:`~torchvision.transforms.v2.RandomIoUCrop` was called.
+    :class:`torchvision.transforms.v2.RandomIoUCrop` was called.
     If you want to be extra careful, you may call it after all transforms that
     may modify bounding boxes but once at the end should be enough in most
     cases.

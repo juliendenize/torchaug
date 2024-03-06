@@ -160,7 +160,7 @@ def convert_bounding_box_format(
 ) -> torch.Tensor:
     """See :func:`~torchaug.transforms.ConvertBoundingBoxFormat` for details."""
     # This being a kernel / functional hybrid, we need an option to pass `old_format` explicitly for pure tensor
-    # inputs as well as extract it from `tv_tensors.BoundingBoxes` inputs. However, putting a default value on
+    # inputs as well as extract it from `ta_tensors.BoundingBoxes` inputs. However, putting a default value on
     # `old_format` means we also need to put one on `new_format` to have syntactically correct Python. Here we mimic the
     # default error that would be thrown if `new_format` had no default value.
     if new_format is None:
@@ -185,7 +185,7 @@ def convert_bounding_box_format(
     elif isinstance(inpt, (ta_tensors.BoundingBoxes, ta_tensors.BatchBoundingBoxes)):
         if old_format is not None:
             raise ValueError(
-                "For bounding box tv_tensor inputs, `old_format` must not be passed."
+                "For bounding box ta_tensor inputs, `old_format` must not be passed."
             )
         output = _convert_bounding_box_format(
             inpt.as_subclass(torch.Tensor),
@@ -196,7 +196,7 @@ def convert_bounding_box_format(
         return ta_tensors.wrap(output, like=inpt, format=new_format)
     else:
         raise TypeError(
-            f"Input can either be a plain tensor or a bounding box tv_tensor, but got {type(inpt)} instead."
+            f"Input can either be a plain tensor or a bounding box ta_tensor, but got {type(inpt)} instead."
         )
 
 
@@ -249,7 +249,7 @@ def clamp_bounding_boxes(
     elif isinstance(inpt, (ta_tensors.BoundingBoxes, ta_tensors.BatchBoundingBoxes)):
         if format is not None or canvas_size is not None:
             raise ValueError(
-                "For bounding box tv_tensor inputs, `format` and `canvas_size` must not be passed."
+                "For bounding box ta_tensor inputs, `format` and `canvas_size` must not be passed."
             )
         output = _clamp_bounding_boxes(
             inpt.as_subclass(torch.Tensor),
@@ -259,5 +259,5 @@ def clamp_bounding_boxes(
         return ta_tensors.wrap(output, like=inpt)
     else:
         raise TypeError(
-            f"Input can either be a plain tensor or a bounding box tv_tensor, but got {type(inpt)} instead."
+            f"Input can either be a plain tensor or a bounding box ta_tensor, but got {type(inpt)} instead."
         )
