@@ -4,7 +4,7 @@
    :caption: Contents:
 
    include/speed_comparison.rst
-   ta_tensors
+   ta_tensors/ta_tensors.rst
    transforms/transforms.rst
    functional/functional.rst
 

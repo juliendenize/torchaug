@@ -3,6 +3,7 @@ Datasets
 
 
 .. currentmodule:: torchaug.ta_tensors._dataset_wrapper
+
 .. autosummary::
     :toctree: ../generated/
     :template: function.rst
