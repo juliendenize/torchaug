@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Sequence
 
+import torch
 from torch._C import device, dtype
 
 from ._ta_tensor import TATensor
@@ -34,6 +35,26 @@ class BatchVideos(TATensor):
         if data.ndim < 5:
             raise ValueError
         return tensor.as_subclass(cls)
+
+    @classmethod
+    def cat(cls, video_batches: Sequence[BatchVideos]) -> BatchVideos:
+        """Concatenates the sequence of images batches into a single batch."""
+        attrs = [
+            "requires_grad",
+            "device",
+            "dtype",
+        ]
+
+        for batch_videos in video_batches:
+            if not isinstance(batch_videos, BatchVideos):
+                raise ValueError("All batches must be of type BatchVideos.")
+            for attr in attrs:
+                if getattr(batch_videos, attr) != getattr(video_batches[0], attr):
+                    raise ValueError(
+                        f"All batches of images must have the same {attr} attribute."
+                    )
+
+        return cls(torch.cat([images.data for images in video_batches], 0))
 
     def __repr__(self, *, tensor_contents: Any = None) -> str:  # type: ignore[override]
         return self._make_repr()

@@ -11,28 +11,37 @@ from ._ta_tensor import TATensor
 
 
 def convert_bboxes_to_batch_bboxes(
-    bboxes: Sequence[BoundingBoxes],
+    bboxes: list[BoundingBoxes],
 ) -> BatchBoundingBoxes:
-    """Convert a sequence of :class:`~torchaug.ta_tensors.BoundingBoxes` objects to a
+    """Convert a list of :class:`~torchaug.ta_tensors.BoundingBoxes` objects to a
     :class:`~torchaug.torchaug_tensors.BatchBoundingBoxes` object.
 
     Assumes all bboxes are valid.
     """
 
+    attrs = [
+        "canvas_size",
+        "format",
+        "requires_grad",
+        "device",
+        "dtype",
+    ]
+
     if not all(
-        bbox.canvas_size == bboxes[0].canvas_size and bbox.format == bboxes[0].format
+        getattr(bbox, attr) == getattr(bboxes[0], attr)
         for bbox in bboxes
+        for attr in attrs
     ):
-        raise ValueError
+        raise ValueError("All bounding boxes must have the same attributes.")
 
     canvas_size, format = (
         bboxes[0].canvas_size,
         bboxes[0].format,
     )
 
-    bboxes_data = torch.cat([bbox.as_subclass(Tensor) for bbox in bboxes])
+    bboxes_data = torch.cat([bbox.data for bbox in bboxes])
     idx_sample = (
-        torch.tensor([0] + [bbox.shape[0] for bbox in bboxes], dtype=torch.int32)
+        torch.tensor([0] + [bbox.shape[0] for bbox in bboxes], dtype=torch.long)
         .cumsum(0)
         .tolist()
     )
@@ -53,10 +62,9 @@ def convert_batch_bboxes_to_bboxes(
     """Convert :class:`~torchaug.torchaug_tensors.BatchBoundingBoxes` object to a list of
     :class:`~torchaug.ta_tensors.BoundingBoxes` objects."""
 
-    canvas_size, format, device, idx_sample = (
+    canvas_size, format, idx_sample = (
         bboxes.canvas_size,
         bboxes.format,
-        bboxes.device,
         bboxes.idx_sample,
     )
 
@@ -65,7 +73,6 @@ def convert_batch_bboxes_to_bboxes(
             bboxes[idx_sample[i] : idx_sample[i + 1]],
             canvas_size=canvas_size,
             format=format,
-            device=device,
         )
         for i in range(len(idx_sample) - 1)
     ]
@@ -109,6 +116,62 @@ class BatchBoundingBoxes(TATensor):
         return self.idx_sample[idx + 1] - self.idx_sample[idx]
 
     @classmethod
+    def cat(
+        cls, bounding_boxes_batches: Sequence[BatchBoundingBoxes]
+    ) -> BatchBoundingBoxes:
+        """Concatenates the given sequence of :class:`~torchaug.ta_tensors.BatchBoundingBoxes` along the first dimension.
+
+        Args:
+            bounding_boxes_batches: The sequence of :class:`~torchaug.ta_tensors.BatchBoundingBoxes` to concatenate.
+
+        Returns:
+            BatchBoundingBoxes: The concatenated batch of bounding boxes.
+        """
+
+        attrs = [
+            "canvas_size",
+            "format",
+            "requires_grad",
+            "device",
+            "dtype",
+        ]
+
+        for batch_bounding_boxes in bounding_boxes_batches:
+            if not isinstance(batch_bounding_boxes, BatchBoundingBoxes):
+                raise ValueError(
+                    "All elements in the sequence must be instances of BatchBoundingBoxes."
+                )
+            for attr in attrs:
+                if getattr(batch_bounding_boxes, attr) != getattr(
+                    bounding_boxes_batches[0], attr
+                ):
+                    raise ValueError(
+                        f"All batches of masks must have the same {attr} attribute."
+                    )
+
+        idx_sample = (
+            torch.tensor(
+                [0]
+                + [
+                    batch_bounding_boxes.get_num_boxes_sample(i)
+                    for batch_bounding_boxes in bounding_boxes_batches
+                    for i in range(batch_bounding_boxes.batch_size)
+                ]
+            )
+            .cumsum(0)
+            .tolist()
+        )
+
+        data = torch.cat([mask.data for mask in bounding_boxes_batches], 0)
+
+        return cls(
+            data,
+            idx_sample=idx_sample,
+            format=bounding_boxes_batches[0].format,
+            canvas_size=bounding_boxes_batches[0].canvas_size,
+        )
+
+    @classmethod
     def _wrap(
         cls,
         tensor: Tensor,
@@ -150,7 +213,7 @@ class BatchBoundingBoxes(TATensor):
     def _wrap_output(
         cls,
         output: torch.Tensor,
-        args: Sequence[Any] = (),
+        args: list[Any] = (),
         kwargs: Mapping[str, Any] | None = None,
     ) -> BatchBoundingBoxes:
         # If there are BatchBoundingBoxes instances in the output, their metadata got lost when we called

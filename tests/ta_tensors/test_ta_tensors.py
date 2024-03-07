@@ -4,7 +4,7 @@ import pytest
 import torch
 from torchaug import ta_tensors
 
-from .utils import (
+from ..utils import (
     assert_equal,
     make_batch_bounding_boxes,
     make_batch_images,

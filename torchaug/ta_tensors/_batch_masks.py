@@ -19,12 +19,22 @@ def convert_masks_to_batch_masks(
     Assumes all masks are valid.
     """
 
-    if not all(mask.shape[-2:] == masks[0][-2:] for mask in masks):
-        raise ValueError
+    attrs = [
+        "requires_grad",
+        "device",
+        "dtype",
+    ]
 
-    masks_data = torch.cat([mask.as_subclass(Tensor) for mask in masks])
+    for mask in masks:
+        if not mask.shape[-2:] == masks[0].shape[-2:]:
+            raise ValueError("All masks must have the same size.")
+        for attr in attrs:
+            if getattr(mask, attr) != getattr(masks[0], attr):
+                raise ValueError(f"All masks must have the same {attr} attribute.")
+
+    masks_data = torch.cat([mask.data for mask in masks])
     idx_sample = (
-        torch.tensor([0] + [mask.shape[0] for mask in masks], dtype=torch.int32)
+        torch.tensor([0] + [mask.shape[0] for mask in masks], dtype=torch.long)
         .cumsum(0)
         .tolist()
     )
@@ -32,8 +42,6 @@ def convert_masks_to_batch_masks(
     batch_masks = BatchMasks(
         masks_data,
         idx_sample=idx_sample,
-        dtype=masks[0].dtype,
-        requires_grad=masks[0].requires_grad,
     )
 
     return batch_masks
@@ -50,9 +58,6 @@ def convert_batch_masks_to_masks(
     list_masks = [
         Mask(
             batch_masks[idx_sample[i] : idx_sample[i + 1]],
-            device=batch_masks.device,
-            dtype=batch_masks.dtype,
-            requires_grad=batch_masks.requires_grad,
         )
         for i in range(len(idx_sample) - 1)
     ]
@@ -87,6 +92,54 @@ class BatchMasks(TATensor):
 
     def get_num_masks_sample(self, idx: int) -> int:
         return self.idx_sample[idx + 1] - self.idx_sample[idx]
+
+    @classmethod
+    def cat(cls, masks_batches: Sequence[BatchMasks]):
+        """Concatenates a sequence of :class:`~torchaug.torchaug_tensors.BatchMasks` along the first dimension.
+
+        Args:
+            batch_masks: A sequence of :class:`~torchaug.torchaug_tensors.BatchMasks` to concatenate.
+
+        Returns:
+            The concatenated :class:`~torchaug.torchaug_tensors.BatchMasks`.
+        """
+
+        attrs = [
+            "requires_grad",
+            "device",
+            "dtype",
+        ]
+
+        for batch_mask in masks_batches:
+            if not isinstance(batch_mask, BatchMasks):
+                raise ValueError("All batches must be of type BatchMasks.")
+            if not batch_mask.shape[-2:] == masks_batches[0].shape[-2:]:
+                raise ValueError("All batches of masks must have the same size.")
+            for attr in attrs:
+                if getattr(batch_mask, attr) != getattr(masks_batches[0], attr):
+                    raise ValueError(
+                        f"All batches of masks must have the same {attr} attribute."
+                    )
+
+        idx_sample = (
+            torch.tensor(
+                [0]
+                + [
+                    batch_mask.get_num_masks_sample(i)
+                    for batch_mask in masks_batches
+                    for i in range(batch_mask.batch_size)
+                ]
+            )
+            .cumsum(0)
+            .tolist()
+        )
+
+        data = torch.cat([mask.data for mask in masks_batches], 0)
+
+        return cls(
+            data,
+            idx_sample=idx_sample,
+        )
 
     @classmethod
     def _wrap(

@@ -15,14 +15,13 @@ from torch.utils.data._utils.collate import (
     default_collate_err_msg_format,
 )
 
-from ._batch_bounding_boxes import convert_bboxes_to_batch_bboxes
+from ._batch_bounding_boxes import BatchBoundingBoxes, convert_bboxes_to_batch_bboxes
 from ._batch_images import BatchImages
-from ._batch_masks import convert_masks_to_batch_masks
+from ._batch_masks import BatchMasks, convert_masks_to_batch_masks
 from ._batch_videos import BatchVideos
 from ._bounding_boxes import BoundingBoxes
 from ._image import Image
 from ._mask import Mask
-from ._ta_tensor import TATensor
 from ._video import Video
 
 
@@ -31,14 +30,24 @@ def collate_ta_tensor_fn(
     *,
     collate_fn_map: Optional[Dict[Union[Type, Tuple[Type, ...]], Callable]] = None
 ):
-    if isinstance(batch, Image):
-        return BatchImages(torch.as_tensor(batch))
-    elif isinstance(batch, Video):
-        return BatchVideos(torch.as_tensor(batch))
-    elif isinstance(batch, BoundingBoxes):
+    elem = batch[0]
+    if isinstance(elem, Image):
+        return BatchImages(torch.stack(batch, 0))
+    elif isinstance(elem, Video):
+        return BatchVideos(torch.stack(batch, 0))
+    elif isinstance(elem, BoundingBoxes):
         return convert_bboxes_to_batch_bboxes(batch)
-    elif isinstance(batch, Mask):
+    elif isinstance(elem, Mask):
         return convert_masks_to_batch_masks(batch)
+    elif isinstance(elem, BatchImages):
+        return BatchImages.cat(batch)
+    elif isinstance(elem, BatchVideos):
+        return BatchVideos.cat(batch)
+    elif isinstance(elem, BatchBoundingBoxes):
+        return BatchBoundingBoxes.cat(batch)
+    elif isinstance(elem, BatchMasks):
+        print("yoohoho")
+        return BatchMasks.cat(batch)
     else:
         raise TypeError(default_collate_err_msg_format.format(type(batch)))
 
@@ -60,10 +69,21 @@ torchaug_default_collate_fn_map[float] = collate_float_fn
 torchaug_default_collate_fn_map[int] = collate_int_fn
 torchaug_default_collate_fn_map[str] = collate_str_fn
 torchaug_default_collate_fn_map[bytes] = collate_str_fn
-torchaug_default_collate_fn_map[TATensor] = collate_ta_tensor_fn
+
+for ta_type in [
+    Image,
+    Video,
+    BoundingBoxes,
+    Mask,
+    BatchBoundingBoxes,
+    BatchImages,
+    BatchVideos,
+    BatchMasks,
+]:
+    torchaug_default_collate_fn_map[ta_type] = collate_ta_tensor_fn
 
 
-def torchaug_default_collate(batch):
+def default_collate(batch):
     r"""
     Take in a batch of data and put the elements within the batch into a tensor with an additional outer dimension - batch size.
 

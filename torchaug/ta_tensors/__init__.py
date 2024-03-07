@@ -13,7 +13,7 @@ from ._batch_masks import (
 )
 from ._batch_videos import BatchVideos
 from ._bounding_boxes import BoundingBoxes, BoundingBoxFormat
-from ._collate_dataloader import torchaug_default_collate
+from ._collate_dataloader import default_collate
 from ._image import Image
 from ._mask import Mask
 from ._ta_tensor import TATensor
