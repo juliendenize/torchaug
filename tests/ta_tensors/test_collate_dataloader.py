@@ -1,17 +1,32 @@
-import torch
 import pytest
+import torch
 from torchaug.ta_tensors import (
-    Image,
-    Video,
     BatchBoundingBoxes,
-    BatchMasks,
     BatchImages,
+    BatchMasks,
     BatchVideos,
     convert_bboxes_to_batch_bboxes,
     convert_masks_to_batch_masks,
+    Image,
+    Video,
 )
 from torchaug.ta_tensors._collate_dataloader import default_collate
-from ..utils import cpu_and_cuda, assert_equal, make_detection_masks, make_segmentation_mask, make_bounding_boxes, make_image, make_video, make_batch_bounding_boxes, make_batch_segmentation_masks, make_batch_detection_masks, make_batch_images, make_batch_videos
+
+from ..utils import (
+    assert_equal,
+    cpu_and_cuda,
+    make_batch_bounding_boxes,
+    make_batch_detection_masks,
+    make_batch_images,
+    make_batch_segmentation_masks,
+    make_batch_videos,
+    make_bounding_boxes,
+    make_detection_masks,
+    make_image,
+    make_segmentation_mask,
+    make_video,
+)
+
 
 class TestDefaultCollate:
     @pytest.mark.parametrize("device", cpu_and_cuda())
@@ -25,11 +40,13 @@ class TestDefaultCollate:
         assert isinstance(actual, BatchImages)
         assert actual.device.type == device
         assert actual.dtype == dtype
-    
+
     @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
     def test_batch_images(self, device, dtype):
-        images = [make_batch_images((32, 32), dtype=dtype, device=device) for _ in range(4)]
+        images = [
+            make_batch_images((32, 32), dtype=dtype, device=device) for _ in range(4)
+        ]
         actual = default_collate(images)
         expected_output_data = torch.cat([image.data for image in images], 0)
 
@@ -37,14 +54,14 @@ class TestDefaultCollate:
         assert isinstance(actual, BatchImages)
         assert actual.device.type == device
         assert actual.dtype == dtype
-    
+
     @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
     def test_video(self, device, dtype):
         videos = [make_video((32, 32), dtype=dtype, device=device) for _ in range(4)]
         actual = default_collate(videos)
         expected_output_data = torch.stack([video.data for video in videos], 0)
-        
+
         assert_equal(actual, expected_output_data)
         assert isinstance(actual, BatchVideos)
         assert actual.device.type == device
@@ -53,15 +70,17 @@ class TestDefaultCollate:
     @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
     def test_batch_videos(self, device, dtype):
-        videos = [make_batch_videos((32, 32), dtype=dtype, device=device) for _ in range(4)]
+        videos = [
+            make_batch_videos((32, 32), dtype=dtype, device=device) for _ in range(4)
+        ]
         actual = default_collate(videos)
         expected_output_data = torch.cat([video.data for video in videos], 0)
-        
+
         assert_equal(actual, expected_output_data)
         assert isinstance(actual, BatchVideos)
         assert actual.device.type == device
         assert actual.dtype == dtype
-    
+
     @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("make_bounding_boxes", [make_bounding_boxes])
     def test_bounding_boxes(self, device, make_bounding_boxes):
@@ -77,11 +96,16 @@ class TestDefaultCollate:
         assert actual.device.type == device
         assert actual.canvas_size == expected_output.canvas_size
         assert actual.format == expected_output.format
-        assert all(actual.idx_sample[i] == expected_output.idx_sample[i] for i in range(len(actual.idx_sample)))
+        assert all(
+            actual.idx_sample[i] == expected_output.idx_sample[i]
+            for i in range(len(actual.idx_sample))
+        )
         assert isinstance(actual, BatchBoundingBoxes)
 
     @pytest.mark.parametrize("device", cpu_and_cuda())
-    @pytest.mark.parametrize("make_mask", [make_detection_masks, make_segmentation_mask])
+    @pytest.mark.parametrize(
+        "make_mask", [make_detection_masks, make_segmentation_mask]
+    )
     def test_mask(self, device, make_mask):
         masks = [
             make_mask(device=device),
@@ -93,11 +117,16 @@ class TestDefaultCollate:
 
         assert_equal(actual, expected_output)
         assert actual.device.type == device
-        assert all(actual.idx_sample[i] == expected_output.idx_sample[i] for i in range(len(actual.idx_sample)))
+        assert all(
+            actual.idx_sample[i] == expected_output.idx_sample[i]
+            for i in range(len(actual.idx_sample))
+        )
         assert isinstance(actual, BatchMasks)
-    
+
     @pytest.mark.parametrize("device", cpu_and_cuda())
-    @pytest.mark.parametrize("make_batch_masks", [make_batch_detection_masks, make_batch_segmentation_masks])
+    @pytest.mark.parametrize(
+        "make_batch_masks", [make_batch_detection_masks, make_batch_segmentation_masks]
+    )
     def test_batch_masks(self, device, make_batch_masks):
         masks = [
             make_batch_masks(device=device),
@@ -109,9 +138,11 @@ class TestDefaultCollate:
 
         assert_equal(actual, expected_output_data)
         assert actual.device.type == device
-        assert actual.idx_sample == masks[0].idx_sample[:-1] + [idx + masks[0].idx_sample[-1] for idx in masks[1].idx_sample]
+        assert actual.idx_sample == masks[0].idx_sample[:-1] + [
+            idx + masks[0].idx_sample[-1] for idx in masks[1].idx_sample
+        ]
         assert isinstance(actual, BatchMasks)
-    
+
     @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("make_batch_bounding_boxes", [make_batch_bounding_boxes])
     def test_batch_bounding_boxes(self, device, make_batch_bounding_boxes):
@@ -127,9 +158,12 @@ class TestDefaultCollate:
         assert actual.device.type == device
         assert actual.canvas_size == bounding_boxes_batches[0].canvas_size
         assert actual.format == bounding_boxes_batches[0].format
-        assert actual.idx_sample == bounding_boxes_batches[0].idx_sample[:-1] + [idx + bounding_boxes_batches[0].idx_sample[-1] for idx in bounding_boxes_batches[1].idx_sample]
+        assert actual.idx_sample == bounding_boxes_batches[0].idx_sample[:-1] + [
+            idx + bounding_boxes_batches[0].idx_sample[-1]
+            for idx in bounding_boxes_batches[1].idx_sample
+        ]
         assert isinstance(actual, BatchBoundingBoxes)
-    
+
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_batch_list(self, device):
         sample = [
@@ -145,7 +179,7 @@ class TestDefaultCollate:
         batch = [sample] * 4
 
         collated_batch = default_collate(batch)
-        
+
         assert isinstance(collated_batch, list)
         assert len(collated_batch) == len(sample)
         assert type(collated_batch[0]) == BatchImages
@@ -155,7 +189,7 @@ class TestDefaultCollate:
         assert type(collated_batch[4]) == BatchMasks
         assert type(collated_batch[5]) == tuple
         assert type(collated_batch[6]) == torch.Tensor
-    
+
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_batch_dict(self, device):
         sample = {
@@ -171,7 +205,7 @@ class TestDefaultCollate:
         batch = [sample] * 4
 
         collated_batch = default_collate(batch)
-        
+
         assert isinstance(collated_batch, dict)
         assert len(collated_batch) == len(sample)
         assert type(collated_batch["image"]) == BatchImages

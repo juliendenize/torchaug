@@ -24,4 +24,3 @@ Mask
 
     convert_batch_masks_to_masks
     convert_masks_to_batch_masks
-

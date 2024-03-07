@@ -22,4 +22,3 @@ Bounding Boxes
 
     convert_batch_bboxes_to_bboxes
     convert_bboxes_to_batch_bboxes
-
