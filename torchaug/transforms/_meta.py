@@ -39,6 +39,9 @@ class ClampBoundingBoxes(Transform):
 
     _transformed_types = (ta_tensors.BoundingBoxes, ta_tensors.BatchBoundingBoxes)
 
+    def __init__(self) -> None:
+        super().__init__()
+
     def _transform(
         self,
         inpt: ta_tensors.BoundingBoxes | ta_tensors.BatchBoundingBoxes,
