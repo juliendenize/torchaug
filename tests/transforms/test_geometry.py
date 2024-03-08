@@ -3422,13 +3422,13 @@ class TestScaleJitter:
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_transform(self, make_input, device):
         # TODO: investigate why sometimes it fails
-        try: 
+        try:
             check_transform(
                 transforms.ScaleJitter(self.TARGET_SIZE),
                 make_input(self.INPUT_SIZE, device=device),
             )
         except RuntimeError as e:
-            if not "please report a bug to PyTorch." in str(e):
+            if "please report a bug to PyTorch." not in str(e):
                 raise e
 
     @pytest.mark.parametrize("is_batch", [False, True])
