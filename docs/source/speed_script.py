@@ -6,9 +6,10 @@ from typing import Callable
 
 import tabulate
 import torch
+from torchvision.transforms import v2 as T
 
 from torchaug import transforms as F
-from torchvision.transforms import v2 as T
+
 
 torch.set_printoptions(precision=3)
 
@@ -100,12 +101,8 @@ if __name__ == "__main__":
         nargs="+",
         default=[8, 16, 64, 128],
     )
-    parser.add_argument(
-        "--device", required=False, help="Device for input.", type=str, default="cpu"
-    )
-    parser.add_argument(
-        "--dtype", required=False, help="Device for input.", type=str, default="int"
-    )
+    parser.add_argument("--device", required=False, help="Device for input.", type=str, default="cpu")
+    parser.add_argument("--dtype", required=False, help="Device for input.", type=str, default="int")
 
     args = parser.parse_args()
 
@@ -153,9 +150,7 @@ if __name__ == "__main__":
         for name, torchvision_transform, torchaug_transform in mono_transforms:
             print(name)
 
-            results_torchvision = time_transform(
-                n_runs_single, input, torchvision_transform
-            )
+            results_torchvision = time_transform(n_runs_single, input, torchvision_transform)
             mean_torchvision = float(results_torchvision.mean())
             std_torchvision = float(torch.std(results_torchvision))
 
@@ -243,65 +238,51 @@ if __name__ == "__main__":
                 "RandomGaussianBlur",
                 "",
                 T.RandomApply([T.GaussianBlur([23, 23], [0.1, 2.0])], 0.5),
-                F.RandomGaussianBlur(
-                    [23, 23], [0.1, 2], 0.5, batch_inplace=True, batch_transform=True
-                ).to(device=device),
+                F.RandomGaussianBlur([23, 23], [0.1, 2], 0.5, batch_inplace=True, batch_transform=True).to(
+                    device=device
+                ),
             ),
             (
                 "RandomGrayscale",
                 "",
                 T.RandomApply([T.Grayscale(num_output_channels=3)], 0.5),
-                F.RandomGrayscale(0.5, batch_inplace=True, batch_transform=True).to(
-                    device=device
-                ),
+                F.RandomGrayscale(0.5, batch_inplace=True, batch_transform=True).to(device=device),
             ),
             (
                 "RandomHorizontalFlip",
                 "",
                 T.RandomHorizontalFlip(0.5),
-                F.RandomHorizontalFlip(
-                    0.5, batch_inplace=True, batch_transform=True
-                ).to(device=device),
+                F.RandomHorizontalFlip(0.5, batch_inplace=True, batch_transform=True).to(device=device),
             ),
             (
                 "RandomResizedCrop",
                 "1",
                 None,
-                F.RandomResizedCrop([224, 224], num_chunks=1, batch_transform=True).to(
-                    device=device
-                ),
+                F.RandomResizedCrop([224, 224], num_chunks=1, batch_transform=True).to(device=device),
             ),
             (
                 "RandomResizedCrop",
                 "8",
                 None,
-                F.RandomResizedCrop([224, 224], num_chunks=8, batch_transform=True).to(
-                    device=device
-                ),
+                F.RandomResizedCrop([224, 224], num_chunks=8, batch_transform=True).to(device=device),
             ),
             (
                 "RandomResizedCrop",
                 "16",
                 None,
-                F.RandomResizedCrop([224, 224], num_chunks=16, batch_transform=True).to(
-                    device=device
-                ),
+                F.RandomResizedCrop([224, 224], num_chunks=16, batch_transform=True).to(device=device),
             ),
             (
                 "RandomResizedCrop",
                 "-1",
                 T.RandomResizedCrop([224, 224], antialias=True),
-                F.RandomResizedCrop([224, 224], num_chunks=-1, batch_transform=True).to(
-                    device=device
-                ),
+                F.RandomResizedCrop([224, 224], num_chunks=-1, batch_transform=True).to(device=device),
             ),
             (
                 "RandomSolarize",
                 "",
                 T.RandomSolarize(0.5, 0.5),
-                F.RandomSolarize(0.5, 0.5, batch_inplace=True, batch_transform=True).to(
-                    device=device
-                ),
+                F.RandomSolarize(0.5, 0.5, batch_inplace=True, batch_transform=True).to(device=device),
             ),
         ]
 
@@ -323,29 +304,19 @@ if __name__ == "__main__":
                 print("Batch size", batch_size)
 
                 if args.dtype == "int":
-                    input = torch.randint(
-                        0, 256, (batch_size, *shape), device=device, dtype=torch.uint8
-                    )
+                    input = torch.randint(0, 256, (batch_size, *shape), device=device, dtype=torch.uint8)
                 elif args.dtype == "float":
-                    input = torch.rand(
-                        (batch_size, *shape), device=device, dtype=torch.float32
-                    )
+                    input = torch.rand((batch_size, *shape), device=device, dtype=torch.float32)
 
                 do_tv = torchvision_transform is not None
                 if do_tv:
-                    results_torchvision = time_batch_transform_tv(
-                        n_runs_batch, input, torchvision_transform
-                    )
+                    results_torchvision = time_batch_transform_tv(n_runs_batch, input, torchvision_transform)
                     mean_torchvision = float(results_torchvision.mean())
                     std_torchvision = float(torch.std(results_torchvision))
 
-                format_torchvision = (
-                    f"{mean_torchvision:.2f}  ± {std_torchvision:.2f}" if do_tv else ""
-                )
+                format_torchvision = f"{mean_torchvision:.2f}  ± {std_torchvision:.2f}" if do_tv else ""
 
-                results_torchaug = time_transform(
-                    n_runs_batch, input, torchaug_transform
-                )
+                results_torchaug = time_transform(n_runs_batch, input, torchaug_transform)
                 mean_torchaug = float(results_torchaug.mean())
                 std_torchaug = float(torch.std(results_torchaug))
 
