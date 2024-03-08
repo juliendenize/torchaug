@@ -126,7 +126,6 @@ class TestErase:
             input,
             check_sample_input=False,
         )
-    
 
     @pytest.mark.parametrize(
         "make_input",
@@ -142,14 +141,29 @@ class TestErase:
     @pytest.mark.parametrize("num_chunks", [1, 2])
     @pytest.mark.parametrize("permute_chunks", [False, True])
     @pytest.mark.parametrize("batch_size", [1, 2, 4])
-    def test_batch_transform(self, make_input, device, p, batch_inplace, num_chunks, permute_chunks, batch_size):
+    def test_batch_transform(
+        self,
+        make_input,
+        device,
+        p,
+        batch_inplace,
+        num_chunks,
+        permute_chunks,
+        batch_size,
+    ):
         input = make_input(device=device, batch_dims=(batch_size,))
 
         check_batch_transform(
-            transforms.RandomErasing(p=p, batch_transform=True, inplace=batch_inplace, num_chunks=num_chunks, permute_chunks=permute_chunks),
+            transforms.RandomErasing(
+                p=p,
+                batch_transform=True,
+                inplace=batch_inplace,
+                num_chunks=num_chunks,
+                permute_chunks=permute_chunks,
+            ),
             input,
             check_sample_input=False,
-            batch_size=batch_size
+            batch_size=batch_size,
         )
 
     def _reference_erase_image(self, image, *, i, j, h, w, v):

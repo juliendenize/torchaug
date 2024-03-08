@@ -77,9 +77,7 @@ def _batch_blend(
     return output if fp else output.to(images1.dtype)
 
 
-def adjust_brightness(
-    inpt: torch.Tensor, brightness_factor: float
-) -> torch.Tensor:
+def adjust_brightness(inpt: torch.Tensor, brightness_factor: float) -> torch.Tensor:
     """Adjust brightness."""
     if torch.jit.is_scripting():
         return adjust_brightness_image(inpt, brightness_factor=brightness_factor)
