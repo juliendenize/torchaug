@@ -31,14 +31,6 @@ from ._common import (
 )
 
 from ._make_tensors import (
-    ALL_IMAGES_MAKERS,
-    ALL_MAKERS,
-    BATCH_IMAGES_AND_VIDEO_TENSOR_AND_SAMPLE_MAKERS,
-    BATCH_IMAGES_TENSOR_AND_MAKERS,
-    BOUNDING_BOXES_MAKERS,
-    IMAGE_AND_VIDEO_TENSOR_AND_MAKERS,
-    IMAGE_MAKERS,
-    IMAGE_TENSOR_AND_MAKERS,
     make_batch_bounding_boxes,
     make_batch_detection_masks,
     make_batch_images,
@@ -49,8 +41,6 @@ from ._make_tensors import (
     make_image,
     make_segmentation_mask,
     make_video,
-    SAMPLE_MAKERS,
-    VIDEO_MAKERS,
 )
 
 
@@ -695,9 +685,6 @@ def _check_transform_batch_sample_input_smoke(transform, input, *, adapter, batc
     )
 
     p = transform.p
-    batch_inplace = transform.batch_inplace
-    num_chunks = transform.num_chunks
-    permute_chunks = transform.permute_chunks
 
     for container_type in [dict, list, tuple]:
         if container_type is dict:

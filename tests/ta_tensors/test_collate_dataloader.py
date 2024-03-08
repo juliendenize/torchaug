@@ -213,5 +213,5 @@ class TestDefaultCollate:
         assert type(collated_batch["bbox"]) == BatchBoundingBoxes
         assert type(collated_batch["mask1"]) == BatchMasks
         assert type(collated_batch["mask2"]) == BatchMasks
-        assert type(collated_batch["string"]) == list
-        assert type(collated_batch["tensor"]) == torch.Tensor
+        assert isinstance(collated_batch["string"], list)
+        assert isinstance(collated_batch["tensor"], torch.Tensor)

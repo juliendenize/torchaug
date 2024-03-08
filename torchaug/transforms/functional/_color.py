@@ -4,11 +4,7 @@ from typing import List
 
 import torch
 import torchvision.transforms.v2.functional as TVF
-from torchvision.transforms.v2.functional._color import (
-    _hsv_to_rgb,
-    _rgb_to_grayscale_image,
-    _rgb_to_hsv,
-)
+from torchvision.transforms.v2.functional._color import _hsv_to_rgb, _rgb_to_hsv
 
 from torchaug import ta_tensors
 
@@ -86,7 +82,6 @@ def adjust_brightness(
 ) -> torch.Tensor:
     """Adjust brightness."""
     if torch.jit.is_scripting():
-
         return adjust_brightness_image(inpt, brightness_factor=brightness_factor)
 
     _log_api_usage_once(adjust_brightness)

@@ -6,7 +6,7 @@ Meta
 .. autosummary::
     :toctree: ../generated/
     :template: function.rst
-    
+
     clamp_bounding_boxes
     convert_bounding_box_format
     get_dimensions

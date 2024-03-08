@@ -536,7 +536,9 @@ class Pad(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = _get_fill(self._fill, type(inpt))
-        return self._call_kernel(F.pad, inpt, padding=self.padding, fill=fill, padding_mode=self.padding_mode)  # type: ignore[arg-type]
+        return self._call_kernel(
+            F.pad, inpt, padding=self.padding, fill=fill, padding_mode=self.padding_mode
+        )  # type: ignore[arg-type]
 
 
 class RandomZoomOut(RandomApplyTransform):
@@ -1419,7 +1421,6 @@ class RandomIoUCrop(Transform):
         return params
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-
         if len(params) < 1:
             return inpt
 

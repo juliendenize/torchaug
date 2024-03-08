@@ -114,7 +114,7 @@ class TestRgbToGrayscale:
     @pytest.mark.parametrize("num_input_channels", [1, 3])
     @pytest.mark.parametrize("make_image", [make_batch_images])
     @pytest.mark.parametrize("batch_inplace", [False, True])
-    def test_random_transform_correctness(
+    def test_random_batch_transform_correctness(
         self, num_input_channels, make_image, batch_inplace
     ):
         image = make_image(
@@ -265,7 +265,7 @@ class TestColorJitter:
                     if value is None:
                         assert original_value is None
                     else:
-                        if type(original_value) is float:
+                        if isinstance(original_value, float):
                             if name == "hue":
                                 original_value = (-original_value, original_value)
                             else:
@@ -323,7 +323,7 @@ class TestColorJitter:
                             assert original_value is None
                         else:
                             assert value.numel() == chunks_indices[i].numel()
-                            if type(original_value) is float:
+                            if isinstance(original_value, float):
                                 if name == "hue":
                                     original_value = (-original_value, original_value)
                                 else:
@@ -355,12 +355,11 @@ class TestColorJitter:
             "hue_factor": hue,
         }
 
-        transform = transforms.RandomColorJitter(
+        transform = transforms.ColorJitter(
             brightness=brightness,
             contrast=contrast,
             saturation=saturation,
             hue=hue,
-            p=1,
         )
 
         transform._get_params = mocker.MagicMock(return_value=[params])
@@ -384,7 +383,7 @@ class TestColorJitter:
     @pytest.mark.parametrize("hue", [None, 0.3])
     @pytest.mark.parametrize("num_chunks", [1, 2])
     @pytest.mark.parametrize("batch_size", [1, 2, 4])
-    def test_batch_transform_correctness(
+    def test_batch_transform_correctness_random(
         self, brightness, contrast, saturation, hue, num_chunks, batch_size
     ):
         if num_chunks > batch_size:
@@ -586,7 +585,7 @@ class TestRandomPhotometricDistort:
     @pytest.mark.parametrize("permute_chunks", [False, True])
     @pytest.mark.parametrize("batch_size", [1, 2, 4])
     @pytest.mark.parametrize("p", [0, 0.5, 1])
-    def test_transform(
+    def test_batch_transform(
         self,
         make_input,
         dtype,
@@ -674,7 +673,7 @@ class TestEqualize:
     )
     @pytest.mark.parametrize("batch_inplace", [False, True])
     @pytest.mark.parametrize("batch_size", [1, 2, 4])
-    def test_transform(self, make_input, batch_inplace, batch_size):
+    def test_batch_transform(self, make_input, batch_inplace, batch_size):
         check_batch_transform(
             transforms.RandomEqualize(
                 p=1, batch_inplace=batch_inplace, batch_transform=True
@@ -1248,7 +1247,7 @@ class TestAdjustSharpness:
             ),
         ],
     )
-    def test_correctness_image(self, sharpness_factor, fn):
+    def test_correctness_batch_images(self, sharpness_factor, fn):
         image = make_batch_images(dtype=torch.uint8, device="cpu")
 
         actual = fn(image, sharpness_factor=sharpness_factor)
@@ -1733,7 +1732,7 @@ class TestAdjustBrightness:
     )
     @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
     @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_kernel(self, kernel, make_input, dtype, device):
+    def test_batch_kernel(self, kernel, make_input, dtype, device):
         check_kernel(
             kernel,
             make_input(dtype=dtype, device=device),
@@ -1760,7 +1759,7 @@ class TestAdjustBrightness:
     @pytest.mark.parametrize(
         "make_input", [make_batch_images_tensor, make_batch_images, make_batch_videos]
     )
-    def test_functional(self, make_input):
+    def test_batch_functional(self, make_input):
         check_functional(
             F.adjust_brightness_batch,
             make_input(),
@@ -1790,7 +1789,7 @@ class TestAdjustBrightness:
             (F.adjust_brightness_batch_videos, ta_tensors.BatchVideos),
         ],
     )
-    def test_functional_signature(self, kernel, input_type):
+    def test_batch_functional_signature(self, kernel, input_type):
         check_functional_kernel_signature_match(
             F.adjust_brightness_batch, kernel=kernel, input_type=input_type
         )

@@ -99,7 +99,6 @@ class TATensor(torch.Tensor):
         if must_return_subclass or (
             func in _FORCE_TORCHFUNCTION_SUBCLASS and isinstance(args[0], cls)
         ):
-
             # The __torch_function__ protocol will invoke the __torch_function__ method on *all* types involved in
             # the computation by walking the MRO upwards. For example,
             # `out = a_pure_tensor.to(an_image)` will invoke `Image.__torch_function__` with

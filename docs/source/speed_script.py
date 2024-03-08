@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import time
 from typing import Callable
 
@@ -10,8 +11,6 @@ from torchaug import transforms as F
 from torchvision.transforms import v2 as T
 
 torch.set_printoptions(precision=3)
-
-import argparse
 
 
 def synchro_if_cuda(device: torch.device):

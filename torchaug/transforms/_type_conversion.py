@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import Any, Dict, Union
 
 import numpy as np
-import PIL
 import torch
 
 from torchaug import ta_tensors

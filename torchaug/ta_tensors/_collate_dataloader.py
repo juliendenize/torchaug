@@ -28,7 +28,7 @@ from ._video import Video
 def collate_ta_tensor_fn(
     batch,
     *,
-    collate_fn_map: Optional[Dict[Union[Type, Tuple[Type, ...]], Callable]] = None
+    collate_fn_map: Optional[Dict[Union[Type, Tuple[Type, ...]], Callable]] = None,
 ):
     elem = batch[0]
     if isinstance(elem, Image):
@@ -62,9 +62,9 @@ with contextlib.suppress(ImportError):
     torchaug_default_collate_fn_map[np.ndarray] = collate_numpy_array_fn
     # See scalars hierarchy: https://numpy.org/doc/stable/reference/arrays.scalars.html
     # Skip string scalars
-    torchaug_default_collate_fn_map[
-        (np.bool_, np.number, np.object_)
-    ] = collate_numpy_scalar_fn
+    torchaug_default_collate_fn_map[(np.bool_, np.number, np.object_)] = (
+        collate_numpy_scalar_fn
+    )
 torchaug_default_collate_fn_map[float] = collate_float_fn
 torchaug_default_collate_fn_map[int] = collate_int_fn
 torchaug_default_collate_fn_map[str] = collate_str_fn

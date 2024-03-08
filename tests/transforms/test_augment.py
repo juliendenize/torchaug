@@ -223,7 +223,6 @@ class TestCutMixMixUp:
 
     @pytest.mark.parametrize("T", [transforms.CutMix, transforms.MixUp])
     def test_supported_input_structure(self, T):
-
         batch_size = 32
         num_classes = 100
 
@@ -285,7 +284,6 @@ class TestCutMixMixUp:
 
     @pytest.mark.parametrize("T", [transforms.CutMix, transforms.MixUp])
     def test_error(self, T):
-
         num_classes = 10
         batch_size = 9
 

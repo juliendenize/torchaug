@@ -1,4 +1,4 @@
-Type Conversion 
+Type Conversion
 ================
 
 .. currentmodule:: torchaug.transforms._type_conversion

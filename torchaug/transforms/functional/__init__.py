@@ -1,3 +1,5 @@
+# ruff: noqa
+
 from torchvision.transforms import InterpolationMode
 
 from ._augment import erase, erase_image, erase_video

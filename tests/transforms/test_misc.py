@@ -280,23 +280,6 @@ class TestNormalize:
             check_sample_input=self._sample_input_adapter,
         )
 
-    @pytest.mark.parametrize(
-        "make_input",
-        [
-            make_image_tensor,
-            make_image,
-            make_video,
-            make_batch_images,
-            make_batch_videos,
-        ],
-    )
-    def test_transform(self, make_input):
-        check_transform(
-            transforms.Normalize(mean=self.MEAN, std=self.STD),
-            make_input(dtype=torch.float32),
-            check_sample_input=self._sample_input_adapter,
-        )
-
     def _reference_normalize_image(self, image, *, mean, std):
         image = image.numpy()
         mean, std = [
@@ -1003,7 +986,6 @@ class TestSanitizeBoundingBoxes:
     @pytest.mark.parametrize("sample_type", (tuple, dict))
     @pytest.mark.parametrize("batch", [False, True])
     def test_transform(self, min_size, labels_getter, sample_type, batch):
-
         if sample_type is tuple and not isinstance(labels_getter, str):
             # The "lambda inputs: inputs["labels"]" labels_getter used in this test
             # doesn't work if the input is a tuple.

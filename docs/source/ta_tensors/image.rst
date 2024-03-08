@@ -13,5 +13,5 @@ Image
 .. autosummary::
     :toctree: ../generated/
     :template: class.rst
-    
+
     BatchImages

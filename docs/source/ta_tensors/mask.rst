@@ -15,7 +15,7 @@ Mask
 .. autosummary::
     :toctree: ../generated/
     :template: class.rst
-    
+
     BatchMasks
 
 .. autosummary::

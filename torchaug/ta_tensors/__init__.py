@@ -1,4 +1,4 @@
-import torch
+# ruff: noqa
 
 from ._batch_bounding_boxes import (
     BatchBoundingBoxes,

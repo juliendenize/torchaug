@@ -26,5 +26,5 @@ def to_batch_images(inpt: torch.Tensor) -> ta_tensors.BatchImages:
     if isinstance(inpt, torch.Tensor):
         output = inpt
     else:
-        raise TypeError(f"Input should be a Tensor.")
+        raise TypeError("Input should be a Tensor.")
     return ta_tensors.BatchImages(output)

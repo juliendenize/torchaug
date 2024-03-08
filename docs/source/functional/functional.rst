@@ -8,7 +8,7 @@ In this section are defined the functions to transform an image or a video.
 
 .. toctree::
    :maxdepth: 2
-   
+
    augment
    color
    geometry

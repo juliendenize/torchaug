@@ -36,7 +36,14 @@ class BoundingBoxes(TATensor):
     canvas_size: Tuple[int, int]
 
     @classmethod
-    def _wrap(cls, tensor: torch.Tensor, *, format: Union[BoundingBoxFormat, str], canvas_size: Tuple[int, int], check_dims: bool = True) -> BoundingBoxes:  # type: ignore[override]
+    def _wrap(
+        cls,
+        tensor: torch.Tensor,
+        *,
+        format: BoundingBoxFormat | str,
+        canvas_size: Tuple[int, int],
+        check_dims: bool = True,
+    ) -> BoundingBoxes:  # type: ignore[override]
         if check_dims:
             if tensor.ndim == 1:
                 tensor = tensor.unsqueeze(0)

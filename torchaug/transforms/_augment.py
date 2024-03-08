@@ -6,7 +6,6 @@ from typing import Any, Callable, Dict, List, Tuple
 import torch
 from torch.nn.functional import one_hot
 from torch.utils._pytree import tree_flatten, tree_unflatten
-from torchaug import ta_tensors
 from torchvision.transforms.v2._utils import _parse_labels_getter, has_any, query_chw
 
 from torchaug import ta_tensors
@@ -14,7 +13,7 @@ from torchaug import ta_tensors
 from . import functional as F
 from ._transform import RandomApplyTransform, Transform
 
-from ._utils import is_pure_tensor, query_chw, query_size
+from ._utils import is_pure_tensor, query_size
 
 
 class RandomErasing(RandomApplyTransform):
@@ -48,13 +47,15 @@ class RandomErasing(RandomApplyTransform):
         permute_chunks: bool = False,
         batch_transform: bool = False,
     ):
-        super().__init__(
-            p=p,
-            batch_inplace=batch_inplace,
-            num_chunks=num_chunks,
-            permute_chunks=permute_chunks,
-            batch_transform=batch_transform,
-        ),
+        (
+            super().__init__(
+                p=p,
+                batch_inplace=batch_inplace,
+                num_chunks=num_chunks,
+                permute_chunks=permute_chunks,
+                batch_transform=batch_transform,
+            ),
+        )
         if not isinstance(value, (numbers.Number, str, tuple, list)):
             raise TypeError(
                 "Argument value should be either a number or str or a sequence"
@@ -109,7 +110,7 @@ class RandomErasing(RandomApplyTransform):
     ) -> List[Dict[str, Any]]:
         img_c, img_h, img_w = query_chw(flat_inputs)
 
-        if self.value is not None and not (len(self.value) in (1, img_c)):
+        if self.value is not None and len(self.value) not in (1, img_c):
             raise ValueError(
                 f"If value is a sequence, it should have either a single value or {img_c} (number of inpt channels)"
             )

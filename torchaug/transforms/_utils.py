@@ -68,7 +68,7 @@ def _find_labels_default_heuristic(inputs: Any) -> torch.Tensor:
 
 
 def _parse_labels_getter(
-    labels_getter: Union[str, Callable[[Any], torch.Tensor | None], None]
+    labels_getter: Union[str, Callable[[Any], torch.Tensor | None], None],
 ) -> Callable[[Any], torch.Tensor | None]:
     if labels_getter == "default":
         return _find_labels_default_heuristic

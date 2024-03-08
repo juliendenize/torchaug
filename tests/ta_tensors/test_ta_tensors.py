@@ -11,7 +11,6 @@ from ..utils import (
     make_batch_segmentation_masks,
     make_batch_videos,
     make_bounding_boxes,
-    make_bounding_boxes,
     make_image,
     make_segmentation_mask,
     make_video,

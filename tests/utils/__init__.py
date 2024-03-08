@@ -1,6 +1,4 @@
-import functools
-
-import torch
+# ruff: noqa
 
 from ._common import (
     assert_equal,

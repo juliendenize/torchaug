@@ -134,7 +134,6 @@ def _convert_bounding_box_format(
     new_format: ta_tensors.BoundingBoxFormat,
     inplace: bool = False,
 ) -> torch.Tensor:
-
     if new_format == old_format:
         return bounding_boxes
 
@@ -240,7 +239,6 @@ def clamp_bounding_boxes(
         _log_api_usage_once(clamp_bounding_boxes)
 
     if torch.jit.is_scripting() or is_pure_tensor(inpt):
-
         if format is None or canvas_size is None:
             raise ValueError(
                 "For pure tensor inputs, `format` and `canvas_size` have to be passed."

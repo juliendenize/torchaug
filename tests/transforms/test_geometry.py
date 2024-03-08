@@ -3639,7 +3639,6 @@ class TestRandomIoUCrop:
 
         n_samples = 5
         for _ in range(n_samples):
-
             list_params = transform._get_params(
                 sample,
                 num_chunks=1 if not is_batch else 2,
@@ -3649,7 +3648,6 @@ class TestRandomIoUCrop:
             )
 
             for params in list_params:
-
                 if options == [2.0]:
                     assert len(params) == 0
                     return

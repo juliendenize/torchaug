@@ -1,3 +1,5 @@
+# ruff: noqa
+
 from ._kernel import (
     _BUILTIN_DATAPOINT_TYPES,
     _FillType,

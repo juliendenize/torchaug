@@ -143,7 +143,6 @@ class RandomApplyTransform(nn.Module):
     def _get_indices_transform(
         self, batch_size: int, device: torch.device
     ) -> torch.Tensor:
-
         p_mul_batch_size = self.p * batch_size
         floor_apply = floor(p_mul_batch_size)
         ceil_apply = ceil(p_mul_batch_size)
@@ -240,7 +239,7 @@ class RandomApplyTransform(nn.Module):
             # Part of the output that is augmented will be updated with the augmented part.
             flat_pre_outputs = []
 
-            for (inpt, needs_transform) in zip(flat_inputs, needs_transform_list):
+            for inpt, needs_transform in zip(flat_inputs, needs_transform_list):
                 if not needs_transform:
                     transform_inpts.append(None)
                     flat_pre_outputs.append(inpt)
@@ -293,7 +292,7 @@ class RandomApplyTransform(nn.Module):
 
         transform_outputs = []
 
-        for (transform_inpt, needs_transform) in zip(
+        for transform_inpt, needs_transform in zip(
             transform_inpts, needs_transform_list
         ):
             if not needs_transform:
