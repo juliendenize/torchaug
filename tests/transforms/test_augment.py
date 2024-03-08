@@ -14,9 +14,11 @@ from ..utils import (
     check_kernel,
     check_kernel_cuda_vs_cpu,
     check_transform,
+    check_batch_transform,
     cpu_and_cuda,
     freeze_rng_state,
     IMAGE_MAKERS,
+    make_batch_images_tensor,
     make_batch_images,
     make_batch_videos,
     make_image,
@@ -122,6 +124,32 @@ class TestErase:
         check_transform(
             transforms.RandomErasing(p=1),
             input,
+            check_sample_input=False,
+        )
+    
+
+    @pytest.mark.parametrize(
+        "make_input",
+        [
+            make_batch_images_tensor,
+            make_batch_images,
+            make_batch_videos,
+        ],
+    )
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    @pytest.mark.parametrize("p", [0.0, 0.5, 1.0])
+    @pytest.mark.parametrize("batch_inplace", [False, True])
+    @pytest.mark.parametrize("num_chunks", [1, 2])
+    @pytest.mark.parametrize("permute_chunks", [False, True])
+    @pytest.mark.parametrize("batch_size", [1, 2, 4])
+    def test_batch_transform(self, make_input, device, p, batch_inplace, num_chunks, permute_chunks, batch_size):
+        input = make_input(device=device, batch_dims=(batch_size,))
+
+        check_batch_transform(
+            transforms.RandomErasing(p=p, batch_transform=True, inplace=batch_inplace, num_chunks=num_chunks, permute_chunks=permute_chunks),
+            input,
+            check_sample_input=False,
+            batch_size=batch_size
         )
 
     def _reference_erase_image(self, image, *, i, j, h, w, v):

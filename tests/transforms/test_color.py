@@ -107,7 +107,7 @@ class TestRgbToGrayscale:
         transform = transforms.RandomGrayscale(p=1)
 
         actual = transform(image)
-        expected = TVF.rgb_to_grayscale(num_output_channels=num_input_channels)
+        expected = TVF.rgb_to_grayscale(image, num_output_channels=num_input_channels)
 
         assert_equal(actual, expected, rtol=0, atol=1)
 

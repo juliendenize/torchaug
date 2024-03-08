@@ -78,7 +78,7 @@ def _batch_blend(
 
 
 def adjust_brightness(
-    inpt: torch.Tensor, brightness_factor: torch.Tensor | float
+    inpt: torch.Tensor, brightness_factor: float
 ) -> torch.Tensor:
     """Adjust brightness."""
     if torch.jit.is_scripting():
