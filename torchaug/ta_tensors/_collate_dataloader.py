@@ -1,9 +1,7 @@
 import contextlib
-
 from typing import Callable, Dict, Optional, Tuple, Type, Union
 
 import torch
-
 from torch.utils.data._utils.collate import (
     collate,
     collate_float_fn,
@@ -52,9 +50,7 @@ def collate_ta_tensor_fn(
         raise TypeError(default_collate_err_msg_format.format(type(batch)))
 
 
-torchaug_default_collate_fn_map: Dict[Union[Type, Tuple[Type, ...]], Callable] = {
-    torch.Tensor: collate_tensor_fn
-}
+torchaug_default_collate_fn_map: Dict[Union[Type, Tuple[Type, ...]], Callable] = {torch.Tensor: collate_tensor_fn}
 with contextlib.suppress(ImportError):
     import numpy as np
 
@@ -62,9 +58,7 @@ with contextlib.suppress(ImportError):
     torchaug_default_collate_fn_map[np.ndarray] = collate_numpy_array_fn
     # See scalars hierarchy: https://numpy.org/doc/stable/reference/arrays.scalars.html
     # Skip string scalars
-    torchaug_default_collate_fn_map[(np.bool_, np.number, np.object_)] = (
-        collate_numpy_scalar_fn
-    )
+    torchaug_default_collate_fn_map[(np.bool_, np.number, np.object_)] = collate_numpy_scalar_fn
 torchaug_default_collate_fn_map[float] = collate_float_fn
 torchaug_default_collate_fn_map[int] = collate_int_fn
 torchaug_default_collate_fn_map[str] = collate_str_fn
@@ -84,11 +78,13 @@ for ta_type in [
 
 
 def default_collate(batch):
-    r"""
-    Take in a batch of data and put the elements within the batch into a tensor or ta_tensor with an additional outer dimension - batch size if relevant.
+    r"""Take in a batch of data and put the elements within the batch into a
+    tensor or ta_tensor with an additional outer dimension - batch size if relevant.
 
     The exact output type can be a :class:`torch.Tensor`, a `Sequence` of :class:`torch.Tensor`, a
-    Collection of :class:`torch.Tensor`, :class:`torchaug.ta_tensors.TATensor`, a `Sequence` of :class:`torchaug.ta_tensors.TATensor`, a Collection of :class:`torchaug.ta_tensors.TATensor`, or left unchanged, depending on the input type.
+    Collection of :class:`torch.Tensor`, :class:`torchaug.ta_tensors.TATensor`, a `Sequence` of
+    :class:`torchaug.ta_tensors.TATensor`, a Collection of :class:`torchaug.ta_tensors.TATensor`, or left unchanged,
+      depending on the input type.
     This is used as the default function for collation when
     `batch_size` or `batch_sampler` is defined in :class:`~torch.utils.data.DataLoader`.
 

@@ -12,7 +12,7 @@ from torchvision.transforms.v2.functional._meta import (
 )
 
 from torchaug import ta_tensors
-from torchaug.utils import _log_api_usage_once
+from torchaug._utils import _log_api_usage_once
 
 from ._utils._kernel import _get_kernel, _register_kernel_internal
 from ._utils._tensor import is_pure_tensor
@@ -30,17 +30,13 @@ def get_dimensions(inpt: torch.Tensor) -> List[int]:
 
 @_register_kernel_internal(get_dimensions, torch.Tensor)
 @_register_kernel_internal(get_dimensions, ta_tensors.Image, ta_tensor_wrapper=False)
-@_register_kernel_internal(
-    get_dimensions, ta_tensors.BatchImages, ta_tensor_wrapper=False
-)
+@_register_kernel_internal(get_dimensions, ta_tensors.BatchImages, ta_tensor_wrapper=False)
 def get_dimensions_image(image: torch.Tensor) -> List[int]:
     return TVF.get_dimensions_image(image=image)
 
 
 @_register_kernel_internal(get_dimensions, ta_tensors.Video, ta_tensor_wrapper=False)
-@_register_kernel_internal(
-    get_dimensions, ta_tensors.BatchVideos, ta_tensor_wrapper=False
-)
+@_register_kernel_internal(get_dimensions, ta_tensors.BatchVideos, ta_tensor_wrapper=False)
 def get_dimensions_video(video: torch.Tensor) -> List[int]:
     return get_dimensions_image(image=video)
 
@@ -57,17 +53,13 @@ def get_num_channels(inpt: torch.Tensor) -> int:
 
 @_register_kernel_internal(get_num_channels, torch.Tensor)
 @_register_kernel_internal(get_num_channels, ta_tensors.Image, ta_tensor_wrapper=False)
-@_register_kernel_internal(
-    get_num_channels, ta_tensors.BatchImages, ta_tensor_wrapper=False
-)
+@_register_kernel_internal(get_num_channels, ta_tensors.BatchImages, ta_tensor_wrapper=False)
 def get_num_channels_image(image: torch.Tensor) -> int:
     return TVF.get_num_channels_image(image=image)
 
 
 @_register_kernel_internal(get_num_channels, ta_tensors.Video, ta_tensor_wrapper=False)
-@_register_kernel_internal(
-    get_num_channels, ta_tensors.BatchVideos, ta_tensor_wrapper=False
-)
+@_register_kernel_internal(get_num_channels, ta_tensors.BatchVideos, ta_tensor_wrapper=False)
 def get_num_channels_video(video: torch.Tensor) -> int:
     return get_num_channels_image(video)
 
@@ -102,9 +94,7 @@ def get_size_mask(mask: torch.Tensor) -> List[int]:
 
 
 @_register_kernel_internal(get_size, ta_tensors.BoundingBoxes, ta_tensor_wrapper=False)
-@_register_kernel_internal(
-    get_size, ta_tensors.BatchBoundingBoxes, ta_tensor_wrapper=False
-)
+@_register_kernel_internal(get_size, ta_tensors.BatchBoundingBoxes, ta_tensor_wrapper=False)
 def get_size_bounding_boxes(bounding_box: ta_tensors.BoundingBoxes) -> List[int]:
     return list(bounding_box.canvas_size)
 
@@ -121,9 +111,7 @@ def get_num_frames(inpt: torch.Tensor) -> int:
 
 @_register_kernel_internal(get_num_frames, torch.Tensor)
 @_register_kernel_internal(get_num_frames, ta_tensors.Video, ta_tensor_wrapper=False)
-@_register_kernel_internal(
-    get_num_frames, ta_tensors.BatchVideos, ta_tensor_wrapper=False
-)
+@_register_kernel_internal(get_num_frames, ta_tensors.BatchVideos, ta_tensor_wrapper=False)
 def get_num_frames_video(video: torch.Tensor) -> int:
     return TVF.get_num_frames_video(video=video)
 
@@ -160,12 +148,10 @@ def convert_bounding_box_format(
     """See :func:`~torchaug.transforms.ConvertBoundingBoxFormat` for details."""
     # This being a kernel / functional hybrid, we need an option to pass `old_format` explicitly for pure tensor
     # inputs as well as extract it from `ta_tensors.BoundingBoxes` inputs. However, putting a default value on
-    # `old_format` means we also need to put one on `new_format` to have syntactically correct Python. Here we mimic the
-    # default error that would be thrown if `new_format` had no default value.
+    # `old_format` means we also need to put one on `new_format` to have syntactically correct Python. Here we
+    # mimic the default error that would be thrown if `new_format` had no default value.
     if new_format is None:
-        raise TypeError(
-            "convert_bounding_box_format() missing 1 required argument: 'new_format'"
-        )
+        raise TypeError("convert_bounding_box_format() missing 1 required argument: 'new_format'")
 
     if not torch.jit.is_scripting():
         _log_api_usage_once(convert_bounding_box_format)
@@ -178,14 +164,10 @@ def convert_bounding_box_format(
     if torch.jit.is_scripting() or is_pure_tensor(inpt):
         if old_format is None:
             raise ValueError("For pure tensor inputs, `old_format` has to be passed.")
-        return _convert_bounding_box_format(
-            inpt, old_format=old_format, new_format=new_format, inplace=inplace
-        )
+        return _convert_bounding_box_format(inpt, old_format=old_format, new_format=new_format, inplace=inplace)
     elif isinstance(inpt, (ta_tensors.BoundingBoxes, ta_tensors.BatchBoundingBoxes)):
         if old_format is not None:
-            raise ValueError(
-                "For bounding box ta_tensor inputs, `old_format` must not be passed."
-            )
+            raise ValueError("For bounding box ta_tensor inputs, `old_format` must not be passed.")
         output = _convert_bounding_box_format(
             inpt.as_subclass(torch.Tensor),
             old_format=inpt.format,
@@ -207,11 +189,7 @@ def _clamp_bounding_boxes(
     # TODO: Investigate if it makes sense from a performance perspective to have an implementation for every
     #  BoundingBoxFormat instead of converting back and forth
     in_dtype = bounding_boxes.dtype
-    bounding_boxes = (
-        bounding_boxes.clone()
-        if bounding_boxes.is_floating_point()
-        else bounding_boxes.float()
-    )
+    bounding_boxes = bounding_boxes.clone() if bounding_boxes.is_floating_point() else bounding_boxes.float()
     xyxy_boxes = convert_bounding_box_format(
         bounding_boxes,
         old_format=format,
@@ -240,15 +218,11 @@ def clamp_bounding_boxes(
 
     if torch.jit.is_scripting() or is_pure_tensor(inpt):
         if format is None or canvas_size is None:
-            raise ValueError(
-                "For pure tensor inputs, `format` and `canvas_size` have to be passed."
-            )
+            raise ValueError("For pure tensor inputs, `format` and `canvas_size` have to be passed.")
         return _clamp_bounding_boxes(inpt, format=format, canvas_size=canvas_size)
     elif isinstance(inpt, (ta_tensors.BoundingBoxes, ta_tensors.BatchBoundingBoxes)):
         if format is not None or canvas_size is not None:
-            raise ValueError(
-                "For bounding box ta_tensor inputs, `format` and `canvas_size` must not be passed."
-            )
+            raise ValueError("For bounding box ta_tensor inputs, `format` and `canvas_size` must not be passed.")
         output = _clamp_bounding_boxes(
             inpt.as_subclass(torch.Tensor),
             format=inpt.format,

@@ -12,7 +12,6 @@ from torchaug import ta_tensors
 
 from . import functional as F
 from ._transform import RandomApplyTransform, Transform
-
 from ._utils import is_pure_tensor, query_size
 
 
@@ -29,7 +28,8 @@ class RandomErasing(RandomApplyTransform):
             erase all pixels. If a tuple of length 3, it is used to erase
             R, G, B channels respectively.
             If a str of 'random', erasing each pixel with random values.
-        batch_inplace: whether to apply the batch transform in-place. Does not prevent functionals to make copy but can reduce time and memory consumption.
+        batch_inplace: whether to apply the batch transform in-place.
+            Does not prevent functionals to make copy but can reduce time and memory consumption.
         num_chunks: number of chunks to split the batched input into.
         permute_chunks: whether to permute the chunks.
         batch_transform: whether to apply the transform in batch mode.
@@ -57,9 +57,7 @@ class RandomErasing(RandomApplyTransform):
             ),
         )
         if not isinstance(value, (numbers.Number, str, tuple, list)):
-            raise TypeError(
-                "Argument value should be either a number or str or a sequence"
-            )
+            raise TypeError("Argument value should be either a number or str or a sequence")
         if isinstance(value, str) and value != "random":
             raise ValueError("If value is str, it should be 'random'")
         if not isinstance(scale, (tuple, list)):
@@ -84,9 +82,7 @@ class RandomErasing(RandomApplyTransform):
 
         self._log_ratio = torch.log(torch.tensor(self.ratio))
 
-    def _call_kernel(
-        self, functional: Callable, inpt: Any, *args: Any, **kwargs: Any
-    ) -> Any:
+    def _call_kernel(self, functional: Callable, inpt: Any, *args: Any, **kwargs: Any) -> Any:
         if isinstance(
             inpt,
             (
@@ -122,9 +118,7 @@ class RandomErasing(RandomApplyTransform):
 
         for i in range(num_chunks):
             for _ in range(10):
-                erase_area = (
-                    area * torch.empty(1).uniform_(self.scale[0], self.scale[1]).item()
-                )
+                erase_area = area * torch.empty(1).uniform_(self.scale[0], self.scale[1]).item()
                 aspect_ratio = torch.exp(
                     torch.empty(1).uniform_(
                         log_ratio[0],  # type: ignore[arg-type]
@@ -148,7 +142,7 @@ class RandomErasing(RandomApplyTransform):
             else:
                 i, j, h, w, v = 0, 0, img_h, img_w, None
 
-            params.append(dict(i=i, j=j, h=h, w=w, v=v))
+            params.append({"i": i, "j": j, "h": h, "w": w, "v": v})
 
         return params
 
@@ -165,14 +159,10 @@ class RandomErasing(RandomApplyTransform):
 
 
 class _BaseMixUpCutMix(Transform):
-    def __init__(
-        self, *, alpha: float = 1.0, num_classes: int, labels_getter="default"
-    ) -> None:
+    def __init__(self, *, alpha: float = 1.0, num_classes: int, labels_getter="default") -> None:
         super().__init__(batch_transform=True)
         self.alpha = float(alpha)
-        self._dist = torch.distributions.Beta(
-            torch.tensor([alpha]), torch.tensor([alpha])
-        )
+        self._dist = torch.distributions.Beta(torch.tensor([alpha]), torch.tensor([alpha]))
 
         self.num_classes = num_classes
 
@@ -192,40 +182,27 @@ class _BaseMixUpCutMix(Transform):
             ta_tensors.Mask,
             ta_tensors.BatchMasks,
         ):
-            raise ValueError(
-                f"{type(self).__name__}() supports only batch of images or videos."
-            )
+            raise ValueError(f"{type(self).__name__}() supports only batch of images or videos.")
 
         labels = self._labels_getter(inputs)
         if not isinstance(labels, torch.Tensor):
-            raise ValueError(
-                f"The labels must be a tensor, but got {type(labels)} instead."
-            )
+            raise ValueError(f"The labels must be a tensor, but got {type(labels)} instead.")
         elif labels.ndim != 1:
             raise ValueError(
-                f"labels tensor should be of shape (batch_size,) "
-                f"but got shape {labels.shape} instead."
+                f"labels tensor should be of shape (batch_size,) " f"but got shape {labels.shape} instead."
             )
 
         params = {
             "labels": labels,
             "batch_size": labels.shape[0],
             **self._get_params(
-                [
-                    inpt
-                    for (inpt, needs_transform) in zip(
-                        flat_inputs, needs_transform_list
-                    )
-                    if needs_transform
-                ]
+                [inpt for (inpt, needs_transform) in zip(flat_inputs, needs_transform_list) if needs_transform]
             ),
         }
 
         # By default, the labels will be False inside needs_transform_list, since they are a torch.Tensor coming
         # after an image or video. However, we need to handle them in _transform, so we make sure to set them to True
-        needs_transform_list[
-            next(idx for idx, inpt in enumerate(flat_inputs) if inpt is labels)
-        ] = True
+        needs_transform_list[next(idx for idx, inpt in enumerate(flat_inputs) if inpt is labels)] = True
         flat_outputs = [
             self._transform(inpt, params) if needs_transform else inpt
             for (inpt, needs_transform) in zip(flat_inputs, needs_transform_list)
@@ -277,7 +254,7 @@ class MixUp(_BaseMixUpCutMix):
     """
 
     def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
-        return dict(lam=float(self._dist.sample(())))  # type: ignore[arg-type]
+        return {"lam": float(self._dist.sample(()))}  # type: ignore[arg-type]
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         lam = params["lam"]
@@ -354,7 +331,7 @@ class CutMix(_BaseMixUpCutMix):
 
         lam_adjusted = float(1.0 - (x2 - x1) * (y2 - y1) / (W * H))
 
-        return dict(box=box, lam_adjusted=lam_adjusted)
+        return {"box": box, "lam_adjusted": lam_adjusted}
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         if inpt is params["labels"]:

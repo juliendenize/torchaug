@@ -7,9 +7,7 @@ import torch
 from torchaug import ta_tensors
 
 
-def _transfer_tensor_on_device(
-    tensor: torch.Tensor, device: torch.device, non_blocking: bool = False
-) -> torch.Tensor:
+def _transfer_tensor_on_device(tensor: torch.Tensor, device: torch.device, non_blocking: bool = False) -> torch.Tensor:
     if non_blocking and not tensor.device == device and device.type == "cuda":
         tensor = tensor.pin_memory(device=device)
 
@@ -30,18 +28,12 @@ def _get_batch_factor(
     if isinstance(factor, (int, float)):
         factor = float(factor)
         if factor < min_value or factor > max_value:
-            raise ValueError(
-                f"factor should be in the range [{min_value}, {max_value}]."
-            )
+            raise ValueError(f"factor should be in the range [{min_value}, {max_value}].")
         factor = torch.tensor([factor], device=device, dtype=dtype).expand(batch_size)
     elif isinstance(factor, torch.Tensor):
         factor = _transfer_tensor_on_device(factor, device, True)
-        if value_check and torch.any(
-            torch.logical_or(torch.lt(factor, min_value), torch.gt(factor, max_value))
-        ):
-            raise ValueError(
-                f"factor should be in the range [{min_value}, {max_value}]."
-            )
+        if value_check and torch.any(torch.logical_or(torch.lt(factor, min_value), torch.gt(factor, max_value))):
+            raise ValueError(f"factor should be in the range [{min_value}, {max_value}].")
         if factor.numel() == 1:
             factor = factor.expand(batch_size)
         elif factor.numel() != batch_size:

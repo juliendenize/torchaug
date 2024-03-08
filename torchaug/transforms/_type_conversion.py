@@ -6,6 +6,7 @@ import numpy as np
 import torch
 
 from torchaug import ta_tensors
+
 from . import functional as F
 from ._transform import Transform
 from ._utils import is_pure_tensor
@@ -20,9 +21,7 @@ class ToImage(Transform):
 
     _transformed_types = (is_pure_tensor, np.ndarray, ta_tensors.BatchImages)
 
-    def _transform(
-        self, inpt: Union[torch.Tensor, np.ndarray], params: Dict[str, Any]
-    ) -> ta_tensors.Image:
+    def _transform(self, inpt: Union[torch.Tensor, np.ndarray], params: Dict[str, Any]) -> ta_tensors.Image:
         return F.to_image(inpt)
 
 

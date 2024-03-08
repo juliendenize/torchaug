@@ -8,6 +8,7 @@ from torchvision.tv_tensors import BoundingBoxFormat as TVBoundingBoxFormat
 
 from ._ta_tensor import TATensor
 
+
 BoundingBoxFormat = TVBoundingBoxFormat
 
 
@@ -66,9 +67,7 @@ class BoundingBoxes(TATensor):
         device: torch.device | str | int | None = None,
         requires_grad: bool = None,
     ) -> BoundingBoxes:
-        tensor = cls._to_tensor(
-            data, dtype=dtype, device=device, requires_grad=requires_grad
-        )
+        tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
         return cls._wrap(tensor, format=format, canvas_size=canvas_size)
 
     @classmethod
@@ -84,24 +83,17 @@ class BoundingBoxes(TATensor):
         # This should be what we want in most cases. When it's not, it's probably a mis-use anyway, e.g.
         # something like some_xyxy_bbox + some_xywh_bbox; we don't guard against those cases.
         flat_params, _ = tree_flatten(args + (tuple(kwargs.values()) if kwargs else ()))  # type: ignore[operator]
-        first_bbox_from_args = next(
-            x for x in flat_params if isinstance(x, BoundingBoxes)
-        )
+        first_bbox_from_args = next(x for x in flat_params if isinstance(x, BoundingBoxes))
         format, canvas_size = (
             first_bbox_from_args.format,
             first_bbox_from_args.canvas_size,
         )
 
         if isinstance(output, torch.Tensor) and not isinstance(output, BoundingBoxes):
-            output = BoundingBoxes._wrap(
-                output, format=format, canvas_size=canvas_size, check_dims=False
-            )
+            output = BoundingBoxes._wrap(output, format=format, canvas_size=canvas_size, check_dims=False)
         elif isinstance(output, (tuple, list)):
             output = type(output)(
-                BoundingBoxes._wrap(
-                    part, format=format, canvas_size=canvas_size, check_dims=False
-                )
-                for part in output
+                BoundingBoxes._wrap(part, format=format, canvas_size=canvas_size, check_dims=False) for part in output
             )
         return output
 

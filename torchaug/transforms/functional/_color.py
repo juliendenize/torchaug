@@ -7,10 +7,9 @@ import torchvision.transforms.v2.functional as TVF
 from torchvision.transforms.v2.functional._color import _hsv_to_rgb, _rgb_to_hsv
 
 from torchaug import ta_tensors
+from torchaug._utils import _log_api_usage_once
 
-from torchaug.utils import _log_api_usage_once
 from ._misc import to_dtype_image
-
 from ._utils._kernel import _get_kernel, _register_kernel_internal
 from ._utils._tensor import _get_batch_factor, _max_value
 
@@ -49,25 +48,17 @@ def rgb_to_grayscale(inpt: torch.Tensor, num_output_channels: int = 1) -> torch.
 @_register_kernel_internal(rgb_to_grayscale, torch.Tensor)
 @_register_kernel_internal(rgb_to_grayscale, ta_tensors.Image)
 @_register_kernel_internal(rgb_to_grayscale, ta_tensors.BatchImages)
-def rgb_to_grayscale_image(
-    image: torch.Tensor, num_output_channels: int = 1
-) -> torch.Tensor:
-    return _rgb_to_grayscale_image(
-        image=image, num_output_channels=num_output_channels, preserve_dtype=True
-    )
+def rgb_to_grayscale_image(image: torch.Tensor, num_output_channels: int = 1) -> torch.Tensor:
+    return _rgb_to_grayscale_image(image=image, num_output_channels=num_output_channels, preserve_dtype=True)
 
 
 @_register_kernel_internal(rgb_to_grayscale, ta_tensors.Video)
 @_register_kernel_internal(rgb_to_grayscale, ta_tensors.BatchVideos)
-def rgb_to_grayscale_video(
-    video: torch.Tensor, num_output_channels: int = 1
-) -> torch.Tensor:
+def rgb_to_grayscale_video(video: torch.Tensor, num_output_channels: int = 1) -> torch.Tensor:
     return rgb_to_grayscale_image(image=video, num_output_channels=num_output_channels)
 
 
-def _batch_blend(
-    images1: torch.Tensor, images2: torch.Tensor, ratio: torch.Tensor
-) -> torch.Tensor:
+def _batch_blend(images1: torch.Tensor, images2: torch.Tensor, ratio: torch.Tensor) -> torch.Tensor:
     ratio = ratio.float()
     fp = images1.is_floating_point()
     bound = _max_value(images1.dtype)
@@ -95,9 +86,7 @@ def adjust_brightness_batch(
 ) -> torch.Tensor:
     """Adjust brightness."""
     if torch.jit.is_scripting():
-        return adjust_brightness_batch_images(
-            inpt, brightness_factor=brightness_factor, value_check=value_check
-        )
+        return adjust_brightness_batch_images(inpt, brightness_factor=brightness_factor, value_check=value_check)
 
     _log_api_usage_once(adjust_brightness_batch)
 
@@ -108,17 +97,13 @@ def adjust_brightness_batch(
 @_register_kernel_internal(adjust_brightness, torch.Tensor)
 @_register_kernel_internal(adjust_brightness, ta_tensors.Image)
 @_register_kernel_internal(adjust_brightness, ta_tensors.BatchImages)
-def adjust_brightness_image(
-    image: torch.Tensor, brightness_factor: float
-) -> torch.Tensor:
+def adjust_brightness_image(image: torch.Tensor, brightness_factor: float) -> torch.Tensor:
     return TVF.adjust_brightness_image(image=image, brightness_factor=brightness_factor)
 
 
 @_register_kernel_internal(adjust_brightness, ta_tensors.Video)
 @_register_kernel_internal(adjust_brightness, ta_tensors.BatchVideos)
-def adjust_brightness_video(
-    video: torch.Tensor, brightness_factor: float
-) -> torch.Tensor:
+def adjust_brightness_video(video: torch.Tensor, brightness_factor: float) -> torch.Tensor:
     return adjust_brightness_image(image=video, brightness_factor=brightness_factor)
 
 
@@ -131,13 +116,9 @@ def adjust_brightness_batch_images(
 ) -> torch.Tensor:
     c = images.shape[-3]
     if c not in [1, 3]:
-        raise TypeError(
-            f"Input image tensor permitted channel values are 1 or 3, but found {c}"
-        )
+        raise TypeError(f"Input image tensor permitted channel values are 1 or 3, but found {c}")
 
-    brightness_factor = _get_batch_factor(
-        brightness_factor, images.shape[0], images.device, None, value_check
-    )
+    brightness_factor = _get_batch_factor(brightness_factor, images.shape[0], images.device, None, value_check)
 
     fp = images.is_floating_point()
     brightness_factor = brightness_factor.float()
@@ -157,9 +138,7 @@ def adjust_brightness_batch_videos(
     brightness_factor: float | torch.Tensor,
     value_check: bool = False,
 ):
-    return adjust_brightness_batch_images(
-        images=videos, brightness_factor=brightness_factor, value_check=value_check
-    )
+    return adjust_brightness_batch_images(images=videos, brightness_factor=brightness_factor, value_check=value_check)
 
 
 def adjust_saturation(inpt: torch.Tensor, saturation_factor: float) -> torch.Tensor:
@@ -180,9 +159,7 @@ def adjust_saturation_batch(
 ) -> torch.Tensor:
     """Adjust saturation."""
     if torch.jit.is_scripting():
-        return adjust_saturation_batch_images(
-            inpt, saturation_factor=saturation_factor, value_check=value_check
-        )
+        return adjust_saturation_batch_images(inpt, saturation_factor=saturation_factor, value_check=value_check)
 
     _log_api_usage_once(adjust_saturation_batch)
 
@@ -193,17 +170,13 @@ def adjust_saturation_batch(
 @_register_kernel_internal(adjust_saturation, torch.Tensor)
 @_register_kernel_internal(adjust_saturation, ta_tensors.Image)
 @_register_kernel_internal(adjust_saturation, ta_tensors.BatchImages)
-def adjust_saturation_image(
-    image: torch.Tensor, saturation_factor: float
-) -> torch.Tensor:
+def adjust_saturation_image(image: torch.Tensor, saturation_factor: float) -> torch.Tensor:
     return TVF.adjust_saturation_image(image=image, saturation_factor=saturation_factor)
 
 
 @_register_kernel_internal(adjust_saturation, ta_tensors.Video)
 @_register_kernel_internal(adjust_saturation, ta_tensors.BatchVideos)
-def adjust_saturation_video(
-    video: torch.Tensor, saturation_factor: float
-) -> torch.Tensor:
+def adjust_saturation_video(video: torch.Tensor, saturation_factor: float) -> torch.Tensor:
     return adjust_saturation_image(image=video, saturation_factor=saturation_factor)
 
 
@@ -216,16 +189,12 @@ def adjust_saturation_batch_images(
 ) -> torch.Tensor:
     c = images.shape[-3]
     if c not in [1, 3]:
-        raise TypeError(
-            f"Input image tensor permitted channel values are 1 or 3, but found {c}"
-        )
+        raise TypeError(f"Input image tensor permitted channel values are 1 or 3, but found {c}")
 
     if c == 1:  # Match PIL behaviour
         return images
 
-    saturation_factor = _get_batch_factor(
-        saturation_factor, images.shape[0], images.device, None, value_check
-    )
+    saturation_factor = _get_batch_factor(saturation_factor, images.shape[0], images.device, None, value_check)
 
     return _batch_blend(images, rgb_to_grayscale(images), saturation_factor)
 
@@ -236,9 +205,7 @@ def adjust_saturation_batch_videos(
     saturation_factor: float | torch.Tensor,
     value_check: bool = False,
 ) -> torch.Tensor:
-    return adjust_saturation_batch_images(
-        video, saturation_factor=saturation_factor, value_check=value_check
-    )
+    return adjust_saturation_batch_images(video, saturation_factor=saturation_factor, value_check=value_check)
 
 
 def adjust_contrast(inpt: torch.Tensor, contrast_factor: float) -> torch.Tensor:
@@ -257,9 +224,7 @@ def adjust_contrast_batch(
 ) -> torch.Tensor:
     """Adjust contrast."""
     if torch.jit.is_scripting():
-        return adjust_contrast_batch_images(
-            inpt, contrast_factor=contrast_factor, value_check=value_check
-        )
+        return adjust_contrast_batch_images(inpt, contrast_factor=contrast_factor, value_check=value_check)
 
     _log_api_usage_once(adjust_contrast_batch)
 
@@ -289,19 +254,13 @@ def adjust_contrast_batch_images(
 ) -> torch.Tensor:
     c = images.shape[-3]
     if c not in [1, 3]:
-        raise TypeError(
-            f"Input image tensor permitted channel values are 1 or 3, but found {c}"
-        )
+        raise TypeError(f"Input image tensor permitted channel values are 1 or 3, but found {c}")
 
-    contrast_factor = _get_batch_factor(
-        contrast_factor, images.shape[0], images.device, None, value_check
-    )
+    contrast_factor = _get_batch_factor(contrast_factor, images.shape[0], images.device, None, value_check)
 
     fp = images.is_floating_point()
     if c == 3:
-        grayscale_images = _rgb_to_grayscale_image(
-            images, num_output_channels=1, preserve_dtype=False
-        )
+        grayscale_images = _rgb_to_grayscale_image(images, num_output_channels=1, preserve_dtype=False)
         if not fp:
             grayscale_images = grayscale_images.floor_()
     else:
@@ -312,14 +271,12 @@ def adjust_contrast_batch_images(
 
 
 @_register_kernel_internal(adjust_contrast_batch, ta_tensors.BatchVideos)
-def adjust_contrast_batch_videos(
-    videos: torch.Tensor, contrast_factor: float | torch.Tensor
-) -> torch.Tensor:
+def adjust_contrast_batch_videos(videos: torch.Tensor, contrast_factor: float | torch.Tensor) -> torch.Tensor:
     return adjust_contrast_batch_images(videos, contrast_factor=contrast_factor)
 
 
 def adjust_sharpness(inpt: torch.Tensor, sharpness_factor: float) -> torch.Tensor:
-    """See :class:`torchvision.transforms.RandomAdjustSharpness`"""
+    """See :class:`torchvision.transforms.RandomAdjustSharpness`."""
     if torch.jit.is_scripting():
         return adjust_sharpness_image(inpt, sharpness_factor=sharpness_factor)
 
@@ -332,17 +289,13 @@ def adjust_sharpness(inpt: torch.Tensor, sharpness_factor: float) -> torch.Tenso
 @_register_kernel_internal(adjust_sharpness, torch.Tensor)
 @_register_kernel_internal(adjust_sharpness, ta_tensors.Image)
 @_register_kernel_internal(adjust_sharpness, ta_tensors.BatchImages)
-def adjust_sharpness_image(
-    image: torch.Tensor, sharpness_factor: float
-) -> torch.Tensor:
+def adjust_sharpness_image(image: torch.Tensor, sharpness_factor: float) -> torch.Tensor:
     return TVF.adjust_sharpness_image(image=image, sharpness_factor=sharpness_factor)
 
 
 @_register_kernel_internal(adjust_sharpness, ta_tensors.Video)
 @_register_kernel_internal(adjust_sharpness, ta_tensors.BatchVideos)
-def adjust_sharpness_video(
-    video: torch.Tensor, sharpness_factor: float
-) -> torch.Tensor:
+def adjust_sharpness_video(video: torch.Tensor, sharpness_factor: float) -> torch.Tensor:
     return TVF.adjust_sharpness_image(image=video, sharpness_factor=sharpness_factor)
 
 
@@ -357,14 +310,10 @@ def adjust_hue(inpt: torch.Tensor, hue_factor: float) -> torch.Tensor:
     return kernel(inpt, hue_factor=hue_factor)
 
 
-def adjust_hue_batch(
-    inpt: torch.Tensor, hue_factor: float | torch.Tensor, value_check: bool = False
-) -> torch.Tensor:
+def adjust_hue_batch(inpt: torch.Tensor, hue_factor: float | torch.Tensor, value_check: bool = False) -> torch.Tensor:
     """Adjust hue."""
     if torch.jit.is_scripting():
-        return adjust_hue_batch_images(
-            inpt, hue_factor=hue_factor, value_check=value_check
-        )
+        return adjust_hue_batch_images(inpt, hue_factor=hue_factor, value_check=value_check)
 
     _log_api_usage_once(adjust_hue_batch)
 
@@ -392,9 +341,7 @@ def adjust_hue_batch_images(
 ) -> torch.Tensor:
     c = images.shape[-3]
     if c not in [1, 3]:
-        raise TypeError(
-            f"Input images tensor permitted channel values are 1 or 3, but found {c}"
-        )
+        raise TypeError(f"Input images tensor permitted channel values are 1 or 3, but found {c}")
 
     if c == 1:  # Match PIL behaviour
         return images
@@ -433,9 +380,7 @@ def adjust_hue_batch_images(
 def adjust_hue_batch_videos(
     videos: torch.Tensor, hue_factor: float | torch.Tensor, value_check: bool = False
 ) -> torch.Tensor:
-    return adjust_hue_batch_images(
-        images=videos, hue_factor=hue_factor, value_check=value_check
-    )
+    return adjust_hue_batch_images(images=videos, hue_factor=hue_factor, value_check=value_check)
 
 
 def adjust_gamma(
@@ -456,17 +401,13 @@ def adjust_gamma(
 @_register_kernel_internal(adjust_gamma, torch.Tensor)
 @_register_kernel_internal(adjust_gamma, ta_tensors.Image)
 @_register_kernel_internal(adjust_gamma, ta_tensors.BatchImages)
-def adjust_gamma_image(
-    image: torch.Tensor, gamma: float, gain: float = 1.0
-) -> torch.Tensor:
+def adjust_gamma_image(image: torch.Tensor, gamma: float, gain: float = 1.0) -> torch.Tensor:
     return TVF.adjust_gamma_image(image=image, gamma=gamma, gain=gain)
 
 
 @_register_kernel_internal(adjust_gamma, ta_tensors.Video)
 @_register_kernel_internal(adjust_gamma, ta_tensors.BatchVideos)
-def adjust_gamma_video(
-    video: torch.Tensor, gamma: float, gain: float = 1
-) -> torch.Tensor:
+def adjust_gamma_video(video: torch.Tensor, gamma: float, gain: float = 1) -> torch.Tensor:
     return adjust_gamma_image(image=video, gamma=gamma, gain=gain)
 
 

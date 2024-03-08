@@ -3,14 +3,15 @@ import itertools
 
 import pytest
 import torch
+import torchvision.transforms.v2.functional as TVF
+
 import torchaug.transforms as transforms
 import torchaug.transforms.functional as F
-import torchvision.transforms.v2.functional as TVF
 from torchaug import ta_tensors
 
 from ..utils import (
-    assert_equal,
     BOUNDING_BOXES_MAKERS,
+    assert_equal,
     check_functional,
     check_kernel,
     check_transform,
@@ -19,9 +20,7 @@ from ..utils import (
 
 
 class TestConvertBoundingBoxFormat:
-    old_new_formats = list(
-        itertools.permutations(iter(ta_tensors.BoundingBoxFormat), 2)
-    )
+    old_new_formats = list(itertools.permutations(iter(ta_tensors.BoundingBoxFormat), 2))
 
     @pytest.mark.parametrize(("old_format", "new_format"), old_new_formats)
     @pytest.mark.parametrize("make_input", BOUNDING_BOXES_MAKERS)
@@ -40,9 +39,7 @@ class TestConvertBoundingBoxFormat:
         input = make_input(format=format).as_subclass(torch.Tensor)
         input_version = input._version
 
-        output = F.convert_bounding_box_format(
-            input, old_format=format, new_format=format, inplace=inplace
-        )
+        output = F.convert_bounding_box_format(input, old_format=format, new_format=format, inplace=inplace)
 
         assert output is input
         assert output.data_ptr() == input.data_ptr()
@@ -54,9 +51,7 @@ class TestConvertBoundingBoxFormat:
         input = make_input(format=old_format).as_subclass(torch.Tensor)
         input_version = input._version
 
-        output_out_of_place = F.convert_bounding_box_format(
-            input, old_format=old_format, new_format=new_format
-        )
+        output_out_of_place = F.convert_bounding_box_format(input, old_format=old_format, new_format=new_format)
         assert output_out_of_place.data_ptr() != input.data_ptr()
         assert output_out_of_place is not input
 
@@ -83,9 +78,7 @@ class TestConvertBoundingBoxFormat:
     @pytest.mark.parametrize("make_input", BOUNDING_BOXES_MAKERS)
     def test_transform(self, old_format, new_format, format_type, make_input):
         check_transform(
-            transforms.ConvertBoundingBoxFormat(
-                new_format.name if format_type == "str" else new_format
-            ),
+            transforms.ConvertBoundingBoxFormat(new_format.name if format_type == "str" else new_format),
             make_input(format=old_format),
         )
 
@@ -110,9 +103,7 @@ class TestConvertBoundingBoxFormat:
             )
         )
 
-        expected = TVF.convert_bounding_box_format(
-            input, old_format=old_format, new_format=new_format
-        )
+        expected = TVF.convert_bounding_box_format(input, old_format=old_format, new_format=new_format)
 
         old_format = old_format.name
         new_format = new_format.name
@@ -132,9 +123,7 @@ class TestConvertBoundingBoxFormat:
     @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("fn_type", ["functional", "transform"])
     @pytest.mark.parametrize("make_input", BOUNDING_BOXES_MAKERS)
-    def test_correctness(
-        self, old_format, new_format, dtype, device, fn_type, make_input
-    ):
+    def test_correctness(self, old_format, new_format, dtype, device, fn_type, make_input):
         bounding_boxes = make_input(format=old_format, dtype=dtype, device=device)
 
         if fn_type == "functional":
@@ -143,9 +132,7 @@ class TestConvertBoundingBoxFormat:
             fn = transforms.ConvertBoundingBoxFormat(format=new_format)
 
         actual = fn(bounding_boxes)
-        expected = TVF.convert_bounding_box_format(
-            bounding_boxes, old_format=old_format, new_format=new_format
-        )
+        expected = TVF.convert_bounding_box_format(bounding_boxes, old_format=old_format, new_format=new_format)
 
         assert_equal(actual, expected)
 
@@ -155,15 +142,11 @@ class TestConvertBoundingBoxFormat:
         input_pure_tensor = input_ta_tensor.as_subclass(torch.Tensor)
 
         for input in [input_ta_tensor, input_pure_tensor]:
-            with pytest.raises(
-                TypeError, match="missing 1 required argument: 'new_format'"
-            ):
+            with pytest.raises(TypeError, match="missing 1 required argument: 'new_format'"):
                 F.convert_bounding_box_format(input)
 
         with pytest.raises(ValueError, match="`old_format` has to be passed"):
-            F.convert_bounding_box_format(
-                input_pure_tensor, new_format=input_ta_tensor.format
-            )
+            F.convert_bounding_box_format(input_pure_tensor, new_format=input_ta_tensor.format)
 
         with pytest.raises(ValueError, match="`old_format` must not be passed"):
             F.convert_bounding_box_format(
@@ -207,9 +190,7 @@ class TestClampBoundingBoxes:
                 ValueError,
                 match="For pure tensor inputs, `format` and `canvas_size` have to be passed.",
             ):
-                F.clamp_bounding_boxes(
-                    input_pure_tensor, format=format_, canvas_size=canvas_size_
-                )
+                F.clamp_bounding_boxes(input_pure_tensor, format=format_, canvas_size=canvas_size_)
 
         for format_, canvas_size_ in [
             (format, canvas_size),
@@ -220,9 +201,7 @@ class TestClampBoundingBoxes:
                 ValueError,
                 match="For bounding box ta_tensor inputs, `format` and `canvas_size` must not be passed.",
             ):
-                F.clamp_bounding_boxes(
-                    input_ta_tensor, format=format_, canvas_size=canvas_size_
-                )
+                F.clamp_bounding_boxes(input_ta_tensor, format=format_, canvas_size=canvas_size_)
 
     @pytest.mark.parametrize("make_bounding_boxes", BOUNDING_BOXES_MAKERS)
     def test_transform(self, make_bounding_boxes):

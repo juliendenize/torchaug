@@ -41,12 +41,8 @@ class TATensor(torch.Tensor):
         requires_grad: Optional[bool] = None,
     ) -> torch.Tensor:
         if requires_grad is None:
-            requires_grad = (
-                data.requires_grad if isinstance(data, torch.Tensor) else False
-            )
-        return torch.as_tensor(data, dtype=dtype, device=device).requires_grad_(
-            requires_grad
-        )
+            requires_grad = data.requires_grad if isinstance(data, torch.Tensor) else False
+        return torch.as_tensor(data, dtype=dtype, device=device).requires_grad_(requires_grad)
 
     @classmethod
     def _wrap_output(
@@ -61,9 +57,7 @@ class TATensor(torch.Tensor):
 
         if isinstance(output, (tuple, list)):
             # Also handles things like namedtuples
-            output = type(output)(
-                cls._wrap_output(part, args, kwargs) for part in output
-            )
+            output = type(output)(cls._wrap_output(part, args, kwargs) for part in output)
         return output
 
     @classmethod
@@ -75,7 +69,7 @@ class TATensor(torch.Tensor):
         kwargs: Optional[Mapping[str, Any]] = None,
     ) -> torch.Tensor:
         """For general information about how the __torch_function__ protocol works,
-        see https://pytorch.org/docs/stable/notes/extending.html#extending-torch
+        see https://pytorch.org/docs/stable/notes/extending.html#extending-torch.
 
         TL;DR: Every time a PyTorch operator is called, it goes through the inputs and looks for the
         ``__torch_function__`` method. If one is found, it is invoked with the operator as ``func`` as well as the
@@ -93,12 +87,10 @@ class TATensor(torch.Tensor):
         # Like in the base Tensor.__torch_function__ implementation, it's easier to always use
         # DisableTorchFunctionSubclass and then manually re-wrap the output if necessary
         with DisableTorchFunctionSubclass():
-            output = func(*args, **kwargs or dict())
+            output = func(*args, **kwargs or {})
 
         must_return_subclass = _must_return_subclass()
-        if must_return_subclass or (
-            func in _FORCE_TORCHFUNCTION_SUBCLASS and isinstance(args[0], cls)
-        ):
+        if must_return_subclass or (func in _FORCE_TORCHFUNCTION_SUBCLASS and isinstance(args[0], cls)):
             # The __torch_function__ protocol will invoke the __torch_function__ method on *all* types involved in
             # the computation by walking the MRO upwards. For example,
             # `out = a_pure_tensor.to(an_image)` will invoke `Image.__torch_function__` with
@@ -146,6 +138,6 @@ class TATensor(torch.Tensor):
         # *not* happen for `deepcopy(Tensor)`. A side-effect from detaching is that the `Tensor.requires_grad`
         # attribute is cleared, so we need to refill it before we return.
         # Note: We don't explicitly handle deep-copying of the metadata here. The only metadata we currently have is
-        # `BoundingBoxes.format` and `BoundingBoxes.canvas_size`, which are immutable and thus implicitly deep-copied by
-        # `BoundingBoxes.clone()`.
+        # `BoundingBoxes.format` and `BoundingBoxes.canvas_size`, which are immutable and thus implicitly deep-copied
+        # by `BoundingBoxes.clone()`.
         return self.detach().clone().requires_grad_(self.requires_grad)  # type: ignore[return-value]

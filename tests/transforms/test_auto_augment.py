@@ -1,19 +1,20 @@
 import pytest
 import torch
+import torchvision.transforms.v2 as tv_transforms
+
 import torchaug.transforms as transforms
 import torchaug.transforms.functional as F
-import torchvision.transforms.v2 as tv_transforms
 from torchaug import ta_tensors
 from torchaug.transforms.functional._utils import is_pure_tensor
 
 from ..utils import (
     BATCH_IMAGES_TENSOR_AND_MAKERS,
+    CORRECTNESS_FILLS,
+    IMAGE_MAKERS,
     check_transform,
     check_type,
-    CORRECTNESS_FILLS,
     cpu_and_cuda,
     freeze_rng_state,
-    IMAGE_MAKERS,
     make_batch_images,
     make_batch_images_tensor,
     make_batch_videos,
@@ -26,12 +27,11 @@ from ..utils import (
 class TestAutoAugmentTransforms:
     # These transforms have a lot of branches in their `forward()` passes which are conditioned on random sampling.
     # It's typically very hard to test the effect on some parameters without heavy mocking logic.
-    # This class adds correctness tests for the kernels that are specific to those transforms. The rest of kernels, e.g.
-    # rotate, are tested in their respective classes. The rest of the tests here are mostly smoke tests.
+    # This class adds correctness tests for the kernels that are specific to those transforms.
+    # The rest of kernels, e.g. rotate, are tested in their respective classes. The rest of the tests here are mostly
+    # smoke tests.
 
-    @pytest.mark.parametrize(
-        "transform_id", ["ShearX", "ShearY", "TranslateX", "TranslateY"]
-    )
+    @pytest.mark.parametrize("transform_id", ["ShearX", "ShearY", "TranslateX", "TranslateY"])
     @pytest.mark.parametrize("magnitude", [0.3, -0.2, 0.0])
     @pytest.mark.parametrize(
         "interpolation",
@@ -39,9 +39,7 @@ class TestAutoAugmentTransforms:
     )
     @pytest.mark.parametrize("fill", CORRECTNESS_FILLS)
     @pytest.mark.parametrize("make_input", IMAGE_MAKERS)
-    def test_correctness_shear_translate(
-        self, transform_id, magnitude, interpolation, fill, make_input
-    ):
+    def test_correctness_shear_translate(self, transform_id, magnitude, interpolation, fill, make_input):
         # ShearX/Y and TranslateX/Y are the only ops that are native to the AA transforms. They are modeled after the
         # reference implementation:
         # https://github.com/tensorflow/models/blob/885fda091c46c59d6c7bb5c7e760935eacc229da/research/autoaugment/augmentation_transforms.py#L273-L362
@@ -70,9 +68,7 @@ class TestAutoAugmentTransforms:
 
         if "Shear" in transform_id:
             mae = (actual.float() - expected.float()).abs().mean()
-            assert mae < (
-                12 if interpolation is transforms.InterpolationMode.NEAREST else 5
-            )
+            assert mae < (12 if interpolation is transforms.InterpolationMode.NEAREST else 5)
         else:
             torch.testing.assert_close(actual, expected, rtol=0, atol=1)
 
@@ -131,10 +127,7 @@ class TestAutoAugmentTransforms:
     @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_transform_smoke(self, transform, make_input, dtype, device):
-        if (
-            type(transform) is transforms.AugMix
-            and make_input not in BATCH_IMAGES_TENSOR_AND_MAKERS
-        ):
+        if type(transform) is transforms.AugMix and make_input not in BATCH_IMAGES_TENSOR_AND_MAKERS:
             pytest.skip("AugMix only supports batched input")
 
         input = make_input(dtype=dtype, device=device)

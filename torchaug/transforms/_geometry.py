@@ -17,7 +17,6 @@ from typing import (
 )
 
 import torch
-
 from torchvision.ops.boxes import box_iou
 from torchvision.transforms.functional import _get_perspective_coeffs
 from torchvision.transforms.v2 import InterpolationMode
@@ -38,8 +37,8 @@ from torchvision.transforms.v2.functional._geometry import _parse_pad_padding
 from torchaug import ta_tensors
 from torchaug.ta_tensors import set_return_type
 from torchaug.transforms.functional._utils._kernel import _FillType
-from . import functional as F
 
+from . import functional as F
 from ._transform import RandomApplyTransform, Transform
 from ._utils import (
     get_batch_bounding_boxes,
@@ -59,16 +58,13 @@ class RandomHorizontalFlip(RandomApplyTransform):
 
     Args:
         p: probability of the input being flipped.
-        batch_inplace: whether to apply the batch transform in-place. Does not prevent functionals to make copy but can reduce time and memory consumption.
+        batch_inplace: whether to apply the batch transform in-place.
+            Does not prevent functionals to make copy but can reduce time and memory consumption.
         batch_transform: whether to apply the transform in batch mode.
     """
 
-    def __init__(
-        self, p: float = 0.5, batch_inplace: bool = False, batch_transform: bool = False
-    ) -> None:
-        super().__init__(
-            p, batch_inplace=batch_inplace, batch_transform=batch_transform
-        )
+    def __init__(self, p: float = 0.5, batch_inplace: bool = False, batch_transform: bool = False) -> None:
+        super().__init__(p, batch_inplace=batch_inplace, batch_transform=batch_transform)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(F.horizontal_flip, inpt)
@@ -84,16 +80,13 @@ class RandomVerticalFlip(RandomApplyTransform):
 
     Args:
         p probability of the input being flipped.
-        batch_inplace: whether to apply the batch transform in-place. Does not prevent functionals to make copy but can reduce time and memory consumption.
+        batch_inplace: whether to apply the batch transform in-place.
+            Does not prevent functionals to make copy but can reduce time and memory consumption.
         batch_transform: whether to apply the transform in batch mode.
     """
 
-    def __init__(
-        self, p: float = 0.5, batch_inplace: bool = False, batch_transform: bool = False
-    ) -> None:
-        super().__init__(
-            p, batch_inplace=batch_inplace, batch_transform=batch_transform
-        )
+    def __init__(self, p: float = 0.5, batch_inplace: bool = False, batch_transform: bool = False) -> None:
+        super().__init__(p, batch_inplace=batch_inplace, batch_transform=batch_transform)
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(F.vertical_flip, inpt)
@@ -189,9 +182,7 @@ class CenterCrop(Transform):
     def __init__(self, size: Union[int, Sequence[int]]) -> None:
         super().__init__()
 
-        self.size = _setup_size(
-            size, error_msg="Please provide only two dimensions (h, w) for size."
-        )
+        self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(F.center_crop, inpt, output_size=self.size)
@@ -248,9 +239,7 @@ class RandomResizedCrop(Transform):
             permute_chunks=permute_chunks,
             batch_transform=batch_transform,
         )
-        self.size = _setup_size(
-            size, error_msg="Please provide only two dimensions (h, w) for size."
-        )
+        self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
 
         if not isinstance(scale, Sequence):
             raise TypeError("Scale should be a sequence")
@@ -281,9 +270,7 @@ class RandomResizedCrop(Transform):
 
         for _ in range(num_chunks):
             for _ in range(10):
-                target_area = (
-                    area * torch.empty(1).uniform_(self.scale[0], self.scale[1]).item()
-                )
+                target_area = area * torch.empty(1).uniform_(self.scale[0], self.scale[1]).item()
                 aspect_ratio = torch.exp(
                     torch.empty(1).uniform_(
                         log_ratio[0],  # type: ignore[arg-type]
@@ -313,7 +300,7 @@ class RandomResizedCrop(Transform):
                 i = (height - h) // 2
                 j = (width - w) // 2
 
-            params.append(dict(top=i, left=j, height=h, width=w))
+            params.append({"top": i, "left": j, "height": h, "width": w})
 
         return params
 
@@ -369,13 +356,9 @@ class FiveCrop(Transform):
 
     def __init__(self, size: Union[int, Sequence[int]]) -> None:
         super().__init__()
-        self.size = _setup_size(
-            size, error_msg="Please provide only two dimensions (h, w) for size."
-        )
+        self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
 
-    def _call_kernel(
-        self, functional: Callable, inpt: Any, *args: Any, **kwargs: Any
-    ) -> Any:
+    def _call_kernel(self, functional: Callable, inpt: Any, *args: Any, **kwargs: Any) -> Any:
         if isinstance(
             inpt,
             (
@@ -402,9 +385,7 @@ class FiveCrop(Transform):
             ta_tensors.Mask,
             ta_tensors.BatchMasks,
         ):
-            raise TypeError(
-                f"BoundingBoxes'es and Mask's are not supported by {type(self).__name__}()"
-            )
+            raise TypeError(f"BoundingBoxes'es and Mask's are not supported by {type(self).__name__}()")
 
 
 class TenCrop(Transform):
@@ -431,18 +412,12 @@ class TenCrop(Transform):
 
     _reshape_transform = True
 
-    def __init__(
-        self, size: Union[int, Sequence[int]], vertical_flip: bool = False
-    ) -> None:
+    def __init__(self, size: Union[int, Sequence[int]], vertical_flip: bool = False) -> None:
         super().__init__()
-        self.size = _setup_size(
-            size, error_msg="Please provide only two dimensions (h, w) for size."
-        )
+        self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
         self.vertical_flip = vertical_flip
 
-    def _call_kernel(
-        self, functional: Callable, inpt: Any, *args: Any, **kwargs: Any
-    ) -> Any:
+    def _call_kernel(self, functional: Callable, inpt: Any, *args: Any, **kwargs: Any) -> Any:
         if isinstance(
             inpt,
             (
@@ -466,14 +441,10 @@ class TenCrop(Transform):
             ta_tensors.Mask,
             ta_tensors.BatchMasks,
         ):
-            raise TypeError(
-                f"BoundingBoxes'es and Mask's are not supported by {type(self).__name__}()"
-            )
+            raise TypeError(f"BoundingBoxes'es and Mask's are not supported by {type(self).__name__}()")
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return self._call_kernel(
-            F.ten_crop, inpt, self.size, vertical_flip=self.vertical_flip
-        )
+        return self._call_kernel(F.ten_crop, inpt, self.size, vertical_flip=self.vertical_flip)
 
 
 class Pad(Transform):
@@ -536,13 +507,11 @@ class Pad(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = _get_fill(self._fill, type(inpt))
-        return self._call_kernel(
-            F.pad, inpt, padding=self.padding, fill=fill, padding_mode=self.padding_mode
-        )  # type: ignore[arg-type]
+        return self._call_kernel(F.pad, inpt, padding=self.padding, fill=fill, padding_mode=self.padding_mode)  # type: ignore[arg-type]
 
 
 class RandomZoomOut(RandomApplyTransform):
-    """ "Zoom out" transformation from
+    """Zoom out transformation from
     `"SSD: Single Shot MultiBox Detector" <https://arxiv.org/abs/1512.02325>`_.
 
     This transformation randomly pads images, videos, bounding boxes and masks creating a zoom out effect.
@@ -600,9 +569,7 @@ class RandomZoomOut(RandomApplyTransform):
         params = []
 
         for _ in range(num_chunks):
-            r = self.side_range[0] + torch.rand(1) * (
-                self.side_range[1] - self.side_range[0]
-            )
+            r = self.side_range[0] + torch.rand(1) * (self.side_range[1] - self.side_range[0])
             canvas_width = int(orig_w * r)
             canvas_height = int(orig_h * r)
 
@@ -613,7 +580,7 @@ class RandomZoomOut(RandomApplyTransform):
             bottom = canvas_height - (top + orig_h)
             padding = [left, top, right, bottom]
 
-            params.append(dict(padding=padding))
+            params.append({"padding": padding})
 
         return params
 
@@ -648,14 +615,15 @@ class RandomRotation(Transform):
 
                 In theory, setting ``center`` has no effect if ``expand=True``, since the image center will become the
                 center of rotation. In practice however, due to numerical precision, this can lead to off-by-one
-                differences of the resulting image size compared to using the image center in the first place. Thus, when
-                setting ``expand=True``, it's best to leave ``center=None`` (default).
+                differences of the resulting image size compared to using the image center in the first place. Thus,
+                when setting ``expand=True``, it's best to leave ``center=None`` (default).
         fill: Pixel fill value used when the  ``padding_mode`` is constant.
              If a tuple of length 3, it is used to fill R, G, B channels respectively.
             Fill value can be also a dictionary mapping data type to the fill value, e.g.
             ``fill={ta_tensors.Image: 127, ta_tensors.Mask: 0}`` where ``Image`` will be filled with 127 and
             ``Mask`` will be filled with 0.
-        batch_inplace: whether to apply the batch transform in-place. Does not prevent functionals to make copy but can reduce time and memory consumption.
+        batch_inplace: whether to apply the batch transform in-place.
+            Does not prevent functionals to make copy but can reduce time and memory consumption.
         num_chunks: number of chunks to split the batched input into.
         permute_chunks: whether to permute the chunks.
         batch_transform: whether to apply the transform in batch mode.
@@ -705,8 +673,7 @@ class RandomRotation(Transform):
         chunks_indices: List[torch.Tensor],
     ) -> Dict[str, Any]:
         params = [
-            dict(angle=torch.empty(1).uniform_(self.degrees[0], self.degrees[1]).item())
-            for _ in range(num_chunks)
+            {"angle": torch.empty(1).uniform_(self.degrees[0], self.degrees[1]).item()} for _ in range(num_chunks)
         ]
         return params
 
@@ -757,7 +724,8 @@ class RandomAffine(Transform):
             ``Mask`` will be filled with 0.
         center: Optional center of rotation, (x, y). Origin is the upper left corner.
             Default is the center of the image.
-        batch_inplace: whether to apply the batch transform in-place. Does not prevent functionals to make copy but can reduce time and memory consumption.
+        batch_inplace: whether to apply the batch transform in-place.
+            Does not prevent functionals to make copy but can reduce time and memory consumption.
         num_chunks: number of chunks to split the batched input into.
         permute_chunks: whether to permute the chunks.
         batch_transform: whether to apply the transform in batch mode.
@@ -844,14 +812,10 @@ class RandomAffine(Transform):
             if self.shear is not None:
                 shear_x = torch.empty(1).uniform_(self.shear[0], self.shear[1]).item()
                 if len(self.shear) == 4:
-                    shear_y = (
-                        torch.empty(1).uniform_(self.shear[2], self.shear[3]).item()
-                    )
+                    shear_y = torch.empty(1).uniform_(self.shear[2], self.shear[3]).item()
 
             shear = (shear_x, shear_y)
-            params.append(
-                dict(angle=angle, translate=translate, scale=scale, shear=shear)
-            )
+            params.append({"angle": angle, "translate": translate, "scale": scale, "shear": shear})
 
         return params
 
@@ -922,9 +886,7 @@ class RandomCrop(Transform):
     ) -> None:
         super().__init__()
 
-        self.size = _setup_size(
-            size, error_msg="Please provide only two dimensions (h, w) for size."
-        )
+        self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
 
         if pad_if_needed or padding is not None:
             if padding is not None:
@@ -975,7 +937,8 @@ class RandomCrop(Transform):
                 f"{'padded ' if self.padding is not None else ''}input image size {(padded_height, padded_width)}."
             )
 
-        # We need a different order here than we have in self.padding since this padding will be parsed again in `F.pad`
+        # We need a different order here than we have in self.padding since this padding will be parsed again
+        # in `F.pad`
         padding = [pad_left, pad_top, pad_right, pad_bottom]
         needs_pad = any(padding)
 
@@ -996,15 +959,15 @@ class RandomCrop(Transform):
             )
 
             params.append(
-                dict(
-                    needs_crop=needs_vert_crop or needs_horz_crop,
-                    top=top,
-                    left=left,
-                    height=cropped_height,
-                    width=cropped_width,
-                    needs_pad=needs_pad,
-                    padding=padding,
-                )
+                {
+                    "needs_crop": needs_vert_crop or needs_horz_crop,
+                    "top": top,
+                    "left": left,
+                    "height": cropped_height,
+                    "width": cropped_width,
+                    "needs_pad": needs_pad,
+                    "padding": padding,
+                }
             )
 
         return params
@@ -1052,7 +1015,8 @@ class RandomPerspective(RandomApplyTransform):
             Fill value can be also a dictionary mapping data type to the fill value, e.g.
             ``fill={ta_tensors.Image: 127, ta_tensors.Mask: 0}`` where ``Image`` will be filled with 127 and
             ``Mask`` will be filled with 0.
-        batch_inplace: whether to apply the batch transform in-place. Does not prevent functionals to make copy but can reduce time and memory consumption.
+        batch_inplace: whether to apply the batch transform in-place.
+            Does not prevent functionals to make copy but can reduce time and memory consumption.
         num_chunks: number of chunks to split the batched input into.
         permute_chunks: whether to permute the chunks.
         batch_transform: whether to apply the transform in batch mode.
@@ -1078,9 +1042,7 @@ class RandomPerspective(RandomApplyTransform):
         )
 
         if not (0 <= distortion_scale <= 1):
-            raise ValueError(
-                "Argument distortion_scale value should be between 0 and 1"
-            )
+            raise ValueError("Argument distortion_scale value should be between 0 and 1")
 
         self.distortion_scale = distortion_scale
         self.interpolation = interpolation
@@ -1129,7 +1091,7 @@ class RandomPerspective(RandomApplyTransform):
             ]
             endpoints = [topleft, topright, botright, botleft]
             perspective_coeffs = _get_perspective_coeffs(startpoints, endpoints)
-            params.append(dict(coefficients=perspective_coeffs))
+            params.append({"coefficients": perspective_coeffs})
 
         return params
 
@@ -1183,7 +1145,8 @@ class ElasticTransform(Transform):
             Fill value can be also a dictionary mapping data type to the fill value, e.g.
             ``fill={ta_tensors.Image: 127, ta_tensors.Mask: 0}`` where ``Image`` will be filled with 127 and
             ``Mask`` will be filled with 0.
-        batch_inplace: whether to apply the batch transform in-place. Does not prevent functionals to make copy but can reduce time and memory consumption.
+        batch_inplace: whether to apply the batch transform in-place.
+            Does not prevent functionals to make copy but can reduce time and memory consumption.
         batch_transform: whether to apply the transform in batch mode.
     """
 
@@ -1212,9 +1175,7 @@ class ElasticTransform(Transform):
     ) -> Dict[str, Any]:
         size = list(query_size(flat_inputs))
         device = chunks_indices[0].device
-        gaussian_blur = (
-            F.gaussian_blur_batch if self.batch_transform else F.gaussian_blur
-        )
+        gaussian_blur = F.gaussian_blur_batch if self.batch_transform else F.gaussian_blur
 
         params = []
 
@@ -1244,10 +1205,8 @@ class ElasticTransform(Transform):
                     ky += 1
                 dy = self._call_kernel(gaussian_blur, dy, [ky, ky], list(self.sigma))
             dy = dy * self.alpha[1] / size[1]
-            displacement = torch.concat([dx, dy], 1).permute(
-                [0, 2, 3, 1]
-            )  # B x H x W x 2
-            params.append(dict(displacement=displacement))
+            displacement = torch.concat([dx, dy], 1).permute([0, 2, 3, 1])  # B x H x W x 2
+            params.append({"displacement": displacement})
         return params
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
@@ -1326,8 +1285,8 @@ class RandomIoUCrop(Transform):
                 and has_any(flat_inputs, ta_tensors.BatchImages, is_pure_tensor)
             ):
                 raise TypeError(
-                    f"{type(self).__name__}(batch_transform=True) requires input sample to contain batch tensor or batch images "
-                    "and batch bounding boxes. Sample can also contain masks."
+                    f"{type(self).__name__}(batch_transform=True) requires input sample to contain batch tensor or"
+                    " batch images and batch bounding boxes. Sample can also contain masks."
                 )
 
     def _get_params(
@@ -1337,11 +1296,7 @@ class RandomIoUCrop(Transform):
         chunks_indices: List[torch.Tensor],
     ) -> Dict[str, Any]:
         orig_h, orig_w = query_size(flat_inputs)
-        bboxes = (
-            get_batch_bounding_boxes(flat_inputs)
-            if self.batch_transform
-            else get_bounding_boxes(flat_inputs)
-        )
+        bboxes = get_batch_bounding_boxes(flat_inputs) if self.batch_transform else get_bounding_boxes(flat_inputs)
 
         params = []
         for _ in range(num_chunks):
@@ -1350,24 +1305,18 @@ class RandomIoUCrop(Transform):
                 # sample an option
                 idx = int(torch.randint(low=0, high=len(self.options), size=(1,)))
                 min_jaccard_overlap = self.options[idx]
-                if (
-                    min_jaccard_overlap >= 1.0
-                ):  # a value larger than 1 encodes the leave as-is option
-                    params.append(dict())
+                if min_jaccard_overlap >= 1.0:  # a value larger than 1 encodes the leave as-is option
+                    params.append({})
                     valid = True
                     break
 
                 for _ in range(self.trials):
                     # check the aspect ratio limitations
-                    r = self.min_scale + (self.max_scale - self.min_scale) * torch.rand(
-                        2
-                    )
+                    r = self.min_scale + (self.max_scale - self.min_scale) * torch.rand(2)
                     new_w = int(orig_w * r[0])
                     new_h = int(orig_h * r[1])
                     aspect_ratio = new_w / new_h
-                    if not (
-                        self.min_aspect_ratio <= aspect_ratio <= self.max_aspect_ratio
-                    ):
+                    if not (self.min_aspect_ratio <= aspect_ratio <= self.max_aspect_ratio):
                         continue
 
                     # check for 0 area crops
@@ -1387,9 +1336,7 @@ class RandomIoUCrop(Transform):
                     )
                     cx = 0.5 * (xyxy_bboxes[..., 0] + xyxy_bboxes[..., 2])
                     cy = 0.5 * (xyxy_bboxes[..., 1] + xyxy_bboxes[..., 3])
-                    is_within_crop_area = (
-                        (left < cx) & (cx < right) & (top < cy) & (cy < bottom)
-                    )
+                    is_within_crop_area = (left < cx) & (cx < right) & (top < cy) & (cy < bottom)
                     if not is_within_crop_area.any():
                         continue
 
@@ -1407,13 +1354,13 @@ class RandomIoUCrop(Transform):
                         continue
 
                     params.append(
-                        dict(
-                            top=top,
-                            left=left,
-                            height=new_h,
-                            width=new_w,
-                            is_within_crop_area=is_within_crop_area,
-                        )
+                        {
+                            "top": top,
+                            "left": left,
+                            "height": new_h,
+                            "width": new_w,
+                            "is_within_crop_area": is_within_crop_area,
+                        }
                     )
                     valid = True
                     break
@@ -1433,9 +1380,7 @@ class RandomIoUCrop(Transform):
             width=params["width"],
         )
 
-        if isinstance(
-            output, (ta_tensors.BoundingBoxes, ta_tensors.BatchBoundingBoxes)
-        ):
+        if isinstance(output, (ta_tensors.BoundingBoxes, ta_tensors.BatchBoundingBoxes)):
             # We "mark" the invalid boxes as degenreate, and they can be
             # removed by a later call to SanitizeBoundingBoxes()
             output[~params["is_within_crop_area"]] = 0
@@ -1489,17 +1434,12 @@ class ScaleJitter(Transform):
         params = []
 
         for _ in range(num_chunks):
-            scale = self.scale_range[0] + torch.rand(1) * (
-                self.scale_range[1] - self.scale_range[0]
-            )
-            r = (
-                min(self.target_size[1] / orig_height, self.target_size[0] / orig_width)
-                * scale
-            )
+            scale = self.scale_range[0] + torch.rand(1) * (self.scale_range[1] - self.scale_range[0])
+            r = min(self.target_size[1] / orig_height, self.target_size[0] / orig_width) * scale
             new_width = int(orig_width * r)
             new_height = int(orig_height * r)
 
-            params.append(dict(size=(new_height, new_width)))
+            params.append({"size": (new_height, new_width)})
 
         return params
 
@@ -1565,7 +1505,7 @@ class RandomShortestSize(Transform):
             new_width = int(orig_width * r)
             new_height = int(orig_height * r)
 
-            params.append(dict(size=(new_height, new_width)))
+            params.append({"size": (new_height, new_width)})
 
         return params
 
@@ -1627,10 +1567,7 @@ class RandomResize(Transform):
         num_chunks: int,
         chunks_indices: List[torch.Tensor],
     ) -> Dict[str, Any]:
-        return [
-            dict(size=[int(torch.randint(self.min_size, self.max_size, ()))])
-            for _ in range(num_chunks)
-        ]
+        return [{"size": [int(torch.randint(self.min_size, self.max_size, ()))]} for _ in range(num_chunks)]
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(

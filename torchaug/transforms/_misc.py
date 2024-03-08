@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, Callable, cast, Dict, List, Optional, Sequence, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Type, Union, cast
 
 import torch
 from torch.utils._pytree import tree_flatten, tree_unflatten
-
 from torchvision.transforms.v2._utils import _setup_number_or_seq, _setup_size
 
 from torchaug import ta_tensors
@@ -55,18 +54,12 @@ class Lambda(Transform):
 
         needs_transform_list = self._needs_transform_list(flat_inputs)
         params = self._get_params(
-            [
-                inpt
-                for (inpt, needs_transform) in zip(flat_inputs, needs_transform_list)
-                if needs_transform
-            ],
+            [inpt for (inpt, needs_transform) in zip(flat_inputs, needs_transform_list) if needs_transform],
             num_chunks=1,
             chunks_indices=[
                 torch.tensor(
                     [0],
-                    device=flat_inputs[0].device
-                    if isinstance(flat_inputs[0], torch.Tensor)
-                    else "cpu",
+                    device=flat_inputs[0].device if isinstance(flat_inputs[0], torch.Tensor) else "cpu",
                 )
             ],
         )[0]
@@ -97,13 +90,14 @@ class LinearTransformation(Transform):
 
     Applications:
         whitening transformation: Suppose X is a column vector zero-centered data.
-        Then compute the data covariance matrix [D x D] or the batch covariance matrix [B x D x D] with torch.mm(X.t(), X),
-        perform SVD on this matrix and pass it as transformation_matrix.
+        Then compute the data covariance matrix [D x D] or the batch covariance matrix [B x D x D]
+        with torch.mm(X.t(), X), perform SVD on this matrix and pass it as transformation_matrix.
 
     Args:
         transformation_matrix: tensor [D x D] or [B x D X D], D = C x H x W
         mean_vector: tensor [D] or [B X D], D = C x H x W
-        batch_inplace: whether to apply the batch transform in-place. Does not prevent functionals to make copy but can reduce time and memory consumption.
+        batch_inplace: whether to apply the batch transform in-place.
+            Does not prevent functionals to make copy but can reduce time and memory consumption.
         batch_transform: whether to apply the transform in batch mode.
     """
 
@@ -134,7 +128,8 @@ class LinearTransformation(Transform):
 
         if transformation_matrix.device != mean_vector.device:
             raise ValueError(
-                f"Input tensors should be on the same device. Got {transformation_matrix.device} and {mean_vector.device}"
+                f"Input tensors should be on the same device. Got {transformation_matrix.device} and "
+                f"{mean_vector.device}"
             )
 
         if transformation_matrix.dtype != mean_vector.dtype:
@@ -210,9 +205,7 @@ class Normalize(Transform):
         self.inplace = inplace
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        return self._call_kernel(
-            F.normalize, inpt, mean=self.mean, std=self.std, inplace=self.inplace
-        )
+        return self._call_kernel(F.normalize, inpt, mean=self.mean, std=self.std, inplace=self.inplace)
 
 
 class RandomGaussianBlur(RandomApplyTransform):
@@ -228,7 +221,8 @@ class RandomGaussianBlur(RandomApplyTransform):
             of float (min, max), sigma is chosen uniformly at random to lie in the
             given range.
         p: probability of applying the transform.
-        batch_inplace: whether to apply the batch transform in-place. Does not prevent functionals to make copy but can reduce time and memory consumption.
+        batch_inplace: whether to apply the batch transform in-place.
+            Does not prevent functionals to make copy but can reduce time and memory consumption.
         batch_transform: whether to apply the transform in batch mode.
     """
 
@@ -240,24 +234,16 @@ class RandomGaussianBlur(RandomApplyTransform):
         batch_inplace: bool = False,
         batch_transform: bool = False,
     ) -> None:
-        super().__init__(
-            p=p, batch_inplace=batch_inplace, batch_transform=batch_transform
-        )
-        self.kernel_size = _setup_size(
-            kernel_size, "Kernel size should be a tuple/list of two integers"
-        )
+        super().__init__(p=p, batch_inplace=batch_inplace, batch_transform=batch_transform)
+        self.kernel_size = _setup_size(kernel_size, "Kernel size should be a tuple/list of two integers")
         for ks in self.kernel_size:
             if ks <= 0 or ks % 2 == 0:
-                raise ValueError(
-                    "Kernel size value should be an odd and positive number."
-                )
+                raise ValueError("Kernel size value should be an odd and positive number.")
 
         self.sigma = _setup_number_or_seq(sigma, "sigma")
 
         if not 0.0 < self.sigma[0] <= self.sigma[1]:
-            raise ValueError(
-                f"sigma values should be positive and of the form (min, max). Got {self.sigma}"
-            )
+            raise ValueError(f"sigma values should be positive and of the form (min, max). Got {self.sigma}")
 
     def _get_params(
         self,
@@ -270,7 +256,7 @@ class RandomGaussianBlur(RandomApplyTransform):
         for _ in range(num_chunks):
             if not self.batch_transform:
                 sigma = torch.empty(1).uniform_(self.sigma[0], self.sigma[1]).item()
-                params.append(dict(sigma=[sigma, sigma]))
+                params.append({"sigma": [sigma, sigma]})
             else:
                 device = chunks_indices[0].device
                 batch_size = chunks_indices[0].shape[0]
@@ -279,7 +265,7 @@ class RandomGaussianBlur(RandomApplyTransform):
                     .uniform_(self.sigma[0], self.sigma[1])
                     .expand(batch_size, 2)
                 )
-            params.append(dict(sigma=sigma))
+            params.append({"sigma": sigma})
 
         return params
 
@@ -304,7 +290,8 @@ class GaussianBlur(RandomGaussianBlur):
             creating kernel to perform blurring. If float, sigma is fixed. If it is tuple
             of float (min, max), sigma is chosen uniformly at random to lie in the
             given range.
-        batch_inplace: whether to apply the batch transform in-place. Does not prevent functionals to make copy but can reduce time and memory consumption.
+        batch_inplace: whether to apply the batch transform in-place.
+            Does not prevent functionals to make copy but can reduce time and memory consumption.
         batch_transform: whether to apply the transform in batch mode.
     """
 
@@ -348,9 +335,7 @@ class ToDtype(Transform):
         super().__init__()
 
         if not isinstance(dtype, (dict, torch.dtype)):
-            raise ValueError(
-                f"dtype must be a dict or a torch.dtype, got {type(dtype)} instead"
-            )
+            raise ValueError(f"dtype must be a dict or a torch.dtype, got {type(dtype)} instead")
 
         if (
             isinstance(dtype, dict)
@@ -396,7 +381,8 @@ class ToDtype(Transform):
         else:
             raise ValueError(
                 f"No dtype was specified for type {type(inpt)}. "
-                "If you only need to convert the dtype of images or videos, you can just pass e.g. dtype=torch.float32. "
+                "If you only need to convert the dtype of images or videos, you can just pass "
+                "e.g. dtype=torch.float32. "
                 "If you're passing a dict as dtype, "
                 'you can use "others" as a catch-all key '
                 'e.g. dtype={ta_tensors.Mask: torch.int64, "others": None} to pass-through the rest of the inputs.'
@@ -450,9 +436,7 @@ class SanitizeBoundingBoxes(Transform):
     def __init__(
         self,
         min_size: float = 1.0,
-        labels_getter: Union[
-            Callable[[Any], Optional[torch.Tensor]], str, None
-        ] = "default",
+        labels_getter: Union[Callable[[Any], Optional[torch.Tensor]], str, None] = "default",
     ) -> None:
         super().__init__()
 
@@ -507,7 +491,7 @@ class SanitizeBoundingBoxes(Transform):
         valid &= (boxes[:, 0] <= image_w) & (boxes[:, 2] <= image_w)
         valid &= (boxes[:, 1] <= image_h) & (boxes[:, 3] <= image_h)
 
-        params = dict(valid=valid.as_subclass(torch.Tensor), labels=labels)
+        params = {"valid": valid.as_subclass(torch.Tensor), "labels": labels}
         flat_outputs = [
             # Even-though it may look like we're transforming all inputs, we don't:
             # _transform() will only care about BoundingBoxeses and the labels
@@ -519,9 +503,7 @@ class SanitizeBoundingBoxes(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         is_label = inpt is not None and inpt is params["labels"]
-        is_bounding_boxes = isinstance(
-            inpt, (ta_tensors.BoundingBoxes, ta_tensors.BatchBoundingBoxes)
-        )
+        is_bounding_boxes = isinstance(inpt, (ta_tensors.BoundingBoxes, ta_tensors.BatchBoundingBoxes))
         is_mask = isinstance(inpt, (ta_tensors.Mask, ta_tensors.BatchMasks))
         is_bounding_boxes_or_mask = is_bounding_boxes or is_mask
 

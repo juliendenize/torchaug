@@ -7,6 +7,7 @@ import torch
 
 from torchaug import ta_tensors
 
+
 _FillType = Union[int, float, Sequence[int], Sequence[float], None]
 _FillTypeJIT = Optional[List[float]]
 
@@ -36,9 +37,7 @@ def _kernel_ta_tensor_wrapper(kernel):
 def _register_kernel_internal(functional, input_type, *, ta_tensor_wrapper=True):
     registry = _KERNEL_REGISTRY.setdefault(functional, {})
     if input_type in registry:
-        raise ValueError(
-            f"Functional {functional} already has a kernel registered for type {input_type}."
-        )
+        raise ValueError(f"Functional {functional} already has a kernel registered for type {input_type}.")
 
     def decorator(kernel):
         registry[input_type] = (
@@ -72,16 +71,15 @@ def _name_to_functional(name):
 
     if functional is None:
         raise ValueError(
-            f"Could not find functional with name '{name}' in torchaug.transforms.functional or torchvision.transforms.v2.functional."
+            f"Could not find functional with name '{name}' in torchaug.transforms.functional or "
+            "torchvision.transforms.v2.functional."
         )
 
     return functional
 
 
 _BUILTIN_DATAPOINT_TYPES = {
-    obj
-    for obj in ta_tensors.__dict__.values()
-    if isinstance(obj, type) and issubclass(obj, ta_tensors.TATensor)
+    obj for obj in ta_tensors.__dict__.values() if isinstance(obj, type) and issubclass(obj, ta_tensors.TATensor)
 }
 
 
@@ -95,28 +93,21 @@ def register_kernel(functional, ta_tensor_cls):
         functional = _name_to_functional(name=functional)
     elif not (
         callable(functional)
-        and getattr(functional, "__module__", "").startswith(
-            "torchvision.transforms.v2.functional"
-        )
+        and getattr(functional, "__module__", "").startswith("torchvision.transforms.v2.functional")
     ):
         raise ValueError(
             f"Kernels can only be registered on functionals from the torchvision.transforms.v2.functional namespace, "
             f"but got {functional}."
         )
 
-    if not (
-        isinstance(ta_tensor_cls, type)
-        and issubclass(ta_tensor_cls, ta_tensors.TATensor)
-    ):
+    if not (isinstance(ta_tensor_cls, type) and issubclass(ta_tensor_cls, ta_tensors.TATensor)):
         raise ValueError(
             f"Kernels can only be registered for subclasses of torchaug.ta_tensors.TATensor, "
             f"but got {ta_tensor_cls}."
         )
 
     if ta_tensor_cls in _BUILTIN_DATAPOINT_TYPES:
-        raise ValueError(
-            f"Kernels cannot be registered for the builtin ta_tensor classes, but got {ta_tensor_cls}"
-        )
+        raise ValueError(f"Kernels cannot be registered for the builtin ta_tensor classes, but got {ta_tensor_cls}")
 
     return _register_kernel_internal(functional, ta_tensor_cls, ta_tensor_wrapper=False)
 
@@ -145,13 +136,12 @@ def _get_kernel(functional, input_type, *, allow_passthrough=False):
 
 
 # This basically replicates _register_kernel_internal, but with a specialized wrapper for five_crop / ten_crop
-# We could get rid of this by letting _register_kernel_internal take arbitrary functionals rather than wrap_kernel: bool
+# We could get rid of this by letting _register_kernel_internal take arbitrary functionals rather
+# than wrap_kernel: bool
 def _register_five_ten_crop_kernel_internal(functional, input_type):
     registry = _KERNEL_REGISTRY.setdefault(functional, {})
     if input_type in registry:
-        raise TypeError(
-            f"Functional '{functional}' already has a kernel registered for type '{input_type}'."
-        )
+        raise TypeError(f"Functional '{functional}' already has a kernel registered for type '{input_type}'.")
 
     def wrap(kernel):
         @functools.wraps(kernel)
@@ -163,9 +153,7 @@ def _register_five_ten_crop_kernel_internal(functional, input_type):
         return wrapper
 
     def decorator(kernel):
-        registry[input_type] = (
-            wrap(kernel) if issubclass(input_type, ta_tensors.TATensor) else kernel
-        )
+        registry[input_type] = wrap(kernel) if issubclass(input_type, ta_tensors.TATensor) else kernel
         return kernel
 
     return decorator

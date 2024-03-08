@@ -6,25 +6,27 @@ import re
 import numpy as np
 import pytest
 import torch
-import torchaug.transforms as transforms
-import torchaug.transforms.functional as F
 import torchvision.transforms.v2.functional as TVF
 from torch.utils._pytree import tree_map
+from torchvision.transforms.v2._utils import check_type
+
+import torchaug.transforms as transforms
+import torchaug.transforms.functional as F
 from torchaug import ta_tensors
 from torchaug.transforms.functional._utils import is_pure_tensor
-from torchvision.transforms.v2._utils import check_type
 
 from ..utils import (
     ALL_IMAGES_MAKERS,
-    assert_equal,
     BATCH_IMAGES_TENSOR_AND_MAKERS,
+    IMAGE_MAKERS,
+    VIDEO_MAKERS,
+    assert_equal,
     check_batch_transform,
     check_functional,
     check_functional_kernel_signature_match,
     check_kernel,
     check_transform,
     cpu_and_cuda,
-    IMAGE_MAKERS,
     make_batch_bounding_boxes,
     make_batch_detection_masks,
     make_batch_images,
@@ -37,14 +39,11 @@ from ..utils import (
     make_video,
     needs_cuda,
     transform_cls_to_functional,
-    VIDEO_MAKERS,
 )
 
 
 class TestLambda:
-    @pytest.mark.parametrize(
-        "input", [object(), torch.empty(()), np.empty(()), "string", 1, 0.0]
-    )
+    @pytest.mark.parametrize("input", [object(), torch.empty(()), np.empty(()), "string", 1, 0.0])
     @pytest.mark.parametrize("types", [(), (torch.Tensor, np.ndarray)])
     def test_transform(self, input, types):
         was_applied = False
@@ -72,14 +71,12 @@ class TestLinearTransform:
     def _make_batch_matrix_and_vector(self, input, *, device=None):
         device = device or input.device
         numel = math.prod(F.get_dimensions(input))
-        transformation_matrix = torch.randn(
-            (input.shape[0], numel, numel), device=device
-        )
+        transformation_matrix = torch.randn((input.shape[0], numel, numel), device=device)
         mean_vector = torch.randn((input.shape[0], numel), device=device)
         return transformation_matrix, mean_vector
 
     def _sample_input_adapter(self, transform, input, device):
-        return {key: value for key, value in input.items()}
+        return dict(input)
 
     @pytest.mark.parametrize(
         "make_input",
@@ -103,31 +100,23 @@ class TestLinearTransform:
 
     def test_transform_error(self):
         with pytest.raises(ValueError, match="transformation_matrix should be square"):
-            transforms.LinearTransformation(
-                transformation_matrix=torch.rand(2, 3), mean_vector=torch.rand(2)
-            )
+            transforms.LinearTransformation(transformation_matrix=torch.rand(2, 3), mean_vector=torch.rand(2))
 
         with pytest.raises(ValueError, match="mean_vector should have the same length"):
-            transforms.LinearTransformation(
-                transformation_matrix=torch.rand(2, 2), mean_vector=torch.rand(1)
-            )
+            transforms.LinearTransformation(transformation_matrix=torch.rand(2, 2), mean_vector=torch.rand(1))
 
         for matrix_dtype, vector_dtype in [
             (torch.float32, torch.float64),
             (torch.float64, torch.float32),
         ]:
-            with pytest.raises(
-                ValueError, match="Input tensors should have the same dtype"
-            ):
+            with pytest.raises(ValueError, match="Input tensors should have the same dtype"):
                 transforms.LinearTransformation(
                     transformation_matrix=torch.rand(2, 2, dtype=matrix_dtype),
                     mean_vector=torch.rand(2, dtype=vector_dtype),
                 )
 
         image = make_image()
-        transform = transforms.LinearTransformation(
-            transformation_matrix=torch.rand(2, 2), mean_vector=torch.rand(2)
-        )
+        transform = transforms.LinearTransformation(transformation_matrix=torch.rand(2, 2), mean_vector=torch.rand(2))
         with pytest.raises(
             ValueError,
             match="Input tensor and transformation matrix have incompatible shape",
@@ -137,9 +126,7 @@ class TestLinearTransform:
     @needs_cuda
     def test_transform_error_cuda(self):
         for matrix_device, vector_device in [("cuda", "cpu"), ("cpu", "cuda")]:
-            with pytest.raises(
-                ValueError, match="Input tensors should be on the same device"
-            ):
+            with pytest.raises(ValueError, match="Input tensors should be on the same device"):
                 transforms.LinearTransformation(
                     transformation_matrix=torch.rand(2, 2, device=matrix_device),
                     mean_vector=torch.rand(2, device=vector_device),
@@ -147,9 +134,7 @@ class TestLinearTransform:
 
         for input_device, param_device in [("cuda", "cpu"), ("cpu", "cuda")]:
             input = make_image(device=input_device)
-            transform = transforms.LinearTransformation(
-                *self._make_matrix_and_vector(input, device=param_device)
-            )
+            transform = transforms.LinearTransformation(*self._make_matrix_and_vector(input, device=param_device))
             with pytest.raises(
                 ValueError,
                 match="Input tensor should be on the same device as transformation matrix and mean vector",
@@ -185,9 +170,7 @@ class TestNormalize:
         assert output_out_of_place.data_ptr() != input.data_ptr()
         assert output_out_of_place is not input
 
-        output_inplace = F.normalize_image(
-            input, mean=self.MEAN, std=self.STD, inplace=True
-        )
+        output_inplace = F.normalize_image(input, mean=self.MEAN, std=self.STD, inplace=True)
         assert output_inplace.data_ptr() == input.data_ptr()
         assert output_inplace._version > input_version
 
@@ -216,9 +199,7 @@ class TestNormalize:
         ],
     )
     def test_functional(self, make_input):
-        check_functional(
-            F.normalize, make_input(dtype=torch.float32), mean=self.MEAN, std=self.STD
-        )
+        check_functional(F.normalize, make_input(dtype=torch.float32), mean=self.MEAN, std=self.STD)
 
     @pytest.mark.parametrize(
         ("kernel", "input_type"),
@@ -231,28 +212,18 @@ class TestNormalize:
         ],
     )
     def test_functional_signature(self, kernel, input_type):
-        check_functional_kernel_signature_match(
-            F.normalize, kernel=kernel, input_type=input_type
-        )
+        check_functional_kernel_signature_match(F.normalize, kernel=kernel, input_type=input_type)
 
     def test_functional_error(self):
         with pytest.raises(TypeError, match="should be a float tensor"):
-            F.normalize_image(
-                make_image(dtype=torch.uint8), mean=self.MEAN, std=self.STD
-            )
+            F.normalize_image(make_image(dtype=torch.uint8), mean=self.MEAN, std=self.STD)
 
         with pytest.raises(ValueError, match="tensor image of size"):
-            F.normalize_image(
-                torch.rand(16, 16, dtype=torch.float32), mean=self.MEAN, std=self.STD
-            )
+            F.normalize_image(torch.rand(16, 16, dtype=torch.float32), mean=self.MEAN, std=self.STD)
 
         for std in [0, [0, 0, 0], [0, 1, 1]]:
-            with pytest.raises(
-                ValueError, match="std evaluated to zero, leading to division by zero"
-            ):
-                F.normalize_image(
-                    make_image(dtype=torch.float32), mean=self.MEAN, std=std
-                )
+            with pytest.raises(ValueError, match="std evaluated to zero, leading to division by zero"):
+                F.normalize_image(make_image(dtype=torch.float32), mean=self.MEAN, std=std)
 
     def _sample_input_adapter(self, transform, input, device):
         adapted_input = {}
@@ -282,25 +253,17 @@ class TestNormalize:
 
     def _reference_normalize_image(self, image, *, mean, std):
         image = image.numpy()
-        mean, std = [
-            np.array(stat, dtype=image.dtype).reshape((-1, 1, 1))
-            for stat in [mean, std]
-        ]
+        mean, std = [np.array(stat, dtype=image.dtype).reshape((-1, 1, 1)) for stat in [mean, std]]
         return ta_tensors.Image((image - mean) / std)
 
     def _reference_normalize_batch_images(self, image, *, mean, std):
         image = image.numpy()
-        mean, std = [
-            np.array(stat, dtype=image.dtype).reshape((-1, 1, 1))
-            for stat in [mean, std]
-        ]
+        mean, std = [np.array(stat, dtype=image.dtype).reshape((-1, 1, 1)) for stat in [mean, std]]
         return ta_tensors.BatchImages((image - mean) / std)
 
     @pytest.mark.parametrize(("mean", "std"), MEANS_STDS)
     @pytest.mark.parametrize("dtype", [torch.float16, torch.float32, torch.float64])
-    @pytest.mark.parametrize(
-        "fn", [F.normalize, transform_cls_to_functional(transforms.Normalize)]
-    )
+    @pytest.mark.parametrize("fn", [F.normalize, transform_cls_to_functional(transforms.Normalize)])
     def test_correctness_image(self, mean, std, dtype, fn):
         image = make_image(dtype=dtype)
 
@@ -311,9 +274,7 @@ class TestNormalize:
 
     @pytest.mark.parametrize(("mean", "std"), MEANS_STDS)
     @pytest.mark.parametrize("dtype", [torch.float16, torch.float32, torch.float64])
-    @pytest.mark.parametrize(
-        "fn", [F.normalize, transform_cls_to_functional(transforms.Normalize)]
-    )
+    @pytest.mark.parametrize("fn", [F.normalize, transform_cls_to_functional(transforms.Normalize)])
     def test_correctness_batch_images(self, mean, std, dtype, fn):
         image = make_batch_images(dtype=dtype)
 
@@ -325,9 +286,7 @@ class TestNormalize:
 
 class TestGaussianBlur:
     @pytest.mark.parametrize("kernel_size", [1, 3, (3, 1), [3, 5]])
-    @pytest.mark.parametrize(
-        "sigma", [None, 1.0, 1, (0.5,), [0.3], (0.3, 0.7), [0.9, 0.2]]
-    )
+    @pytest.mark.parametrize("sigma", [None, 1.0, 1, (0.5,), [0.3], (0.3, 0.7), [0.9, 0.2]])
     @pytest.mark.parametrize("make_input", IMAGE_MAKERS)
     def test_kernel_image(self, kernel_size, sigma, make_input):
         check_kernel(
@@ -335,9 +294,7 @@ class TestGaussianBlur:
             make_input(),
             kernel_size=kernel_size,
             sigma=sigma,
-            check_scripted_vs_eager=not (
-                isinstance(kernel_size, int) or isinstance(sigma, (float, int))
-            ),
+            check_scripted_vs_eager=not (isinstance(kernel_size, int) or isinstance(sigma, (float, int))),
         )
 
     @pytest.mark.parametrize("kernel_size", [1, 3, (3, 1), [3, 5]])
@@ -362,34 +319,23 @@ class TestGaussianBlur:
             make_batch_images(),
             kernel_size=kernel_size,
             sigma=sigma,
-            check_scripted_vs_eager=not (
-                isinstance(kernel_size, int)
-                or isinstance(sigma, (list, tuple, float, int))
-            ),
+            check_scripted_vs_eager=not (isinstance(kernel_size, int) or isinstance(sigma, (list, tuple, float, int))),
         )
 
     def test_kernel_image_errors(self):
         image = make_image_tensor()
 
-        with pytest.raises(
-            ValueError, match="kernel_size is a sequence its length should be 2"
-        ):
+        with pytest.raises(ValueError, match="kernel_size is a sequence its length should be 2"):
             F.gaussian_blur_image(image, kernel_size=[1, 2, 3])
 
         for kernel_size in [2, -1]:
-            with pytest.raises(
-                ValueError, match="kernel_size should have odd and positive integers"
-            ):
+            with pytest.raises(ValueError, match="kernel_size should have odd and positive integers"):
                 F.gaussian_blur_image(image, kernel_size=kernel_size)
 
-        with pytest.raises(
-            ValueError, match="sigma is a sequence, its length should be 2"
-        ):
+        with pytest.raises(ValueError, match="sigma is a sequence, its length should be 2"):
             F.gaussian_blur_image(image, kernel_size=1, sigma=[1, 2, 3])
 
-        with pytest.raises(
-            TypeError, match="sigma should be either float or sequence of floats"
-        ):
+        with pytest.raises(TypeError, match="sigma should be either float or sequence of floats"):
             F.gaussian_blur_image(image, kernel_size=1, sigma=object())
 
         with pytest.raises(ValueError, match="sigma should have positive values"):
@@ -398,25 +344,17 @@ class TestGaussianBlur:
     def test_batch_kernel_image_errors(self):
         image = make_batch_images_tensor()
 
-        with pytest.raises(
-            ValueError, match="kernel_size is a sequence its length should be 2"
-        ):
+        with pytest.raises(ValueError, match="kernel_size is a sequence its length should be 2"):
             F.gaussian_blur_batch_images(image, kernel_size=[1, 2, 3])
 
         for kernel_size in [2, -1]:
-            with pytest.raises(
-                ValueError, match="kernel_size should have odd and positive integers"
-            ):
+            with pytest.raises(ValueError, match="kernel_size should have odd and positive integers"):
                 F.gaussian_blur_batch_images(image, kernel_size=kernel_size)
 
-        with pytest.raises(
-            ValueError, match="sigma is a sequence, its length should be 2"
-        ):
+        with pytest.raises(ValueError, match="sigma is a sequence, its length should be 2"):
             F.gaussian_blur_batch_images(image, kernel_size=1, sigma=[1, 2, 3])
 
-        with pytest.raises(
-            TypeError, match="sigma should be either float or sequence of floats"
-        ):
+        with pytest.raises(TypeError, match="sigma should be either float or sequence of floats"):
             F.gaussian_blur_batch_images(image, kernel_size=1, sigma=object())
 
         with pytest.raises(ValueError, match="sigma should have positive values"):
@@ -426,26 +364,20 @@ class TestGaussianBlur:
             F.gaussian_blur_batch_images(image, kernel_size=1, sigma=torch.tensor(-1))
 
         with pytest.raises(ValueError, match="sigma should have 1 or 2 dimensions"):
-            F.gaussian_blur_batch_images(
-                image, kernel_size=1, sigma=torch.tensor([[[1.0]]])
-            )
+            F.gaussian_blur_batch_images(image, kernel_size=1, sigma=torch.tensor([[[1.0]]]))
 
         with pytest.raises(
             ValueError,
             match="sigma should have one element or the same length as the batch size",
         ):
-            F.gaussian_blur_batch_images(
-                image, kernel_size=1, sigma=torch.tensor([[1.0, 1.0, 1.0]])
-            )
+            F.gaussian_blur_batch_images(image, kernel_size=1, sigma=torch.tensor([[1.0, 1.0, 1.0]]))
 
     @pytest.mark.parametrize("make_input", VIDEO_MAKERS)
     def test_kernel_video(self, make_input):
         check_kernel(F.gaussian_blur_video, make_input(), kernel_size=(3, 3))
 
     def test_kernel_batch_videos(self):
-        check_kernel(
-            F.gaussian_blur_batch_videos, make_batch_videos(), kernel_size=(3, 3)
-        )
+        check_kernel(F.gaussian_blur_batch_videos, make_batch_videos(), kernel_size=(3, 3))
 
     @pytest.mark.parametrize(
         "make_input",
@@ -468,9 +400,7 @@ class TestGaussianBlur:
         ],
     )
     def test_functional_signature(self, kernel, input_type):
-        check_functional_kernel_signature_match(
-            F.gaussian_blur, kernel=kernel, input_type=input_type
-        )
+        check_functional_kernel_signature_match(F.gaussian_blur, kernel=kernel, input_type=input_type)
 
     @pytest.mark.parametrize(
         ("kernel", "input_type"),
@@ -481,9 +411,7 @@ class TestGaussianBlur:
         ],
     )
     def test_batch_functional_signature(self, kernel, input_type):
-        check_functional_kernel_signature_match(
-            F.gaussian_blur_batch, kernel=kernel, input_type=input_type
-        )
+        check_functional_kernel_signature_match(F.gaussian_blur_batch, kernel=kernel, input_type=input_type)
 
     @pytest.mark.parametrize(
         "make_input",
@@ -506,9 +434,7 @@ class TestGaussianBlur:
     @pytest.mark.parametrize("p", [0, 0.5, 1])
     @pytest.mark.parametrize("batch_size", [1, 2, 4])
     @pytest.mark.parametrize("batch_inplace", [True, False])
-    def test_batch_transform(
-        self, make_input, device, sigma, batch_size, batch_inplace, p
-    ):
+    def test_batch_transform(self, make_input, device, sigma, batch_size, batch_inplace, p):
         check_batch_transform(
             transforms.RandomGaussianBlur(
                 kernel_size=3,
@@ -522,14 +448,10 @@ class TestGaussianBlur:
         )
 
     def test_assertions(self):
-        with pytest.raises(
-            ValueError, match="Kernel size should be a tuple/list of two integers"
-        ):
+        with pytest.raises(ValueError, match="Kernel size should be a tuple/list of two integers"):
             transforms.RandomGaussianBlur([10, 12, 14])
 
-        with pytest.raises(
-            ValueError, match="Kernel size value should be an odd and positive number"
-        ):
+        with pytest.raises(ValueError, match="Kernel size value should be an odd and positive number"):
             transforms.RandomGaussianBlur(4)
 
         with pytest.raises(
@@ -538,19 +460,13 @@ class TestGaussianBlur:
         ):
             transforms.RandomGaussianBlur(3, sigma=[1, 2, 3])
 
-        with pytest.raises(
-            ValueError, match="sigma values should be positive and of the form"
-        ):
+        with pytest.raises(ValueError, match="sigma values should be positive and of the form"):
             transforms.RandomGaussianBlur(3, sigma=-1.0)
 
-        with pytest.raises(
-            ValueError, match="sigma values should be positive and of the form"
-        ):
+        with pytest.raises(ValueError, match="sigma values should be positive and of the form"):
             transforms.RandomGaussianBlur(3, sigma=[2.0, 1.0])
 
-        with pytest.raises(
-            TypeError, match="sigma should be a number or a sequence of numbers"
-        ):
+        with pytest.raises(TypeError, match="sigma should be a number or a sequence of numbers"):
             transforms.RandomGaussianBlur(3, sigma={})
 
     @pytest.mark.parametrize("sigma", [10.0, [10.0, 12.0], (10, 12.0), [10]])
@@ -580,12 +496,8 @@ class TestGaussianBlur:
         ([1, (torch.tensor([0, 1]),)], [2, (torch.tensor([0]), torch.tensor([1]))]),
     )
     def test__get_batch_params(self, sigma, num_chunks, chunks_indices):
-        transform = transforms.RandomGaussianBlur(
-            3, sigma=sigma, p=1, batch_transform=True
-        )
-        list_params = transform._get_params(
-            [make_batch_images()], num_chunks, chunks_indices
-        )
+        transform = transforms.RandomGaussianBlur(3, sigma=sigma, p=1, batch_transform=True)
+        list_params = transform._get_params([make_batch_images()], num_chunks, chunks_indices)
 
         for params in list_params:
             if isinstance(sigma, float):
@@ -620,9 +532,7 @@ class TestGaussianBlur:
     )
     @pytest.mark.parametrize("dtype", [torch.float32, torch.float64, torch.float16])
     @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_functional_image_correctness(
-        self, dimensions, kernel_size, sigma, dtype, device
-    ):
+    def test_functional_image_correctness(self, dimensions, kernel_size, sigma, dtype, device):
         if dtype is torch.float16 and device == "cpu":
             pytest.skip("reflection_pad2d not implemented for float16 on CPU")
 
@@ -660,20 +570,12 @@ class TestGaussianBlur:
     @pytest.mark.parametrize("batch_size", [1, 2, 4])
     @pytest.mark.parametrize("dtype", [torch.float32, torch.float64, torch.float16])
     @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_functional_batch_images_correctness(
-        self, dimensions, batch_size, kernel_size, sigma, dtype, device
-    ):
+    def test_functional_batch_images_correctness(self, dimensions, batch_size, kernel_size, sigma, dtype, device):
         if dtype is torch.float16 and device == "cpu":
             pytest.skip("reflection_pad2d not implemented for float16 on CPU")
 
-        if (
-            isinstance(sigma, torch.Tensor)
-            and sigma.ndim >= 1
-            and sigma.shape[0] > batch_size
-        ):
-            pytest.skip(
-                "sigma should have one element or the same length as the batch size"
-            )
+        if isinstance(sigma, torch.Tensor) and sigma.ndim >= 1 and sigma.shape[0] > batch_size:
+            pytest.skip("sigma should have one element or the same length as the batch size")
 
         num_channels, height, width = dimensions
 
@@ -687,9 +589,7 @@ class TestGaussianBlur:
             )
         )
 
-        actual = F.gaussian_blur_batch_images(
-            images, kernel_size=kernel_size, sigma=sigma
-        )
+        actual = F.gaussian_blur_batch_images(images, kernel_size=kernel_size, sigma=sigma)
         for i, a in enumerate(actual):
             if type(sigma) in (int, float):
                 s = sigma
@@ -700,9 +600,7 @@ class TestGaussianBlur:
                     if sigma.ndim == 2:
                         s = sigma[0].tolist()
                     else:
-                        pytest.skip(
-                            "Use case hard to test as it is unclear if the tensor is for a batch or not."
-                        )
+                        pytest.skip("Use case hard to test as it is unclear if the tensor is for a batch or not.")
                 else:
                     s = sigma[i].tolist()
 
@@ -722,9 +620,7 @@ class TestToDtype:
         ],
     )
     @pytest.mark.parametrize("input_dtype", [torch.float32, torch.float64, torch.uint8])
-    @pytest.mark.parametrize(
-        "output_dtype", [torch.float32, torch.float64, torch.uint8]
-    )
+    @pytest.mark.parametrize("output_dtype", [torch.float32, torch.float64, torch.uint8])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("scale", (True, False))
     def test_kernel(self, kernel, make_input, input_dtype, output_dtype, device, scale):
@@ -737,9 +633,7 @@ class TestToDtype:
 
     @pytest.mark.parametrize("make_input", [make_image_tensor, make_image, make_video])
     @pytest.mark.parametrize("input_dtype", [torch.float32, torch.float64, torch.uint8])
-    @pytest.mark.parametrize(
-        "output_dtype", [torch.float32, torch.float64, torch.uint8]
-    )
+    @pytest.mark.parametrize("output_dtype", [torch.float32, torch.float64, torch.uint8])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("scale", (True, False))
     def test_functional(self, make_input, input_dtype, output_dtype, device, scale):
@@ -752,15 +646,11 @@ class TestToDtype:
 
     @pytest.mark.parametrize("make_input", ALL_IMAGES_MAKERS)
     @pytest.mark.parametrize("input_dtype", [torch.float32, torch.float64, torch.uint8])
-    @pytest.mark.parametrize(
-        "output_dtype", [torch.float32, torch.float64, torch.uint8]
-    )
+    @pytest.mark.parametrize("output_dtype", [torch.float32, torch.float64, torch.uint8])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("scale", (True, False))
     @pytest.mark.parametrize("as_dict", (True, False))
-    def test_transform(
-        self, make_input, input_dtype, output_dtype, device, scale, as_dict
-    ):
+    def test_transform(self, make_input, input_dtype, output_dtype, device, scale, as_dict):
         input = make_input(dtype=input_dtype, device=device)
         if as_dict:
             output_dtype = {type(input): output_dtype}
@@ -770,9 +660,7 @@ class TestToDtype:
             check_sample_input=not as_dict,
         )
 
-    def reference_convert_dtype_image_tensor(
-        self, image, dtype=torch.float, scale=False
-    ):
+    def reference_convert_dtype_image_tensor(self, image, dtype=torch.float, scale=False):
         input_dtype = image.dtype
         output_dtype = dtype
 
@@ -803,35 +691,23 @@ class TestToDtype:
                         factor = (output_max_value + 1) // (input_max_value + 1)
                         return value * factor
 
-        return torch.tensor(
-            tree_map(fn, image.tolist()), dtype=dtype, device=image.device
-        )
+        return torch.tensor(tree_map(fn, image.tolist()), dtype=dtype, device=image.device)
 
     @pytest.mark.parametrize("input_dtype", [torch.float32, torch.float64, torch.uint8])
-    @pytest.mark.parametrize(
-        "output_dtype", [torch.float32, torch.float64, torch.uint8]
-    )
+    @pytest.mark.parametrize("output_dtype", [torch.float32, torch.float64, torch.uint8])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("scale", (True, False))
     @pytest.mark.parametrize("make_input", [make_image, make_batch_images])
-    def test_image_correctness(
-        self, input_dtype, output_dtype, device, scale, make_input
-    ):
+    def test_image_correctness(self, input_dtype, output_dtype, device, scale, make_input):
         if input_dtype.is_floating_point and output_dtype == torch.int64:
             pytest.xfail("float to int64 conversion is not supported")
 
         input = make_input(dtype=input_dtype, device=device)
 
         out = F.to_dtype(input, dtype=output_dtype, scale=scale)
-        expected = self.reference_convert_dtype_image_tensor(
-            input, dtype=output_dtype, scale=scale
-        )
+        expected = self.reference_convert_dtype_image_tensor(input, dtype=output_dtype, scale=scale)
 
-        if (
-            input_dtype.is_floating_point
-            and not output_dtype.is_floating_point
-            and scale
-        ):
+        if input_dtype.is_floating_point and not output_dtype.is_floating_point and scale:
             torch.testing.assert_close(out, expected, atol=1, rtol=0)
         else:
             torch.testing.assert_close(out, expected)
@@ -967,9 +843,7 @@ class TestToDtype:
             UserWarning,
             match=re.escape("plain `torch.Tensor` will *not* be transformed"),
         ):
-            transforms.ToDtype(
-                dtype={torch.Tensor: torch.float32, ta_tensors.Image: torch.float32}
-            )
+            transforms.ToDtype(dtype={torch.Tensor: torch.float32, ta_tensors.Image: torch.float32})
         with pytest.warns(UserWarning, match="no scaling will be done"):
             out = transforms.ToDtype(dtype={"others": None}, scale=True)(sample)
         assert out["inpt"].dtype == inpt_dtype
@@ -1011,9 +885,7 @@ class TestSanitizeBoundingBoxes:
             ([1, 1, 30, 20], True),
         ]
 
-        random.shuffle(
-            boxes_and_validity
-        )  # For test robustness: mix order of wrong and correct cases
+        random.shuffle(boxes_and_validity)  # For test robustness: mix order of wrong and correct cases
         boxes, is_valid_mask = zip(*boxes_and_validity)
         valid_indices = [i for (i, is_valid) in enumerate(is_valid_mask) if is_valid]
 
@@ -1021,11 +893,7 @@ class TestSanitizeBoundingBoxes:
             valid_indices = valid_indices + [v + len(boxes) for v in valid_indices]
 
         boxes = torch.tensor(boxes)
-        labels = (
-            torch.arange(boxes.shape[0])
-            if not batch
-            else torch.arange(boxes.shape[0] * 2)
-        )
+        labels = torch.arange(boxes.shape[0]) if not batch else torch.arange(boxes.shape[0] * 2)
 
         boxes = (
             ta_tensors.BoundingBoxes(
@@ -1070,9 +938,7 @@ class TestSanitizeBoundingBoxes:
             img = sample.pop("image")
             sample = (img, sample)
 
-        out = transforms.SanitizeBoundingBoxes(
-            min_size=min_size, labels_getter=labels_getter
-        )(sample)
+        out = transforms.SanitizeBoundingBoxes(min_size=min_size, labels_getter=labels_getter)(sample)
 
         if sample_type is tuple:
             out_image = out[0]
@@ -1094,15 +960,9 @@ class TestSanitizeBoundingBoxes:
             out_boxes,
             ta_tensors.BoundingBoxes if not batch else ta_tensors.BatchBoundingBoxes,
         )
-        assert (
-            isinstance(out_masks, ta_tensors.Mask)
-            if not batch
-            else isinstance(out_masks, ta_tensors.BatchMasks)
-        )
+        assert isinstance(out_masks, ta_tensors.Mask) if not batch else isinstance(out_masks, ta_tensors.BatchMasks)
 
-        if labels_getter is None or (
-            callable(labels_getter) and labels_getter({"labels": "blah"}) is None
-        ):
+        if labels_getter is None or (callable(labels_getter) and labels_getter({"labels": "blah"}) is None):
             assert out_labels is labels
         else:
             assert isinstance(out_labels, torch.Tensor)
@@ -1117,19 +977,11 @@ class TestSanitizeBoundingBoxes:
         img = make_image() if not batch else make_batch_images()
         boxes = make_bounding_boxes() if not batch else make_batch_bounding_boxes()
 
-        with pytest.raises(
-            ValueError, match="or a two-tuple whose second item is a dict"
-        ):
+        with pytest.raises(ValueError, match="or a two-tuple whose second item is a dict"):
             transforms.SanitizeBoundingBoxes()(img, boxes)
 
-        out_img, out_boxes = transforms.SanitizeBoundingBoxes(labels_getter=None)(
-            img, boxes
-        )
-        assert (
-            isinstance(out_img, ta_tensors.Image)
-            if not batch
-            else isinstance(out_img, ta_tensors.BatchImages)
-        )
+        out_img, out_boxes = transforms.SanitizeBoundingBoxes(labels_getter=None)(img, boxes)
+        assert isinstance(out_img, ta_tensors.Image) if not batch else isinstance(out_img, ta_tensors.BatchImages)
         assert (
             isinstance(out_boxes, ta_tensors.BoundingBoxes)
             if not batch
@@ -1145,9 +997,7 @@ class TestSanitizeBoundingBoxes:
 
         with pytest.raises(ValueError, match="min_size must be >= 1"):
             transforms.SanitizeBoundingBoxes(min_size=0)
-        with pytest.raises(
-            ValueError, match="labels_getter should either be 'default'"
-        ):
+        with pytest.raises(ValueError, match="labels_getter should either be 'default'"):
             transforms.SanitizeBoundingBoxes(labels_getter=12)
 
         with pytest.raises(ValueError, match="Could not infer where the labels are"):

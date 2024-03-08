@@ -4,10 +4,8 @@ import math
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 import torch
-
-from torch.utils._pytree import tree_flatten, tree_unflatten, TreeSpec
+from torch.utils._pytree import TreeSpec, tree_flatten, tree_unflatten
 from torchvision.transforms import AutoAugmentPolicy, InterpolationMode
-
 from torchvision.transforms.v2._utils import _get_fill, _setup_fill_arg, check_type
 from torchvision.transforms.v2.functional._geometry import _check_interpolation
 
@@ -43,9 +41,7 @@ class _AutoAugmentBase(Transform):
         self.fill = fill
         self._fill = _setup_fill_arg(fill)
 
-    def _get_random_item(
-        self, dct: Dict[str, Tuple[Callable, bool]]
-    ) -> Tuple[str, Tuple[Callable, bool]]:
+    def _get_random_item(self, dct: Dict[str, Tuple[Callable, bool]]) -> Tuple[str, Tuple[Callable, bool]]:
         keys = tuple(dct.keys())
         key = keys[int(torch.randint(len(keys), ()))]
         return key, dct[key]
@@ -61,16 +57,12 @@ class _AutoAugmentBase(Transform):
         ),
     ) -> Tuple[Tuple[List[Any], TreeSpec, int], ImageOrVideo]:
         if self.batch_transform:
-            unsupported_types = tuple(
-                list(unsupported_types) + [ta_tensors.Image, ta_tensors.Video]
-            )
+            unsupported_types = tuple(list(unsupported_types) + [ta_tensors.Image, ta_tensors.Video])
         flat_inputs, spec = tree_flatten(inputs if len(inputs) > 1 else inputs[0])
         needs_transform_list = self._needs_transform_list(flat_inputs)
 
         image_or_videos = []
-        for idx, (inpt, needs_transform) in enumerate(
-            zip(flat_inputs, needs_transform_list)
-        ):
+        for idx, (inpt, needs_transform) in enumerate(zip(flat_inputs, needs_transform_list)):
             if needs_transform and check_type(
                 inpt,
                 (
@@ -89,9 +81,7 @@ class _AutoAugmentBase(Transform):
             ):
                 image_or_videos.append((idx, inpt))
             elif isinstance(inpt, unsupported_types):
-                raise TypeError(
-                    f"Inputs of type {type(inpt).__name__} are not supported by {type(self).__name__}()"
-                )
+                raise TypeError(f"Inputs of type {type(inpt).__name__} are not supported by {type(self).__name__}()")
 
         if not image_or_videos:
             raise TypeError("Found no image in the sample.")
@@ -177,27 +167,15 @@ class _AutoAugmentBase(Transform):
                 fill=fill_,
             )
         elif transform_id == "Rotate":
-            return F.rotate(
-                image, angle=magnitude, interpolation=interpolation, fill=fill_
-            )
+            return F.rotate(image, angle=magnitude, interpolation=interpolation, fill=fill_)
         elif transform_id == "Brightness":
-            brightness = (
-                F.adjust_brightness_batch
-                if self.batch_transform
-                else F.adjust_brightness
-            )
+            brightness = F.adjust_brightness_batch if self.batch_transform else F.adjust_brightness
             return brightness(image, brightness_factor=1.0 + magnitude)
         elif transform_id == "Color":
-            saturation = (
-                F.adjust_saturation_batch
-                if self.batch_transform
-                else F.adjust_saturation
-            )
+            saturation = F.adjust_saturation_batch if self.batch_transform else F.adjust_saturation
             return saturation(image, saturation_factor=1.0 + magnitude)
         elif transform_id == "Contrast":
-            contrast = (
-                F.adjust_contrast_batch if self.batch_transform else F.adjust_contrast
-            )
+            contrast = F.adjust_contrast_batch if self.batch_transform else F.adjust_contrast
             return contrast(image, contrast_factor=1.0 + magnitude)
         elif transform_id == "Sharpness":
             sharpness = F.adjust_sharpness
@@ -205,9 +183,7 @@ class _AutoAugmentBase(Transform):
         elif transform_id == "Posterize":
             return F.posterize(image, bits=int(magnitude))
         elif transform_id == "Solarize":
-            bound = (
-                _max_value(image.dtype) if isinstance(image, torch.Tensor) else 255.0
-            )
+            bound = _max_value(image.dtype) if isinstance(image, torch.Tensor) else 255.0
             return F.solarize(image, threshold=bound * magnitude)
         elif transform_id == "AutoContrast":
             return F.autocontrast(image)
@@ -248,15 +224,11 @@ class AutoAugment(_AutoAugmentBase):
             True,
         ),
         "TranslateX": (
-            lambda num_bins, height, width: torch.linspace(
-                0.0, 150.0 / 331.0 * width, num_bins
-            ),
+            lambda num_bins, height, width: torch.linspace(0.0, 150.0 / 331.0 * width, num_bins),
             True,
         ),
         "TranslateY": (
-            lambda num_bins, height, width: torch.linspace(
-                0.0, 150.0 / 331.0 * height, num_bins
-            ),
+            lambda num_bins, height, width: torch.linspace(0.0, 150.0 / 331.0 * height, num_bins),
             True,
         ),
         "Rotate": (
@@ -280,11 +252,7 @@ class AutoAugment(_AutoAugmentBase):
             True,
         ),
         "Posterize": (
-            lambda num_bins, height, width: (
-                8 - (torch.arange(num_bins) / ((num_bins - 1) / 4))
-            )
-            .round()
-            .int(),
+            lambda num_bins, height, width: (8 - (torch.arange(num_bins) / ((num_bins - 1) / 4))).round().int(),
             False,
         ),
         "Solarize": (
@@ -308,9 +276,7 @@ class AutoAugment(_AutoAugmentBase):
 
     def _get_policies(
         self, policy: AutoAugmentPolicy
-    ) -> List[
-        Tuple[Tuple[str, float, Optional[int]], Tuple[str, float, Optional[int]]]
-    ]:
+    ) -> List[Tuple[Tuple[str, float, Optional[int]], Tuple[str, float, Optional[int]]]]:
         if policy == AutoAugmentPolicy.IMAGENET:
             return [
                 (("Posterize", 0.4, 8), ("Rotate", 0.6, 9)),
@@ -429,9 +395,7 @@ class AutoAugment(_AutoAugmentBase):
                 fill=self._fill,
             )
 
-        return self._unflatten_and_insert_image_or_video(
-            flat_inputs_with_spec, image_or_video
-        )
+        return self._unflatten_and_insert_image_or_video(flat_inputs_with_spec, image_or_video)
 
 
 class RandAugment(_AutoAugmentBase):
@@ -467,15 +431,11 @@ class RandAugment(_AutoAugmentBase):
             True,
         ),
         "TranslateX": (
-            lambda num_bins, height, width: torch.linspace(
-                0.0, 150.0 / 331.0 * width, num_bins
-            ),
+            lambda num_bins, height, width: torch.linspace(0.0, 150.0 / 331.0 * width, num_bins),
             True,
         ),
         "TranslateY": (
-            lambda num_bins, height, width: torch.linspace(
-                0.0, 150.0 / 331.0 * height, num_bins
-            ),
+            lambda num_bins, height, width: torch.linspace(0.0, 150.0 / 331.0 * height, num_bins),
             True,
         ),
         "Rotate": (
@@ -499,11 +459,7 @@ class RandAugment(_AutoAugmentBase):
             True,
         ),
         "Posterize": (
-            lambda num_bins, height, width: (
-                8 - (torch.arange(num_bins) / ((num_bins - 1) / 4))
-            )
-            .round()
-            .int(),
+            lambda num_bins, height, width: (8 - (torch.arange(num_bins) / ((num_bins - 1) / 4))).round().int(),
             False,
         ),
         "Solarize": (
@@ -535,9 +491,7 @@ class RandAugment(_AutoAugmentBase):
         height, width = get_size(image_or_video)
 
         for _ in range(self.num_ops):
-            transform_id, (magnitudes_fn, signed) = self._get_random_item(
-                self._AUGMENTATION_SPACE
-            )
+            transform_id, (magnitudes_fn, signed) = self._get_random_item(self._AUGMENTATION_SPACE)
             magnitudes = magnitudes_fn(self.num_magnitude_bins, height, width)
             if magnitudes is not None:
                 magnitude = float(magnitudes[self.magnitude])
@@ -553,9 +507,7 @@ class RandAugment(_AutoAugmentBase):
                 fill=self._fill,
             )
 
-        return self._unflatten_and_insert_image_or_video(
-            flat_inputs_with_spec, image_or_video
-        )
+        return self._unflatten_and_insert_image_or_video(flat_inputs_with_spec, image_or_video)
 
 
 class TrivialAugmentWide(_AutoAugmentBase):
@@ -616,11 +568,7 @@ class TrivialAugmentWide(_AutoAugmentBase):
             True,
         ),
         "Posterize": (
-            lambda num_bins, height, width: (
-                8 - (torch.arange(num_bins) / ((num_bins - 1) / 6))
-            )
-            .round()
-            .int(),
+            lambda num_bins, height, width: (8 - (torch.arange(num_bins) / ((num_bins - 1) / 6))).round().int(),
             False,
         ),
         "Solarize": (
@@ -647,15 +595,11 @@ class TrivialAugmentWide(_AutoAugmentBase):
         ) = self._flatten_and_extract_image_or_video(inputs)
         height, width = get_size(image_or_video)
 
-        transform_id, (magnitudes_fn, signed) = self._get_random_item(
-            self._AUGMENTATION_SPACE
-        )
+        transform_id, (magnitudes_fn, signed) = self._get_random_item(self._AUGMENTATION_SPACE)
 
         magnitudes = magnitudes_fn(self.num_magnitude_bins, height, width)
         if magnitudes is not None:
-            magnitude = float(
-                magnitudes[int(torch.randint(self.num_magnitude_bins, ()))]
-            )
+            magnitude = float(magnitudes[int(torch.randint(self.num_magnitude_bins, ()))])
             if signed and torch.rand(()) <= 0.5:
                 magnitude *= -1
         else:
@@ -668,9 +612,7 @@ class TrivialAugmentWide(_AutoAugmentBase):
             interpolation=self.interpolation,
             fill=self._fill,
         )
-        return self._unflatten_and_insert_image_or_video(
-            flat_inputs_with_spec, image_or_video
-        )
+        return self._unflatten_and_insert_image_or_video(flat_inputs_with_spec, image_or_video)
 
 
 class AugMix(_AutoAugmentBase):
@@ -686,7 +628,8 @@ class AugMix(_AutoAugmentBase):
     Args:
         severity: The severity of base augmentation operators.
         mixture_width: The number of augmentation chains.
-        chain_depth: The depth of augmentation chains. A negative value denotes stochastic depth sampled from the interval [1, 3].
+        chain_depth: The depth of augmentation chains. A negative value denotes stochastic depth sampled
+            from the interval [1, 3].
         alpha: The hyperparameter for the probability distributions.
         all_ops: Use all operations (including brightness, contrast, color and sharpness).
         interpolation: Desired interpolation enum defined by
@@ -718,11 +661,7 @@ class AugMix(_AutoAugmentBase):
             True,
         ),
         "Posterize": (
-            lambda num_bins, height, width: (
-                4 - (torch.arange(num_bins) / ((num_bins - 1) / 4))
-            )
-            .round()
-            .int(),
+            lambda num_bins, height, width: (4 - (torch.arange(num_bins) / ((num_bins - 1) / 4))).round().int(),
             False,
         ),
         "Solarize": (
@@ -732,9 +671,7 @@ class AugMix(_AutoAugmentBase):
         "AutoContrast": (lambda num_bins, height, width: None, False),
         "Equalize": (lambda num_bins, height, width: None, False),
     }
-    _AUGMENTATION_SPACE: Dict[
-        str, Tuple[Callable[[int, int, int], torch.Tensor | None], bool]
-    ] = {
+    _AUGMENTATION_SPACE: Dict[str, Tuple[Callable[[int, int, int], torch.Tensor | None], bool]] = {
         **_PARTIAL_AUGMENTATION_SPACE,
         "Brightness": (
             lambda num_bins, height, width: torch.linspace(0.0, 0.9, num_bins),
@@ -767,9 +704,7 @@ class AugMix(_AutoAugmentBase):
         super().__init__(interpolation=interpolation, fill=fill, batch_transform=True)
         self._PARAMETER_MAX = 10
         if not (1 <= severity <= self._PARAMETER_MAX):
-            raise ValueError(
-                f"The severity must be between [1, {self._PARAMETER_MAX}]. Got {severity} instead."
-            )
+            raise ValueError(f"The severity must be between [1, {self._PARAMETER_MAX}]. Got {severity} instead.")
         self.severity = severity
         self.mixture_width = mixture_width
         self.chain_depth = chain_depth
@@ -792,49 +727,32 @@ class AugMix(_AutoAugmentBase):
         else:  # isinstance(inpt, PIL.Image.Image):
             image_or_video = F.pil_to_tensor(orig_image_or_video)
 
-        augmentation_space = (
-            self._AUGMENTATION_SPACE
-            if self.all_ops
-            else self._PARTIAL_AUGMENTATION_SPACE
-        )
+        augmentation_space = self._AUGMENTATION_SPACE if self.all_ops else self._PARTIAL_AUGMENTATION_SPACE
 
         orig_dims = list(image_or_video.shape)
-        expected_ndim = (
-            5 if isinstance(orig_image_or_video, ta_tensors.BatchVideos) else 4
-        )
-        batch = image_or_video.reshape(
-            [1] * max(expected_ndim - image_or_video.ndim, 0) + orig_dims
-        )
+        expected_ndim = 5 if isinstance(orig_image_or_video, ta_tensors.BatchVideos) else 4
+        batch = image_or_video.reshape([1] * max(expected_ndim - image_or_video.ndim, 0) + orig_dims)
         batch_dims = [batch.size(0)] + [1] * (batch.ndim - 1)
 
         # Sample the beta weights for combining the original and augmented image or video. To get Beta, we use a
         # Dirichlet with 2 parameters. The 1st column stores the weights of the original and the 2nd the ones of
         # augmented image or video.
         m = self._sample_dirichlet(
-            torch.tensor([self.alpha, self.alpha], device=batch.device).expand(
-                batch_dims[0], -1
-            )
+            torch.tensor([self.alpha, self.alpha], device=batch.device).expand(batch_dims[0], -1)
         )
 
-        # Sample the mixing weights and combine them with the ones sampled from Beta for the augmented images or videos.
+        # Sample the mixing weights and combine them with the ones sampled from Beta for the augmented
+        # images or videos.
         combined_weights = self._sample_dirichlet(
-            torch.tensor([self.alpha] * self.mixture_width, device=batch.device).expand(
-                batch_dims[0], -1
-            )
+            torch.tensor([self.alpha] * self.mixture_width, device=batch.device).expand(batch_dims[0], -1)
         ) * m[:, 1].reshape([batch_dims[0], -1])
 
         mix = m[:, 0].reshape(batch_dims) * batch
         for i in range(self.mixture_width):
             aug = batch
-            depth = (
-                self.chain_depth
-                if self.chain_depth > 0
-                else int(torch.randint(low=1, high=4, size=(1,)).item())
-            )
+            depth = self.chain_depth if self.chain_depth > 0 else int(torch.randint(low=1, high=4, size=(1,)).item())
             for _ in range(depth):
-                transform_id, (magnitudes_fn, signed) = self._get_random_item(
-                    augmentation_space
-                )
+                transform_id, (magnitudes_fn, signed) = self._get_random_item(augmentation_space)
 
                 magnitudes = magnitudes_fn(self._PARAMETER_MAX, height, width)
                 if magnitudes is not None:
@@ -854,9 +772,7 @@ class AugMix(_AutoAugmentBase):
             mix.add_(combined_weights[:, i].reshape(batch_dims) * aug)
         mix = mix.reshape(orig_dims).to(dtype=image_or_video.dtype)
 
-        if isinstance(
-            orig_image_or_video, (ta_tensors.BatchImages, ta_tensors.BatchVideos)
-        ):
+        if isinstance(orig_image_or_video, (ta_tensors.BatchImages, ta_tensors.BatchVideos)):
             mix = ta_tensors.wrap(mix, like=orig_image_or_video)
 
         return self._unflatten_and_insert_image_or_video(flat_inputs_with_spec, mix)

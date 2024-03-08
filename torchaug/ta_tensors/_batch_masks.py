@@ -18,7 +18,6 @@ def convert_masks_to_batch_masks(
 
     Assumes all masks are valid.
     """
-
     attrs = [
         "requires_grad",
         "device",
@@ -33,11 +32,7 @@ def convert_masks_to_batch_masks(
                 raise ValueError(f"All masks must have the same {attr} attribute.")
 
     masks_data = torch.cat([mask.data for mask in masks])
-    idx_sample = (
-        torch.tensor([0] + [mask.shape[0] for mask in masks], dtype=torch.long)
-        .cumsum(0)
-        .tolist()
-    )
+    idx_sample = torch.tensor([0] + [mask.shape[0] for mask in masks], dtype=torch.long).cumsum(0).tolist()
 
     batch_masks = BatchMasks(
         masks_data,
@@ -51,8 +46,8 @@ def convert_batch_masks_to_masks(
     batch_masks: BatchMasks,
 ) -> list[Mask]:
     """Convert :class:`~torchaug.torchaug_tensors.BatchMasks` object to a list of
-    :class:`~torchaug.ta_tensors.Mask` objects."""
-
+    :class:`~torchaug.ta_tensors.Mask` objects.
+    """
     idx_sample = batch_masks.idx_sample
 
     list_masks = [
@@ -72,7 +67,8 @@ class BatchMasks(TATensor):
         data: Any data that can be turned into a tensor with :func:`torch.as_tensor`.
         dtype: Desired data type. If omitted, will be inferred from
             ``data``.
-        idx_sample: Each element is the index of the first mask of the corresponding sample in the batch of N samples. Contains N+1 elements whose last value is the number of masks.
+        idx_sample: Each element is the index of the first mask of the corresponding sample in the batch of
+         N samples. Contains N+1 elements whose last value is the number of masks.
         device: Desired device. If omitted and ``data`` is a
             :class:`torch.Tensor`, the device is taken from it. Otherwise, the mask is constructed on the CPU.
         requires_grad: Whether autograd should record operations. If omitted and
@@ -98,12 +94,11 @@ class BatchMasks(TATensor):
         """Concatenates a sequence of :class:`~torchaug.torchaug_tensors.BatchMasks` along the first dimension.
 
         Args:
-            batch_masks: A sequence of :class:`~torchaug.torchaug_tensors.BatchMasks` to concatenate.
+            masks_batches: A sequence of :class:`~torchaug.torchaug_tensors.BatchMasks` to concatenate.
 
         Returns:
             The concatenated :class:`~torchaug.torchaug_tensors.BatchMasks`.
         """
-
         attrs = [
             "requires_grad",
             "device",
@@ -117,9 +112,7 @@ class BatchMasks(TATensor):
                 raise ValueError("All batches of masks must have the same size.")
             for attr in attrs:
                 if getattr(batch_mask, attr) != getattr(masks_batches[0], attr):
-                    raise ValueError(
-                        f"All batches of masks must have the same {attr} attribute."
-                    )
+                    raise ValueError(f"All batches of masks must have the same {attr} attribute.")
 
         idx_sample = (
             torch.tensor(
@@ -150,9 +143,7 @@ class BatchMasks(TATensor):
         check_dims: bool = True,
     ) -> BatchMasks:  # type: ignore[override]
         if check_dims and tensor.ndim < 2:
-            raise ValueError(
-                f"Expected at least a 2D tensor, got {tensor.ndim}D tensor"
-            )
+            raise ValueError(f"Expected at least a 2D tensor, got {tensor.ndim}D tensor")
         batch_masks = tensor.as_subclass(cls)
         batch_masks.idx_sample = idx_sample
         return batch_masks
@@ -166,9 +157,7 @@ class BatchMasks(TATensor):
         device: torch.device | str | int | None = None,
         requires_grad: bool | None = None,
     ) -> BatchMasks:
-        tensor = cls._to_tensor(
-            data, dtype=dtype, device=device, requires_grad=requires_grad
-        )
+        tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
 
         if tensor.ndim < 2:
             raise ValueError
@@ -188,9 +177,7 @@ class BatchMasks(TATensor):
         # This should be what we want in most cases. When it's not, it's probably a mis-use anyway, e.g.
         # something like mask_N1HW + mask_N2HW; we don't guard against those cases.
         flat_params, _ = tree_flatten(args + (tuple(kwargs.values()) if kwargs else ()))  # type: ignore[operator]
-        first_batch_masks_from_args = next(
-            x for x in flat_params if isinstance(x, BatchMasks)
-        )
+        first_batch_masks_from_args = next(x for x in flat_params if isinstance(x, BatchMasks))
 
         idx_sample = first_batch_masks_from_args.idx_sample
 
@@ -220,7 +207,6 @@ class BatchMasks(TATensor):
         Returns:
             The masks for the sample.
         """
-
         masks = self[self.idx_sample[idx] : self.idx_sample[idx + 1]]
         return Mask(
             masks,
@@ -238,11 +224,7 @@ class BatchMasks(TATensor):
             The chunk of the batch of masks.
         """
         chunk_idx_sample = torch.tensor(
-            [0]
-            + [
-                self.idx_sample[chunk_indice + 1] - self.idx_sample[chunk_indice]
-                for chunk_indice in chunk_indices
-            ]
+            [0] + [self.idx_sample[chunk_indice + 1] - self.idx_sample[chunk_indice] for chunk_indice in chunk_indices]
         )
 
         chunk_idx_sample = chunk_idx_sample.cumsum(0).tolist()
@@ -254,9 +236,7 @@ class BatchMasks(TATensor):
             requires_grad=self.requires_grad,
         )
 
-    def update_chunk_(
-        self, chunk: BatchMasks, chunk_indices: torch.Tensor
-    ) -> BatchMasks:
+    def update_chunk_(self, chunk: BatchMasks, chunk_indices: torch.Tensor) -> BatchMasks:
         """Update a chunk of the batch of masks.
 
         Args:
@@ -287,14 +267,10 @@ class BatchMasks(TATensor):
         cpu_mask = mask.cpu()
 
         num_delete_per_sample = [
-            cpu_mask[old_idx_sample[i] : old_idx_sample[i + 1]].sum().item()
-            for i in range(len(old_idx_sample) - 1)
+            cpu_mask[old_idx_sample[i] : old_idx_sample[i + 1]].sum().item() for i in range(len(old_idx_sample) - 1)
         ]
 
-        new_idx_sample = [
-            old_idx_sample[i] - sum(num_delete_per_sample[: i + 1])
-            for i in range(len(old_idx_sample))
-        ]
+        new_idx_sample = [old_idx_sample[i] - sum(num_delete_per_sample[: i + 1]) for i in range(len(old_idx_sample))]
 
         return cls._wrap(
             data,

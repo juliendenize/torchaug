@@ -10,10 +10,10 @@ from torch.utils._pytree import tree_flatten, tree_unflatten
 from torchvision.transforms.v2._utils import check_type, has_any
 
 from torchaug import ta_tensors
+from torchaug._utils import _log_api_usage_once
 from torchaug.ta_tensors import set_return_type
-from torchaug.utils import _log_api_usage_once
-from ._utils import is_pure_tensor
 
+from ._utils import is_pure_tensor
 from .functional._utils._kernel import _get_kernel
 
 
@@ -31,17 +31,11 @@ class RandomApplyTransform(nn.Module):
         batch_transform: bool = False,
     ) -> None:
         if not (0.0 <= p <= 1.0):
-            raise ValueError(
-                "`p` should be a floating point value in the interval [0.0, 1.0]."
-            )
+            raise ValueError("`p` should be a floating point value in the interval [0.0, 1.0].")
         elif p > 0 and p < 1 and self._reshape_transform and batch_transform:
-            raise ValueError(
-                "`p` should be 0 or 1 if `_reshape_transform` is True and `batch_transform` is True."
-            )
+            raise ValueError("`p` should be 0 or 1 if `_reshape_transform` is True and `batch_transform` is True.")
         if batch_inplace and self._reshape_transform:
-            raise ValueError(
-                "`inplace` should be False if `_reshape_transform` is True."
-            )
+            raise ValueError("`inplace` should be False if `_reshape_transform` is True.")
         if (num_chunks == -1 or num_chunks > 1) and not batch_transform:
             raise ValueError("`num_chunks` should be 1 if `batch_transform` is False.")
         elif num_chunks < -1:
@@ -68,14 +62,13 @@ class RandomApplyTransform(nn.Module):
 
         return batch_size
 
-    def _get_chunks_indices(
-        self, batch_size: int, num_chunks: int, device: torch.device
-    ) -> Tuple[torch.Tensor, ...]:
+    def _get_chunks_indices(self, batch_size: int, num_chunks: int, device: torch.device) -> Tuple[torch.Tensor, ...]:
         if num_chunks <= 0:
             raise ValueError("`num_chunks` should be greater than 0.")
         elif num_chunks > batch_size:
             raise ValueError(
-                f"`num_chunks` should be less than or equal to the batch size, but got {num_chunks} and batch size {batch_size}."
+                f"`num_chunks` should be less than or equal to the batch size, but got {num_chunks} "
+                f"and batch size {batch_size}."
             )
         elif num_chunks == 1:
             return (torch.arange(0, batch_size, device=device),)
@@ -89,7 +82,8 @@ class RandomApplyTransform(nn.Module):
     def _needs_transform_list(self, flat_inputs: List[Any]) -> List[bool]:
         # Below is a heuristic on how to deal with pure tensor inputs:
         # 1. Pure tensors, i.e. tensors that are not a ta_tensor, are passed through if there is an explicit image
-        #    (`ta_tensors.Image`, `ta_tensors.BatchImages`) or video (`ta_tensors.Video`, `ta_tensors.BatchVideos`) in the sample.
+        #    (`ta_tensors.Image`, `ta_tensors.BatchImages`) or video (`ta_tensors.Video`, `ta_tensors.BatchVideos`)
+        #    in the sample.
         # 2. If there is no explicit image or video in the sample, only the first encountered pure tensor is
         #    transformed as image, while the rest is passed through. The order is defined by the returned `flat_inputs`
         #    of `tree_flatten`, which recurses depth-first through the input.
@@ -138,11 +132,9 @@ class RandomApplyTransform(nn.Module):
         num_chunks: int,
         chunks_indices: List[torch.Tensor],
     ) -> List[Dict[str, Any]]:
-        return [dict() for _ in range(num_chunks)]
+        return [{} for _ in range(num_chunks)]
 
-    def _get_indices_transform(
-        self, batch_size: int, device: torch.device
-    ) -> torch.Tensor:
+    def _get_indices_transform(self, batch_size: int, device: torch.device) -> torch.Tensor:
         p_mul_batch_size = self.p * batch_size
         floor_apply = floor(p_mul_batch_size)
         ceil_apply = ceil(p_mul_batch_size)
@@ -157,9 +149,7 @@ class RandomApplyTransform(nn.Module):
         # elements from input are augmented randomly depending with the decimal.
         else:
             decimal = p_mul_batch_size % 1
-            num_transform = (
-                floor_apply if decimal < torch.rand(1).item() else ceil_apply
-            )
+            num_transform = floor_apply if decimal < torch.rand(1).item() else ceil_apply
 
         # If no augmentation return the output directly, keep consistency of inplace.
         if num_transform == 0:
@@ -167,17 +157,13 @@ class RandomApplyTransform(nn.Module):
         elif num_transform == 1:
             indices_transform = torch.randint(0, batch_size, (1,), device=device)
         elif num_transform > 1:
-            indices_transform = torch.randperm(batch_size, device=device)[
-                :num_transform
-            ]
+            indices_transform = torch.randperm(batch_size, device=device)[:num_transform]
         return indices_transform
 
     def _check_inputs(self, flat_inputs: List[Any]) -> None:
         pass
 
-    def _call_kernel(
-        self, functional: Callable, inpt: Any, *args: Any, **kwargs: Any
-    ) -> Any:
+    def _call_kernel(self, functional: Callable, inpt: Any, *args: Any, **kwargs: Any) -> Any:
         kernel = _get_kernel(functional, type(inpt), allow_passthrough=True)
         return kernel(inpt, *args, **kwargs)
 
@@ -192,11 +178,7 @@ class RandomApplyTransform(nn.Module):
 
         needs_transform_list = self._needs_transform_list(flat_inputs)
         params = self._get_params(
-            [
-                inpt
-                for (inpt, needs_transform) in zip(flat_inputs, needs_transform_list)
-                if needs_transform
-            ],
+            [inpt for (inpt, needs_transform) in zip(flat_inputs, needs_transform_list) if needs_transform],
             num_chunks=1,
             chunks_indices=[torch.tensor([0], device=flat_inputs[0].device)],
         )[0]
@@ -225,9 +207,7 @@ class RandomApplyTransform(nn.Module):
             )
 
             transform_all = indices_transform.shape[0] == batch_size
-        if (
-            not transform_all and indices_transform.shape[0] == 0
-        ):  # if no augmentation return the inputs directly.
+        if not transform_all and indices_transform.shape[0] == 0:  # if no augmentation return the inputs directly.
             return flat_inputs
 
         if transform_all:
@@ -251,39 +231,30 @@ class RandomApplyTransform(nn.Module):
                 )
                 pre_output = (
                     inpt
-                    if self.batch_inplace
-                    or (self._reshape_transform and not is_batch_bboxes_or_masks_inpt)
+                    if self.batch_inplace or (self._reshape_transform and not is_batch_bboxes_or_masks_inpt)
                     else inpt.clone()
                 )
                 flat_pre_outputs.append(pre_output)
 
                 if is_batch_bboxes_or_masks_inpt:
-                    transform_inpt = pre_output.get_chunk(
-                        chunk_indices=indices_transform
-                    )
+                    transform_inpt = pre_output.get_chunk(chunk_indices=indices_transform)
                 else:
                     with set_return_type("TATensor" if is_ta_inpt else "Tensor"):
                         transform_inpt = pre_output[indices_transform]
                 transform_inpts.append(transform_inpt)
 
-        transform_batch_size = (
-            indices_transform.shape[0] if not transform_all else batch_size
-        )
+        transform_batch_size = indices_transform.shape[0] if not transform_all else batch_size
         if self.num_chunks == -1:
             num_chunks = transform_batch_size
         else:
             num_chunks = min(transform_batch_size, self.num_chunks)
 
-        chunks_indices = self._get_chunks_indices(
-            transform_batch_size, num_chunks, flat_inputs[0].device
-        )
+        chunks_indices = self._get_chunks_indices(transform_batch_size, num_chunks, flat_inputs[0].device)
 
         params = self._get_params(
             [
                 transform_inpt
-                for (transform_inpt, needs_transform) in zip(
-                    transform_inpts, needs_transform_list
-                )
+                for (transform_inpt, needs_transform) in zip(transform_inpts, needs_transform_list)
                 if needs_transform
             ],
             len(chunks_indices),
@@ -292,9 +263,7 @@ class RandomApplyTransform(nn.Module):
 
         transform_outputs = []
 
-        for transform_inpt, needs_transform in zip(
-            transform_inpts, needs_transform_list
-        ):
+        for transform_inpt, needs_transform in zip(transform_inpts, needs_transform_list):
             if not needs_transform:
                 transform_outputs.append(transform_inpt)
                 continue
@@ -310,16 +279,12 @@ class RandomApplyTransform(nn.Module):
                     output = []
                 for i, chunk_indices in enumerate(chunks_indices):
                     if is_batch_bboxes_or_masks_inpt:
-                        chunk_inpt = transform_inpt.get_chunk(
-                            chunk_indices=chunk_indices
-                        )
+                        chunk_inpt = transform_inpt.get_chunk(chunk_indices=chunk_indices)
                         chunk_output = self._transform(chunk_inpt, params[i])
                         if self._reshape_transform:
                             output.append(chunk_output)
                         else:
-                            transform_inpt.update_chunk_(
-                                chunk_output, chunk_indices=chunk_indices
-                            )
+                            transform_inpt.update_chunk_(chunk_output, chunk_indices=chunk_indices)
                             output = transform_inpt
                     else:
                         with set_return_type("TATensor" if is_ta_inpt else "Tensor"):
@@ -331,9 +296,7 @@ class RandomApplyTransform(nn.Module):
                             output.append(chunk_output)
 
                         else:
-                            with set_return_type(
-                                "TATensor" if is_ta_inpt else "Tensor"
-                            ):
+                            with set_return_type("TATensor" if is_ta_inpt else "Tensor"):
                                 transform_inpt[chunk_indices] = chunk_output
                             output = transform_inpt
                 if self._reshape_transform:
@@ -357,9 +320,7 @@ class RandomApplyTransform(nn.Module):
                 )
 
                 if is_batch_bboxes_or_masks_inpt:
-                    flat_pre_output.update_chunk_(
-                        transform_output, chunk_indices=indices_transform
-                    )
+                    flat_pre_output.update_chunk_(transform_output, chunk_indices=indices_transform)
                 else:
                     with set_return_type("TATensor" if is_ta_output else "Tensor"):
                         flat_pre_output[indices_transform] = transform_output
@@ -404,9 +365,7 @@ class RandomApplyTransform(nn.Module):
 
             extra.append(f"{name}={value}")
 
-        return ", ".join(extra) + (
-            ", batch_transform=True" if self.batch_transform else ""
-        )
+        return ", ".join(extra) + (", batch_transform=True" if self.batch_transform else "")
 
 
 class Transform(RandomApplyTransform):

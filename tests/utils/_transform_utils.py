@@ -7,20 +7,20 @@ from unittest import mock
 
 import numpy as np
 import pytest
-
 import torch
-import torchaug.transforms as transforms
-
 from torch.testing import assert_close
 from torch.utils._pytree import tree_flatten
+from torchvision.transforms.v2._utils import check_type
+
+import torchaug.transforms as transforms
 from torchaug import ta_tensors
 from torchaug.transforms import functional as F
 from torchaug.transforms.functional._utils._tensor import (
     _max_value as get_max_value,
+)
+from torchaug.transforms.functional._utils._tensor import (
     is_pure_tensor,
 )
-
-from torchvision.transforms.v2._utils import check_type
 
 from ._common import (
     assert_equal,
@@ -29,7 +29,6 @@ from ._common import (
     ignore_jit_no_profile_information_warning,
     set_rng_seed,
 )
-
 from ._make_tensors import (
     make_batch_bounding_boxes,
     make_batch_detection_masks,
@@ -58,9 +57,7 @@ EXHAUSTIVE_TYPE_FILLS = [
     (0.9, 0.234, 0.314),
 ]
 CORRECTNESS_FILLS = [
-    v
-    for v in EXHAUSTIVE_TYPE_FILLS
-    if v is None or isinstance(v, float) or (isinstance(v, list) and len(v) > 1)
+    v for v in EXHAUSTIVE_TYPE_FILLS if v is None or isinstance(v, float) or (isinstance(v, list) and len(v) > 1)
 ]
 
 
@@ -70,9 +67,7 @@ def _script(obj):
         return torch.jit.script(obj)
     except Exception as error:
         name = getattr(obj, "__name__", obj.__class__.__name__)
-        raise AssertionError(
-            f"Trying to `torch.jit.script` '{name}' raised the error above."
-        ) from error
+        raise AssertionError(f"Trying to `torch.jit.script` '{name}' raised the error above.") from error
 
 
 # turns all warnings into errors for this module
@@ -116,9 +111,7 @@ def _script(obj):
         return torch.jit.script(obj)
     except Exception as error:
         name = getattr(obj, "__name__", obj.__class__.__name__)
-        raise AssertionError(
-            f"Trying to `torch.jit.script` '{name}' raised the error above."
-        ) from error
+        raise AssertionError(f"Trying to `torch.jit.script` '{name}' raised the error above.") from error
 
 
 def _check_kernel_scripted_vs_eager(kernel, input, *args, rtol, atol, **kwargs):
@@ -230,14 +223,10 @@ def check_kernel(
     assert output.device == input.device
 
     if check_cuda_vs_cpu:
-        check_kernel_cuda_vs_cpu(
-            kernel, input, *args, **kwargs, **_to_tolerances(check_cuda_vs_cpu)
-        )
+        check_kernel_cuda_vs_cpu(kernel, input, *args, **kwargs, **_to_tolerances(check_cuda_vs_cpu))
 
     if check_scripted_vs_eager:
-        _check_kernel_scripted_vs_eager(
-            kernel, input, *args, **kwargs, **_to_tolerances(check_scripted_vs_eager)
-        )
+        _check_kernel_scripted_vs_eager(kernel, input, *args, **kwargs, **_to_tolerances(check_scripted_vs_eager))
 
     is_batch_input = type(input) in (
         ta_tensors.BatchImages,
@@ -252,9 +241,7 @@ def check_kernel(
         )
 
     if check_batch_kernel_leading_dims and is_batch_input:
-        _check_batch_kernel_leading_dims(
-            kernel, input, *args, **kwargs, **_to_tolerances(check_batched_vs_unbatched)
-        )
+        _check_batch_kernel_leading_dims(kernel, input, *args, **kwargs, **_to_tolerances(check_batched_vs_unbatched))
 
 
 def _check_functional_scripted_smoke(functional, input, *args, **kwargs):
@@ -272,9 +259,7 @@ def check_functional(functional, input, *args, check_scripted_smoke=True, **kwar
     with pytest.raises(TypeError, match=re.escape(str(type(unknown_input)))):
         functional(unknown_input, *args, **kwargs)
 
-    with mock.patch(
-        "torch._C._log_api_usage_once", wraps=torch._C._log_api_usage_once
-    ) as spy:
+    with mock.patch("torch._C._log_api_usage_once", wraps=torch._C._log_api_usage_once) as spy:
         output = functional(input, *args, **kwargs)
 
         spy.assert_any_call(f"{functional.__module__}.{functional.__name__}")
@@ -304,9 +289,7 @@ def check_functional_kernel_signature_match(functional, *, kernel, input_type):
             ta_tensors.BatchBoundingBoxes: {"format", "canvas_size", "idx_sample"},
         }
         kernel_params = [
-            param
-            for param in kernel_params
-            if param.name not in explicit_metadata.get(input_type, set())
+            param for param in kernel_params if param.name not in explicit_metadata.get(input_type, set())
         ]
 
     functional_params = iter(functional_params)
@@ -326,24 +309,16 @@ def check_functional_kernel_signature_match(functional, *, kernel, input_type):
 
 
 def _make_transform_sample(transform, *, image_or_video, adapter, batch=False):
-    device = (
-        image_or_video.device if isinstance(image_or_video, torch.Tensor) else "cpu"
-    )
+    device = image_or_video.device if isinstance(image_or_video, torch.Tensor) else "cpu"
     size = F.get_size(image_or_video)
     input = (
         dict(
             image_or_video=image_or_video,
             image_ta_tensor=make_image(size, device=device),
             video_ta_tensor=make_video(size, device=device),
-            bounding_boxes_xyxy=make_bounding_boxes(
-                size, format=ta_tensors.BoundingBoxFormat.XYXY, device=device
-            ),
-            bounding_boxes_xywh=make_bounding_boxes(
-                size, format=ta_tensors.BoundingBoxFormat.XYWH, device=device
-            ),
-            bounding_boxes_cxcywh=make_bounding_boxes(
-                size, format=ta_tensors.BoundingBoxFormat.CXCYWH, device=device
-            ),
+            bounding_boxes_xyxy=make_bounding_boxes(size, format=ta_tensors.BoundingBoxFormat.XYXY, device=device),
+            bounding_boxes_xywh=make_bounding_boxes(size, format=ta_tensors.BoundingBoxFormat.XYWH, device=device),
+            bounding_boxes_cxcywh=make_bounding_boxes(size, format=ta_tensors.BoundingBoxFormat.CXCYWH, device=device),
             bounding_boxes_degenerate_xyxy=ta_tensors.BoundingBoxes(
                 [
                     [0, 0, 0, 0],  # no height or width
@@ -470,18 +445,12 @@ def _make_transform_sample(transform, *, image_or_video, adapter, batch=False):
 
 
 def _make_transform_batch_sample(transform, *, image_or_video, adapter, batch_size):
-    device = (
-        image_or_video.device if isinstance(image_or_video, torch.Tensor) else "cpu"
-    )
+    device = image_or_video.device if isinstance(image_or_video, torch.Tensor) else "cpu"
     size = F.get_size(image_or_video)
     input = dict(
         image_or_video=image_or_video,
-        batch_images_ta_tensor=make_batch_images(
-            size, device=device, batch_dims=(batch_size,)
-        ),
-        batch_videos_ta_tensor=make_batch_videos(
-            size, device=device, batch_dims=(batch_size,)
-        ),
+        batch_images_ta_tensor=make_batch_images(size, device=device, batch_dims=(batch_size,)),
+        batch_videos_ta_tensor=make_batch_videos(size, device=device, batch_dims=(batch_size,)),
         batch_bounding_boxes_xyxy=make_batch_bounding_boxes(
             size,
             format=ta_tensors.BoundingBoxFormat.XYXY,
@@ -512,9 +481,7 @@ def _make_transform_batch_sample(transform, *, image_or_video, adapter, batch_si
             * batch_size,
             format=ta_tensors.BoundingBoxFormat.XYXY,
             canvas_size=size,
-            idx_sample=torch.tensor([0] + [6] * batch_size, dtype=torch.long)
-            .cumsum(0)
-            .tolist(),
+            idx_sample=torch.tensor([0] + [6] * batch_size, dtype=torch.long).cumsum(0).tolist(),
             device=device,
         ),
         batch_bounding_boxes_degenerate_xywh=ta_tensors.BatchBoundingBoxes(
@@ -529,9 +496,7 @@ def _make_transform_batch_sample(transform, *, image_or_video, adapter, batch_si
             * batch_size,
             format=ta_tensors.BoundingBoxFormat.XYWH,
             canvas_size=size,
-            idx_sample=torch.tensor([0] + [6] * batch_size, dtype=torch.long)
-            .cumsum(0)
-            .tolist(),
+            idx_sample=torch.tensor([0] + [6] * batch_size, dtype=torch.long).cumsum(0).tolist(),
             device=device,
         ),
         batch_bounding_boxes_degenerate_cxcywh=ta_tensors.BatchBoundingBoxes(
@@ -546,17 +511,11 @@ def _make_transform_batch_sample(transform, *, image_or_video, adapter, batch_si
             * batch_size,
             format=ta_tensors.BoundingBoxFormat.CXCYWH,
             canvas_size=size,
-            idx_sample=torch.tensor([0] + [6] * batch_size, dtype=torch.long)
-            .cumsum(0)
-            .tolist(),
+            idx_sample=torch.tensor([0] + [6] * batch_size, dtype=torch.long).cumsum(0).tolist(),
             device=device,
         ),
-        batch_detection_masks=make_batch_detection_masks(
-            size=size, device=device, batch_dims=(batch_size,)
-        ),
-        batch_segmentation_masks=make_batch_segmentation_masks(
-            size=size, device=device, batch_dims=(batch_size,)
-        ),
+        batch_detection_masks=make_batch_detection_masks(size=size, device=device, batch_dims=(batch_size,)),
+        batch_segmentation_masks=make_batch_segmentation_masks(size=size, device=device, batch_dims=(batch_size,)),
         int=0,
         float=0.0,
         bool=True,
@@ -588,9 +547,7 @@ def _check_transform_sample_input_smoke(transform, input, *, adapter, batch=Fals
         ):
             return
     else:
-        if not check_type(
-            input, (is_pure_tensor, ta_tensors.BatchImages, ta_tensors.BatchVideos)
-        ):
+        if not check_type(input, (is_pure_tensor, ta_tensors.BatchImages, ta_tensors.BatchVideos)):
             return
 
     sample = _make_transform_sample(
@@ -631,10 +588,7 @@ def _check_transform_sample_input_smoke(transform, input, *, adapter, batch=Fals
     for degenerate_bounding_boxes in (
         bounding_box
         for name, bounding_box in sample.items()
-        if "degenerate" in name
-        and isinstance(
-            bounding_box, (ta_tensors.BoundingBoxes, ta_tensors.BatchBoundingBoxes)
-        )
+        if "degenerate" in name and isinstance(bounding_box, (ta_tensors.BoundingBoxes, ta_tensors.BatchBoundingBoxes))
     ):
         sample = dict(
             boxes=degenerate_bounding_boxes,
@@ -653,9 +607,9 @@ def check_transform(transform, input, check_sample_input=True, batch=False):
     output = transform(input)
     assert isinstance(output, type(input))
 
-    if isinstance(
-        input, (ta_tensors.BoundingBoxes, ta_tensors.BatchBoundingBoxes)
-    ) and not isinstance(transform, transforms.ConvertBoundingBoxFormat):
+    if isinstance(input, (ta_tensors.BoundingBoxes, ta_tensors.BatchBoundingBoxes)) and not isinstance(
+        transform, transforms.ConvertBoundingBoxFormat
+    ):
         assert output.format == input.format
 
     if check_sample_input:
@@ -671,9 +625,7 @@ def check_transform(transform, input, check_sample_input=True, batch=False):
 
 def _check_transform_batch_sample_input_smoke(transform, input, *, adapter, batch_size):
     # This is a bunch of input / output convention checks, using a big sample with different parts as input.
-    if not check_type(
-        input, (is_pure_tensor, ta_tensors.BatchImages, ta_tensors.BatchVideos)
-    ):
+    if not check_type(input, (is_pure_tensor, ta_tensors.BatchImages, ta_tensors.BatchVideos)):
         return
 
     sample = _make_transform_batch_sample(
@@ -712,9 +664,7 @@ def _check_transform_batch_sample_input_smoke(transform, input, *, adapter, batc
                 batch_size = transform._get_input_batch_size(input_flat[0])
                 device = input_flat[0].device
                 if p == 1:
-                    indices_transform = torch.tensor(
-                        [i for i in range(batch_size)], dtype=torch.long, device=device
-                    )
+                    indices_transform = torch.tensor(list(range(batch_size)), dtype=torch.long, device=device)
                 else:
                     indices_transform = transform._get_indices_transform(
                         batch_size,
@@ -729,9 +679,7 @@ def _check_transform_batch_sample_input_smoke(transform, input, *, adapter, batc
                     needs_transform_list,
                     sample.keys(),
                 ):
-                    if isinstance(
-                        inpt, (ta_tensors.BatchBoundingBoxes, ta_tensors.BatchMasks)
-                    ):
+                    if isinstance(inpt, (ta_tensors.BatchBoundingBoxes, ta_tensors.BatchMasks)):
                         continue
                     if not need_transform:
                         if isinstance(opt, torch.Tensor):
@@ -750,8 +698,7 @@ def _check_transform_batch_sample_input_smoke(transform, input, *, adapter, batc
     for degenerate_bounding_boxes in (
         bounding_box
         for name, bounding_box in sample.items()
-        if "degenerate" in name
-        and isinstance(bounding_box, (ta_tensors.BatchBoundingBoxes))
+        if "degenerate" in name and isinstance(bounding_box, (ta_tensors.BatchBoundingBoxes))
     ):
         sample = dict(
             boxes=degenerate_bounding_boxes,
@@ -772,9 +719,9 @@ def check_batch_transform(transform, input, batch_size, check_sample_input=True)
     output = transform(cloned_input)
     assert isinstance(output, type(cloned_input))
 
-    if isinstance(
-        input, (ta_tensors.BoundingBoxes, ta_tensors.BatchBoundingBoxes)
-    ) and not isinstance(transform, transforms.ConvertBoundingBoxFormat):
+    if isinstance(input, (ta_tensors.BoundingBoxes, ta_tensors.BatchBoundingBoxes)) and not isinstance(
+        transform, transforms.ConvertBoundingBoxFormat
+    ):
         assert output.format == input.format
 
     if check_sample_input:
@@ -833,6 +780,4 @@ def adapt_fill(value, *, dtype):
     elif isinstance(value, (list, tuple)):
         return type(value)(value_type(v * max_value) for v in value)
     else:
-        raise ValueError(
-            f"fill should be an int or float, or a list or tuple of the former, but got '{value}'."
-        )
+        raise ValueError(f"fill should be an int or float, or a list or tuple of the former, but got '{value}'.")

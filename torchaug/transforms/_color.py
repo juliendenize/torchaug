@@ -7,7 +7,6 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 import torch
 
 from . import functional as F
-
 from ._transform import RandomApplyTransform, Transform
 from ._utils import query_chw
 
@@ -52,24 +51,21 @@ class RandomGrayscale(RandomApplyTransform):
 
     Args:
         p: probability that image should be converted to grayscale.
-        batch_inplace: whether to apply the batch transform in-place. Does not prevent functionals to make copy but can reduce time and memory consumption.
+        batch_inplace: whether to apply the batch transform in-place.
+            Does not prevent functionals to make copy but can reduce time and memory consumption.
         batch_transform: whether to apply the transform in batch mode.
     """
 
-    def __init__(
-        self, p: float = 0.1, batch_inplace: bool = False, batch_transform: bool = False
-    ) -> None:
+    def __init__(self, p: float = 0.1, batch_inplace: bool = False, batch_transform: bool = False) -> None:
         super().__init__(
             p=p,
             batch_inplace=batch_inplace,
             batch_transform=batch_transform,
         )
 
-    def _get_params(
-        self, flat_inputs: List[Any], *args, **kwargs
-    ) -> List[Dict[str, Any]]:
+    def _get_params(self, flat_inputs: List[Any], *args, **kwargs) -> List[Dict[str, Any]]:
         num_input_channels, *_ = query_chw(flat_inputs)
-        return [dict(num_input_channels=num_input_channels)]
+        return [{"num_input_channels": num_input_channels}]
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(
@@ -104,7 +100,8 @@ class RandomColorJitter(RandomApplyTransform):
             thus it does not work if you normalize your image to an interval with negative values,
             or use an interpolation that generates negative values before using this function.
         p: probability of image being color jittered.
-        batch_inplace: whether to apply the batch transform in-place. Does not prevent functionals to make copy but can reduce time and memory consumption.
+        batch_inplace: whether to apply the batch transform in-place.
+            Does not prevent functionals to make copy but can reduce time and memory consumption.
         num_chunks: number of chunks to split the input into.
         permute_chunks: whether to permute the chunks.
         batch_transform: whether to apply the transform in batch mode.
@@ -135,9 +132,7 @@ class RandomColorJitter(RandomApplyTransform):
         self.brightness = self._check_input(brightness, "brightness")
         self.contrast = self._check_input(contrast, "contrast")
         self.saturation = self._check_input(saturation, "saturation")
-        self.hue = self._check_input(
-            hue, "hue", center=0, bound=(-0.5, 0.5), clip_first_on_zero=False
-        )
+        self.hue = self._check_input(hue, "hue", center=0, bound=(-0.5, 0.5), clip_first_on_zero=False)
 
         self._combinations = list(permutations(range(0, 4)))
 
@@ -154,29 +149,19 @@ class RandomColorJitter(RandomApplyTransform):
 
         if isinstance(value, (int, float)):
             if value < 0:
-                raise ValueError(
-                    f"If {name} is a single number, it must be non negative."
-                )
+                raise ValueError(f"If {name} is a single number, it must be non negative.")
             value = [center - value, center + value]
             if clip_first_on_zero:
                 value[0] = max(value[0], 0.0)
         elif isinstance(value, collections.abc.Sequence) and len(value) == 2:
             value = [float(v) for v in value]
         else:
-            raise TypeError(
-                f"{name}={value} should be a single number or a sequence with length 2."
-            )
+            raise TypeError(f"{name}={value} should be a single number or a sequence with length 2.")
 
         if not bound[0] <= value[0] <= value[1] <= bound[1]:
-            raise ValueError(
-                f"{name} values should be between {bound}, but got {value}."
-            )
+            raise ValueError(f"{name} values should be between {bound}, but got {value}.")
 
-        return (
-            None
-            if value[0] == value[1] == center
-            else (float(value[0]), float(value[1]))
-        )
+        return None if value[0] == value[1] == center else (float(value[0]), float(value[1]))
 
     @staticmethod
     def _generate_value(
@@ -254,13 +239,13 @@ class RandomColorJitter(RandomApplyTransform):
             )
 
             params.append(
-                dict(
-                    fn_idx=self._combinations[idx_perms[i]],
-                    brightness_factor=b,
-                    contrast_factor=c,
-                    saturation_factor=s,
-                    hue_factor=h,
-                )
+                {
+                    "fn_idx": self._combinations[idx_perms[i]],
+                    "brightness_factor": b,
+                    "contrast_factor": c,
+                    "saturation_factor": s,
+                    "hue_factor": h,
+                }
             )
 
         return params
@@ -274,25 +259,19 @@ class RandomColorJitter(RandomApplyTransform):
         for fn_id in params["fn_idx"]:
             if fn_id == 0 and brightness_factor is not None:
                 output = self._call_kernel(
-                    F.adjust_brightness_batch
-                    if self.batch_transform
-                    else F.adjust_brightness,
+                    F.adjust_brightness_batch if self.batch_transform else F.adjust_brightness,
                     output,
                     brightness_factor=brightness_factor,
                 )
             elif fn_id == 1 and contrast_factor is not None:
                 output = self._call_kernel(
-                    F.adjust_contrast_batch
-                    if self.batch_transform
-                    else F.adjust_contrast,
+                    F.adjust_contrast_batch if self.batch_transform else F.adjust_contrast,
                     output,
                     contrast_factor=contrast_factor,
                 )
             elif fn_id == 2 and saturation_factor is not None:
                 output = self._call_kernel(
-                    F.adjust_saturation_batch
-                    if self.batch_transform
-                    else F.adjust_saturation,
+                    F.adjust_saturation_batch if self.batch_transform else F.adjust_saturation,
                     output,
                     saturation_factor=saturation_factor,
                 )
@@ -327,7 +306,8 @@ class ColorJitter(RandomColorJitter):
             thus it does not work if you normalize your image to an interval with negative values,
             or use an interpolation that generates negative values before using this function.
         p: probability of image being color jittered.
-        batch_inplace: whether to apply the batch transform in-place. Does not prevent functionals to make copy but can reduce time and memory consumption.
+        batch_inplace: whether to apply the batch transform in-place.
+            Does not prevent functionals to make copy but can reduce time and memory consumption.
         num_chunks: number of chunks to split the input into.
         permute_chunks: whether to permute the chunks.
         batch_transform: whether to apply the transform in batch mode.
@@ -361,11 +341,12 @@ class ColorJitter(RandomColorJitter):
 
 
 class RandomChannelPermutation(RandomApplyTransform):
-    """Randomly permute the channels of an image or video
+    """Randomly permute the channels of an image or video.
 
     Args:
         p: probability of the image being channel permuted.
-        batch_inplace: whether to apply the batch transform in-place. Does not prevent functionals to make copy but can reduce time and memory consumption.
+        batch_inplace: whether to apply the batch transform in-place.
+            Does not prevent functionals to make copy but can reduce time and memory consumption.
         num_chunks: number of chunks to split the batched input into.
         permute_chunks: whether to permute the chunks.
         batch_transform: whether to apply the transform in batch mode.
@@ -397,7 +378,7 @@ class RandomChannelPermutation(RandomApplyTransform):
 
         params = []
         for _ in range(num_chunks):
-            params.append(dict(permutation=torch.randperm(num_channels).tolist()))
+            params.append({"permutation": torch.randperm(num_channels).tolist()})
         return params
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
@@ -426,7 +407,8 @@ class RandomPhotometricDistort(RandomApplyTransform):
             or use an interpolation that generates negative values before using this function.
         p_transform: probability each distortion operation (contrast, saturation, ...) to be applied.
         p: probability of the image being photometrically distorted.
-        batch_inplace: whether to apply the batch transform in-place. Does not prevent functionals to make copy but can reduce time and memory consumption.
+        batch_inplace: whether to apply the batch transform in-place.
+            Does not prevent functionals to make copy but can reduce time and memory consumption.
         num_chunks: number of chunks to split the batched input into.
         permute_chunks: whether to permute the chunks.
         batch_transform: whether to apply the transform in batch mode.
@@ -486,9 +468,7 @@ class RandomPhotometricDistort(RandomApplyTransform):
             }
             chunk_params["contrast_before"] = bool(torch.rand(()) < 0.5)
             chunk_params["channel_permutation"] = (
-                torch.randperm(num_channels)
-                if torch.rand(1) < self.p_transform
-                else None
+                torch.randperm(num_channels) if torch.rand(1) < self.p_transform else None
             )
 
             params.append(chunk_params)
@@ -498,9 +478,7 @@ class RandomPhotometricDistort(RandomApplyTransform):
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         if params["brightness_factor"] is not None:
             inpt = self._call_kernel(
-                F.adjust_brightness_batch
-                if self.batch_transform
-                else F.adjust_brightness_batch,
+                F.adjust_brightness_batch if self.batch_transform else F.adjust_brightness_batch,
                 inpt,
                 brightness_factor=params["brightness_factor"],
             )
@@ -512,9 +490,7 @@ class RandomPhotometricDistort(RandomApplyTransform):
             )
         if params["saturation_factor"] is not None:
             inpt = self._call_kernel(
-                F.adjust_saturation_batch
-                if self.batch_transform
-                else F.adjust_saturation,
+                F.adjust_saturation_batch if self.batch_transform else F.adjust_saturation,
                 inpt,
                 saturation_factor=params["saturation_factor"],
             )
@@ -546,13 +522,12 @@ class RandomEqualize(RandomApplyTransform):
 
     Args:
         p: probability of the image being equalized.
-        batch_inplace: whether to apply the batch transform in-place. Does not prevent functionals to make copy but can reduce time and memory consumption.
+        batch_inplace: whether to apply the batch transform in-place.
+            Does not prevent functionals to make copy but can reduce time and memory consumption.
         batch_transform: whether to apply the transform in batch mode.
     """
 
-    def __init__(
-        self, p: float = 0.5, batch_inplace: bool = False, batch_transform: bool = False
-    ) -> None:
+    def __init__(self, p: float = 0.5, batch_inplace: bool = False, batch_transform: bool = False) -> None:
         super().__init__(
             p=p,
             batch_inplace=batch_inplace,
@@ -574,13 +549,12 @@ class RandomInvert(RandomApplyTransform):
 
     Args:
         p: probability of the image being color inverted.
-        batch_inplace: whether to apply the batch transform in-place. Does not prevent functionals to make copy but can reduce time and memory consumption.
+        batch_inplace: whether to apply the batch transform in-place.
+            Does not prevent functionals to make copy but can reduce time and memory consumption.
         batch_transform: whether to apply the transform in batch mode.
     """
 
-    def __init__(
-        self, p: float = 0.5, batch_inplace: bool = False, batch_transform: bool = False
-    ) -> None:
+    def __init__(self, p: float = 0.5, batch_inplace: bool = False, batch_transform: bool = False) -> None:
         super().__init__(
             p=p,
             batch_inplace=batch_inplace,
@@ -598,12 +572,14 @@ class RandomPosterize(RandomApplyTransform):
     """Posterize the image or video with a given probability by reducing the
     number of bits for each color channel.
 
-    The input should be of type torch.uint8 and it is expected to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
+    The input should be of type torch.uint8 and it is expected to have [..., 1 or 3, H, W] shape, where ...
+    means an arbitrary number of leading dimensions.
 
     Args:
         bits: number of bits to keep for each channel (0-8)
         p: probability of the image being posterized.
-        batch_inplace: whether to apply the batch transform in-place. Does not prevent functionals to make copy but can reduce time and memory consumption.
+        batch_inplace: whether to apply the batch transform in-place.
+            Does not prevent functionals to make copy but can reduce time and memory consumption.
         batch_transform: whether to apply the transform in batch mode.
     """
 
@@ -642,7 +618,8 @@ class RandomSolarize(RandomApplyTransform):
     Args:
         threshold: all pixels equal or above this value are inverted.
         p: probability of the image being solarized.
-        batch_inplace: whether to apply the batch transform in-place. Does not prevent functionals to make copy but can reduce time and memory consumption.
+        batch_inplace: whether to apply the batch transform in-place.
+            Does not prevent functionals to make copy but can reduce time and memory consumption.
         batch_transform: whether to apply the transform in batch mode.
     """
 
@@ -653,9 +630,7 @@ class RandomSolarize(RandomApplyTransform):
         batch_inplace: bool = False,
         batch_transform: bool = False,
     ) -> None:
-        super().__init__(
-            p=p, batch_inplace=batch_inplace, batch_transform=batch_transform
-        )
+        super().__init__(p=p, batch_inplace=batch_inplace, batch_transform=batch_transform)
         self.threshold = threshold
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
@@ -676,13 +651,12 @@ class RandomAutocontrast(RandomApplyTransform):
 
     Args:
         p: probability of the image being autocontrasted.
-        batch_inplace: whether to apply the batch transform in-place. Does not prevent functionals to make copy but can reduce time and memory consumption.
+        batch_inplace: whether to apply the batch transform in-place.
+            Does not prevent functionals to make copy but can reduce time and memory consumption.
         batch_transform: whether to apply the transform in batch mode.
     """
 
-    def __init__(
-        self, p: float = 0.5, batch_inplace: bool = False, batch_transform: bool = False
-    ) -> None:
+    def __init__(self, p: float = 0.5, batch_inplace: bool = False, batch_transform: bool = False) -> None:
         super().__init__(
             p=p,
             batch_inplace=batch_inplace,
@@ -702,9 +676,11 @@ class RandomAdjustSharpness(RandomApplyTransform):
     The input is expected to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
 
     Args:
-        sharpness_factor: How much to adjust the sharpness. Can be any non-negative number. 0 gives a blurred image, 1 gives the original image while 2 increases the sharpness by a factor of 2.
+        sharpness_factor: How much to adjust the sharpness. Can be any non-negative number. 0 gives a blurred image,
+            1 gives the original image while 2 increases the sharpness by a factor of 2.
         p: probability of the image being sharpened.
-        batch_inplace: whether to apply the batch transform in-place. Does not prevent functionals to make copy but can reduce time and memory consumption.
+        batch_inplace: whether to apply the batch transform in-place.
+            Does not prevent functionals to make copy but can reduce time and memory consumption.
         batch_transform: whether to apply the transform in batch mode.
     """
 

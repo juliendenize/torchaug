@@ -60,3 +60,21 @@ readme = {file = ["README.md"], content-type = "text/markdown"}
 [tool.setuptools.packages.find]
 exclude = ["docs*", "test*", "examples*"]
 namespaces = false
+
+[tool.ruff.lint]
+ignore=["D205", "C901"]
+select = ["C", "E", "F", "I", "W", "D"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["D", "C408", "C901"]
+"docs/*" = ["D"]
+
+[tool.ruff.lint.isort]
+lines-after-imports = 2
+known-first-party = ["torchaug"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff]
+line-length = 119

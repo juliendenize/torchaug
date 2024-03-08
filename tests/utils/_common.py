@@ -74,9 +74,9 @@ def needs_cuda(test_func):
 @contextlib.contextmanager
 def ignore_jit_no_profile_information_warning():
     # Calling a scripted object often triggers a warning like
-    # `UserWarning: operator() profile_node %$INT1 : int[] = prim::profile_ivalue($INT2) does not have profile information`
-    # with varying `INT1` and `INT2`. Since these are uninteresting for us and only clutter the test summary, we ignore
-    # them.
+    # `UserWarning: operator() profile_node %$INT1 : int[] = prim::profile_ivalue($INT2) does not have profile
+    # information` with varying `INT1` and `INT2`. Since these are uninteresting for us and only clutter the
+    # test summary, we ignore them.
     with warnings.catch_warnings():
         warnings.filterwarnings(
             "ignore",

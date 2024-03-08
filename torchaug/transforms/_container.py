@@ -3,13 +3,12 @@ from __future__ import annotations
 from typing import Any, Callable, List, Optional, Sequence, Union
 
 import torch
-
-from torch import nn, Tensor
-
+from torch import Tensor, nn
 from torch.utils._pytree import tree_flatten, tree_unflatten
 
+from torchaug._utils import _log_api_usage_once
 from torchaug.transforms._utils import _assert_module_or_list_of_modules
-from torchaug.utils import _log_api_usage_once
+
 from ._transform import RandomApplyTransform, Transform
 
 
@@ -84,21 +83,15 @@ class RandomApply(Transform):
         p: probability of applying the list of transforms.
     """
 
-    def __init__(
-        self, transforms: Union[Sequence[Callable], nn.ModuleList], p: float = 0.5
-    ) -> None:
+    def __init__(self, transforms: Union[Sequence[Callable], nn.ModuleList], p: float = 0.5) -> None:
         super().__init__()
 
         if not isinstance(transforms, (Sequence, nn.ModuleList)):
-            raise TypeError(
-                "Argument transforms should be a sequence of callables or a `nn.ModuleList`"
-            )
+            raise TypeError("Argument transforms should be a sequence of callables or a `nn.ModuleList`")
         self.transforms = transforms
 
         if not (0.0 <= p <= 1.0):
-            raise ValueError(
-                "`p` should be a floating point value in the interval [0.0, 1.0]."
-            )
+            raise ValueError("`p` should be a floating point value in the interval [0.0, 1.0].")
         self.p = p
 
     def forward(self, *inputs: Any) -> Any:
@@ -142,9 +135,7 @@ class RandomChoice(Transform):
         if p is None:
             p = [1] * len(transforms)
         elif len(p) != len(transforms):
-            raise ValueError(
-                f"Length of p doesn't match the number of transforms: {len(p)} != {len(transforms)}"
-            )
+            raise ValueError(f"Length of p doesn't match the number of transforms: {len(p)} != {len(transforms)}")
 
         super().__init__()
 
@@ -190,9 +181,7 @@ class SequentialTransform(Transform):
         batch_inplace: Whether to perform the transforms in-place.
     """
 
-    def __init__(
-        self, transforms: List[RandomApplyTransform], batch_inplace: bool = False
-    ) -> None:
+    def __init__(self, transforms: List[RandomApplyTransform], batch_inplace: bool = False) -> None:
         super().__init__()
         _log_api_usage_once(self)
 
@@ -242,6 +231,4 @@ class SequentialTransform(Transform):
         format_string = []
         for t in self.transforms:
             format_string.append(f"    {t}")
-        return f"batch_inplace={self.batch_inplace}, transforms=\n" + "\n".join(
-            format_string
-        )
+        return f"batch_inplace={self.batch_inplace}, transforms=\n" + "\n".join(format_string)

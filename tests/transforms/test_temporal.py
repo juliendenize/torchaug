@@ -1,11 +1,13 @@
 import pytest
 import torch
+import torchvision.transforms.v2.functional as TVF
+
 import torchaug.transforms as transforms
 import torchaug.transforms.functional as F
-import torchvision.transforms.v2.functional as TVF
 from torchaug import ta_tensors
 
 from ..utils import (
+    VIDEO_MAKERS,
     assert_equal,
     check_functional,
     check_functional_kernel_signature_match,
@@ -16,7 +18,6 @@ from ..utils import (
     make_video,
     make_video_tensor,
     transform_cls_to_functional,
-    VIDEO_MAKERS,
 )
 
 
@@ -25,9 +26,7 @@ class TestUniformTemporalSubsample:
     def test_kernel_video(self, make_input):
         check_kernel(F.uniform_temporal_subsample_video, make_input(), num_samples=2)
 
-    @pytest.mark.parametrize(
-        "make_input", [make_video_tensor, make_video, make_batch_videos]
-    )
+    @pytest.mark.parametrize("make_input", [make_video_tensor, make_video, make_batch_videos])
     def test_functional(self, make_input):
         check_functional(F.uniform_temporal_subsample, make_input(), num_samples=2)
 
@@ -40,17 +39,11 @@ class TestUniformTemporalSubsample:
         ],
     )
     def test_functional_signature(self, kernel, input_type):
-        check_functional_kernel_signature_match(
-            F.uniform_temporal_subsample, kernel=kernel, input_type=input_type
-        )
+        check_functional_kernel_signature_match(F.uniform_temporal_subsample, kernel=kernel, input_type=input_type)
 
-    @pytest.mark.parametrize(
-        "make_input", [make_video_tensor, make_video, make_batch_videos]
-    )
+    @pytest.mark.parametrize("make_input", [make_video_tensor, make_video, make_batch_videos])
     def test_transform(self, make_input):
-        check_transform(
-            transforms.UniformTemporalSubsample(num_samples=2), make_input()
-        )
+        check_transform(transforms.UniformTemporalSubsample(num_samples=2), make_input())
 
     CORRECTNESS_NUM_FRAMES = 5
 
@@ -66,9 +59,7 @@ class TestUniformTemporalSubsample:
     )
     @pytest.mark.parametrize("make_input", VIDEO_MAKERS)
     def test_video_correctness(self, num_samples, dtype, device, fn, make_input):
-        video = make_input(
-            num_frames=self.CORRECTNESS_NUM_FRAMES, dtype=dtype, device=device
-        )
+        video = make_input(num_frames=self.CORRECTNESS_NUM_FRAMES, dtype=dtype, device=device)
 
         actual = fn(video, num_samples=num_samples)
         expected = TVF.uniform_temporal_subsample_video(video, num_samples=num_samples)

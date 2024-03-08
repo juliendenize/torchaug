@@ -28,7 +28,5 @@ class Mask(TATensor):
         device: torch.device | str | int | None = None,
         requires_grad: bool | None = None,
     ) -> Mask:
-        tensor = cls._to_tensor(
-            data, dtype=dtype, device=device, requires_grad=requires_grad
-        )
+        tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
         return tensor.as_subclass(cls)

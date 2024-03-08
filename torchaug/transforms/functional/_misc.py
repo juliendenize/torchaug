@@ -5,10 +5,11 @@ from typing import List
 
 import torch
 import torchvision.transforms.v2.functional as TVF
-from torch.nn.functional import conv2d, pad as torch_pad
+from torch.nn.functional import conv2d
+from torch.nn.functional import pad as torch_pad
 
 from torchaug import ta_tensors
-from torchaug.utils import _log_api_usage_once
+from torchaug._utils import _log_api_usage_once
 
 from ._utils._kernel import _get_kernel, _register_kernel_internal
 from ._utils._tensor import _transfer_tensor_on_device
@@ -44,9 +45,7 @@ def normalize_image(
 
 @_register_kernel_internal(normalize, ta_tensors.Video)
 @_register_kernel_internal(normalize, ta_tensors.BatchVideos)
-def normalize_video(
-    video: torch.Tensor, mean: List[float], std: List[float], inplace: bool = False
-) -> torch.Tensor:
+def normalize_video(video: torch.Tensor, mean: List[float], std: List[float], inplace: bool = False) -> torch.Tensor:
     return normalize_image(image=video, mean=mean, std=std, inplace=inplace)
 
 
@@ -73,9 +72,7 @@ def gaussian_blur_batch(
 ) -> torch.Tensor:
     """See :class:`~torchaug.transforms.RandomGaussianBlur` for details."""
     if torch.jit.is_scripting():
-        return gaussian_blur_batch_images(
-            inpt, kernel_size=kernel_size, sigma=sigma, value_check=value_check
-        )
+        return gaussian_blur_batch_images(inpt, kernel_size=kernel_size, sigma=sigma, value_check=value_check)
 
     _log_api_usage_once(gaussian_blur_batch)
 
@@ -104,30 +101,24 @@ def _get_gaussian_kernel2d(
 ) -> torch.Tensor:
     kernel1d_x = _get_gaussian_kernel1d(kernel_size[0], sigma[..., 0], dtype, device)
     kernel1d_y = _get_gaussian_kernel1d(kernel_size[1], sigma[..., 1], dtype, device)
-    kernel2d = (
-        kernel1d_y.view(-1, kernel_size[1], 1) * kernel1d_x.view(-1, 1, kernel_size[0])
-    ).view(-1, kernel_size[1], kernel_size[0])
+    kernel2d = (kernel1d_y.view(-1, kernel_size[1], 1) * kernel1d_x.view(-1, 1, kernel_size[0])).view(
+        -1, kernel_size[1], kernel_size[0]
+    )
     return kernel2d
 
 
 @_register_kernel_internal(gaussian_blur, torch.Tensor)
 @_register_kernel_internal(gaussian_blur, ta_tensors.Image)
 @_register_kernel_internal(gaussian_blur, ta_tensors.BatchImages)
-def gaussian_blur_image(
-    image: torch.Tensor, kernel_size: List[int], sigma: List[float] | None = None
-) -> torch.Tensor:
+def gaussian_blur_image(image: torch.Tensor, kernel_size: List[int], sigma: List[float] | None = None) -> torch.Tensor:
     # TODO: consider deprecating integers from sigma on the future
     if isinstance(kernel_size, int):
         kernel_size = [kernel_size, kernel_size]
     elif len(kernel_size) != 2:
-        raise ValueError(
-            f"If kernel_size is a sequence its length should be 2. Got {len(kernel_size)}"
-        )
+        raise ValueError(f"If kernel_size is a sequence its length should be 2. Got {len(kernel_size)}")
     for ksize in kernel_size:
         if ksize % 2 == 0 or ksize < 0:
-            raise ValueError(
-                f"kernel_size should have odd and positive integers. Got {kernel_size}"
-            )
+            raise ValueError(f"kernel_size should have odd and positive integers. Got {kernel_size}")
 
     if sigma is None:
         sigma = [ksize * 0.15 + 0.35 for ksize in kernel_size]
@@ -138,16 +129,12 @@ def gaussian_blur_image(
                 s = float(sigma[0])
                 sigma = [s, s]
             elif length != 2:
-                raise ValueError(
-                    f"If sigma is a sequence, its length should be 2. Got {length}"
-                )
+                raise ValueError(f"If sigma is a sequence, its length should be 2. Got {length}")
         elif isinstance(sigma, (int, float)):
             s = float(sigma)
             sigma = [s, s]
         else:
-            raise TypeError(
-                f"sigma should be either float or sequence of floats. Got {type(sigma)}"
-            )
+            raise TypeError(f"sigma should be either float or sequence of floats. Got {type(sigma)}")
     for s in sigma:
         if s <= 0.0:
             raise ValueError(f"sigma should have positive values. Got {sigma}")
@@ -166,9 +153,7 @@ def gaussian_blur_image(
         image = image.reshape((-1,) + shape[-3:])
 
     fp = torch.is_floating_point(image)
-    kernel = _get_gaussian_kernel2d(
-        kernel_size, sigma, dtype=dtype if fp else torch.float32, device=image.device
-    )
+    kernel = _get_gaussian_kernel2d(kernel_size, sigma, dtype=dtype if fp else torch.float32, device=image.device)
 
     kernel = kernel.expand(shape[-3], 1, kernel.shape[1], kernel.shape[2])
 
@@ -197,9 +182,7 @@ def gaussian_blur_image(
 
 @_register_kernel_internal(gaussian_blur, ta_tensors.Video)
 @_register_kernel_internal(gaussian_blur, ta_tensors.BatchVideos)
-def gaussian_blur_video(
-    video: torch.Tensor, kernel_size: List[int], sigma: List[float] | None = None
-) -> torch.Tensor:
+def gaussian_blur_video(video: torch.Tensor, kernel_size: List[int], sigma: List[float] | None = None) -> torch.Tensor:
     return gaussian_blur_image(image=video, kernel_size=kernel_size, sigma=sigma)
 
 
@@ -217,14 +200,10 @@ def gaussian_blur_batch_images(
     if isinstance(kernel_size, int):
         kernel_size = [kernel_size, kernel_size]
     elif len(kernel_size) != 2:
-        raise ValueError(
-            f"If kernel_size is a sequence its length should be 2. Got {len(kernel_size)}"
-        )
+        raise ValueError(f"If kernel_size is a sequence its length should be 2. Got {len(kernel_size)}")
     for ksize in kernel_size:
         if ksize % 2 == 0 or ksize < 0:
-            raise ValueError(
-                f"kernel_size should have odd and positive integers. Got {kernel_size}"
-            )
+            raise ValueError(f"kernel_size should have odd and positive integers. Got {kernel_size}")
 
     if images.numel() == 0:
         return images
@@ -254,9 +233,7 @@ def gaussian_blur_batch_images(
     elif sigma.ndim > 2:
         raise ValueError(f"sigma should have 1 or 2 dimensions. Got {sigma.ndim}")
     fp = torch.is_floating_point(images)
-    kernel = _get_gaussian_kernel2d(
-        kernel_size, sigma, dtype=dtype if fp else torch.float32, device=images.device
-    )
+    kernel = _get_gaussian_kernel2d(kernel_size, sigma, dtype=dtype if fp else torch.float32, device=images.device)
 
     kernel = kernel[:, None, ...]
     kernel = kernel.expand(-1, images.shape[-3], kernel_size[1], kernel_size[0])
@@ -290,14 +267,10 @@ def gaussian_blur_batch_videos(
     sigma: torch.Tensor | None = None,
     value_check: bool = False,
 ) -> torch.Tensor:
-    return gaussian_blur_batch_images(
-        images=videos, kernel_size=kernel_size, sigma=sigma, value_check=value_check
-    )
+    return gaussian_blur_batch_images(images=videos, kernel_size=kernel_size, sigma=sigma, value_check=value_check)
 
 
-def to_dtype(
-    inpt: torch.Tensor, dtype: torch.dtype = torch.float, scale: bool = False
-) -> torch.Tensor:
+def to_dtype(inpt: torch.Tensor, dtype: torch.dtype = torch.float, scale: bool = False) -> torch.Tensor:
     """See :func:`~torchaug.transforms.ToDtype` for details."""
     if torch.jit.is_scripting():
         return to_dtype_image(inpt, dtype=dtype, scale=scale)
@@ -311,28 +284,20 @@ def to_dtype(
 @_register_kernel_internal(to_dtype, torch.Tensor)
 @_register_kernel_internal(to_dtype, ta_tensors.Image)
 @_register_kernel_internal(to_dtype, ta_tensors.BatchImages)
-def to_dtype_image(
-    image: torch.Tensor, dtype: torch.dtype = torch.float, scale: bool = False
-) -> torch.Tensor:
+def to_dtype_image(image: torch.Tensor, dtype: torch.dtype = torch.float, scale: bool = False) -> torch.Tensor:
     return TVF.to_dtype_image(image=image, dtype=dtype, scale=scale)
 
 
 @_register_kernel_internal(to_dtype, ta_tensors.Video)
 @_register_kernel_internal(to_dtype, ta_tensors.BatchVideos)
-def to_dtype_video(
-    video: torch.Tensor, dtype: torch.dtype = torch.float, scale: bool = False
-) -> torch.Tensor:
+def to_dtype_video(video: torch.Tensor, dtype: torch.dtype = torch.float, scale: bool = False) -> torch.Tensor:
     return to_dtype_image(image=video, dtype=dtype, scale=scale)
 
 
 @_register_kernel_internal(to_dtype, ta_tensors.BoundingBoxes, ta_tensor_wrapper=False)
 @_register_kernel_internal(to_dtype, ta_tensors.Mask, ta_tensor_wrapper=False)
-@_register_kernel_internal(
-    to_dtype, ta_tensors.BatchBoundingBoxes, ta_tensor_wrapper=False
-)
+@_register_kernel_internal(to_dtype, ta_tensors.BatchBoundingBoxes, ta_tensor_wrapper=False)
 @_register_kernel_internal(to_dtype, ta_tensors.BatchMasks, ta_tensor_wrapper=False)
-def _to_dtype_tensor_dispatch(
-    inpt: torch.Tensor, dtype: torch.dtype, scale: bool = False
-) -> torch.Tensor:
+def _to_dtype_tensor_dispatch(inpt: torch.Tensor, dtype: torch.dtype, scale: bool = False) -> torch.Tensor:
     # We don't need to unwrap and rewrap here, since TVTensor.to() preserves the type
     return inpt.to(dtype)

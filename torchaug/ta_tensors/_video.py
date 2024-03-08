@@ -28,9 +28,7 @@ class Video(TATensor):
         device: torch.device | str | int | None = None,
         requires_grad: bool | None = None,
     ) -> Video:
-        tensor = cls._to_tensor(
-            data, dtype=dtype, device=device, requires_grad=requires_grad
-        )
+        tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
         if data.ndim < 4:
             raise ValueError
         return tensor.as_subclass(cls)

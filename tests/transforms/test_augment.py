@@ -1,32 +1,33 @@
 import pytest
 import torch
-import torchaug.transforms as transforms
-import torchaug.transforms.functional as F
 import torchvision.transforms.v2 as tv_transforms
 from torch.utils.data import DataLoader
 from torch.utils.data.dataloader import default_collate
+
+import torchaug.transforms as transforms
+import torchaug.transforms.functional as F
 from torchaug import ta_tensors
 
 from ..utils import (
+    IMAGE_MAKERS,
+    VIDEO_MAKERS,
     assert_equal,
+    check_batch_transform,
     check_functional,
     check_functional_kernel_signature_match,
     check_kernel,
     check_kernel_cuda_vs_cpu,
     check_transform,
-    check_batch_transform,
     cpu_and_cuda,
     freeze_rng_state,
-    IMAGE_MAKERS,
-    make_batch_images_tensor,
     make_batch_images,
+    make_batch_images_tensor,
     make_batch_videos,
     make_image,
     make_image_tensor,
     make_video,
     needs_cuda,
     param_value_parametrization,
-    VIDEO_MAKERS,
 )
 
 
@@ -75,9 +76,7 @@ class TestErase:
 
     @pytest.mark.parametrize("make_input", VIDEO_MAKERS)
     def test_kernel_video(self, make_input):
-        check_kernel(
-            F.erase_video, make_input(self.INPUT_SIZE), **self.FUNCTIONAL_KWARGS
-        )
+        check_kernel(F.erase_video, make_input(self.INPUT_SIZE), **self.FUNCTIONAL_KWARGS)
 
     @pytest.mark.parametrize(
         "make_input",
@@ -103,9 +102,7 @@ class TestErase:
         ],
     )
     def test_functional_signature(self, kernel, input_type):
-        check_functional_kernel_signature_match(
-            F.erase, kernel=kernel, input_type=input_type
-        )
+        check_functional_kernel_signature_match(F.erase, kernel=kernel, input_type=input_type)
 
     @pytest.mark.parametrize(
         "make_input",
@@ -199,9 +196,7 @@ class TestErase:
     @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("seed", list(range(5)))
     @pytest.mark.parametrize("make_input", IMAGE_MAKERS)
-    def test_transform_image_correctness(
-        self, param, value, dtype, device, seed, make_input
-    ):
+    def test_transform_image_correctness(self, param, value, dtype, device, seed, make_input):
         transform = transforms.RandomErasing(**{param: value}, p=1)
 
         image = make_input(dtype=dtype, device=device)
@@ -209,9 +204,7 @@ class TestErase:
         with freeze_rng_state():
             torch.manual_seed(seed)
 
-            params = transform._get_params(
-                [image], 1, [torch.tensor([0], device=image.device)]
-            )[0]
+            params = transform._get_params([image], 1, [torch.tensor([0], device=image.device)])[0]
 
             torch.manual_seed(seed)
             actual = transform(image)
@@ -338,9 +331,7 @@ class TestCutMixMixUp:
             ta_tensors.Mask(torch.rand(12, 12)),
             ta_tensors.BoundingBoxes(torch.rand(2, 4), format="XYXY", canvas_size=12),
         ):
-            with pytest.raises(
-                ValueError, match="supports only batch of images or videos."
-            ):
+            with pytest.raises(ValueError, match="supports only batch of images or videos."):
                 cutmix_mixup(input_with_bad_type)
 
         with pytest.raises(ValueError, match="Could not infer where the labels are"):
@@ -358,13 +349,9 @@ class TestCutMixMixUp:
             cutmix_mixup(imgs, torch.randint(0, 2, size=(2, 3)))
 
         with pytest.raises(ValueError, match="Expected a batched input with 4 dims"):
-            cutmix_mixup(
-                imgs[None, None], torch.randint(0, num_classes, size=(batch_size,))
-            )
+            cutmix_mixup(imgs[None, None], torch.randint(0, num_classes, size=(batch_size,)))
 
-        with pytest.raises(
-            ValueError, match="does not match the batch size of the labels"
-        ):
+        with pytest.raises(ValueError, match="does not match the batch size of the labels"):
             cutmix_mixup(imgs, torch.randint(0, num_classes, size=(batch_size + 1,)))
 
         with pytest.raises(ValueError, match="labels tensor should be of shape"):
@@ -376,9 +363,7 @@ class TestCutMixMixUp:
             transforms.Compose([cutmix_mixup, cutmix_mixup])(imgs, labels)
 
 
-@pytest.mark.parametrize(
-    "key", ("labels", "LABELS", "LaBeL", "SOME_WEIRD_KEY_THAT_HAS_LABeL_IN_IT")
-)
+@pytest.mark.parametrize("key", ("labels", "LABELS", "LaBeL", "SOME_WEIRD_KEY_THAT_HAS_LABeL_IN_IT"))
 @pytest.mark.parametrize("sample_type", (tuple, list, dict))
 def test_labels_getter_default_heuristic(key, sample_type):
     labels = torch.arange(10)

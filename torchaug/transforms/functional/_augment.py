@@ -4,7 +4,7 @@ import torch
 import torchvision.transforms.v2.functional as TVF
 
 from torchaug import ta_tensors
-from torchaug.utils import _log_api_usage_once
+from torchaug._utils import _log_api_usage_once
 
 from ._utils._kernel import _get_kernel, _register_kernel_internal
 

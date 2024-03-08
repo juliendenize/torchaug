@@ -29,9 +29,7 @@ class BatchVideos(TATensor):
         device: device | str | int | None = None,
         requires_grad: bool | None = None,
     ) -> BatchVideos:
-        tensor = cls._to_tensor(
-            data, dtype=dtype, device=device, requires_grad=requires_grad
-        )
+        tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
         if data.ndim < 5:
             raise ValueError
         return tensor.as_subclass(cls)
@@ -50,9 +48,7 @@ class BatchVideos(TATensor):
                 raise ValueError("All batches must be of type BatchVideos.")
             for attr in attrs:
                 if getattr(batch_videos, attr) != getattr(video_batches[0], attr):
-                    raise ValueError(
-                        f"All batches of images must have the same {attr} attribute."
-                    )
+                    raise ValueError(f"All batches of images must have the same {attr} attribute.")
 
         return cls(torch.cat([images.data for images in video_batches], 0))
 

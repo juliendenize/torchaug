@@ -2,6 +2,7 @@ from copy import deepcopy
 
 import pytest
 import torch
+
 from torchaug import ta_tensors
 
 from ..utils import (
@@ -97,9 +98,7 @@ def test_bbox_instance(data, format):
     ],
 )
 def test_batch_bboxes_instance(data, idx_sample, format):
-    bboxes = ta_tensors.BatchBoundingBoxes(
-        data, format=format, canvas_size=(32, 32), idx_sample=idx_sample
-    )
+    bboxes = ta_tensors.BatchBoundingBoxes(data, format=format, canvas_size=(32, 32), idx_sample=idx_sample)
     assert isinstance(bboxes, torch.Tensor)
     assert bboxes.ndim == 2 and bboxes.shape[1] == 4
     if isinstance(format, str):
@@ -110,9 +109,7 @@ def test_batch_bboxes_instance(data, idx_sample, format):
 def test_batch_bboxes_dim_error():
     data_2d = [[[1, 2, 3, 4]]]
     with pytest.raises(ValueError, match="Expected a 2D tensor, got 3D"):
-        ta_tensors.BatchBoundingBoxes(
-            data_2d, format="XYXY", canvas_size=(32, 32), idx_sample=[0]
-        )
+        ta_tensors.BatchBoundingBoxes(data_2d, format="XYXY", canvas_size=(32, 32), idx_sample=[0])
 
 
 @pytest.mark.parametrize(

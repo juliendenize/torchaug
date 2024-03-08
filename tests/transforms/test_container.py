@@ -2,9 +2,10 @@ import functools
 import re
 
 import pytest
+from torch import nn
+
 import torchaug.transforms as transforms
 import torchaug.transforms.functional as F
-from torch import nn
 
 from ..utils import (
     assert_equal,
@@ -55,16 +56,9 @@ class TestContainerTransforms:
     )
     @pytest.mark.parametrize("unpack", [True, False])
     @pytest.mark.parametrize("batch", [True, False])
-    def test_packed_unpacked(
-        self, transform_cls, wrapped_transform_clss, unpack, batch
-    ):
-        needs_packed_inputs = any(
-            issubclass(cls, self.PackedInputTransform) for cls in wrapped_transform_clss
-        )
-        needs_unpacked_inputs = any(
-            issubclass(cls, self.UnpackedInputTransform)
-            for cls in wrapped_transform_clss
-        )
+    def test_packed_unpacked(self, transform_cls, wrapped_transform_clss, unpack, batch):
+        needs_packed_inputs = any(issubclass(cls, self.PackedInputTransform) for cls in wrapped_transform_clss)
+        needs_unpacked_inputs = any(issubclass(cls, self.UnpackedInputTransform) for cls in wrapped_transform_clss)
         assert not (needs_packed_inputs and needs_unpacked_inputs)
 
         transform = transform_cls([cls() for cls in wrapped_transform_clss])
@@ -80,14 +74,10 @@ class TestContainerTransforms:
                 return transform(packed_input)
 
         if needs_unpacked_inputs and not unpack:
-            with pytest.raises(
-                TypeError, match="missing 1 required positional argument"
-            ):
+            with pytest.raises(TypeError, match="missing 1 required positional argument"):
                 call_transform()
         elif needs_packed_inputs and unpack:
-            with pytest.raises(
-                TypeError, match="takes 2 positional arguments but 3 were given"
-            ):
+            with pytest.raises(TypeError, match="takes 2 positional arguments but 3 were given"):
                 call_transform()
         else:
             output = call_transform()
@@ -183,22 +173,16 @@ class TestContainerTransforms:
             transforms.RandomChoice,
             transforms.RandomOrder,
         ]:
-            with pytest.raises(
-                TypeError, match="Argument transforms should be a sequence of callables"
-            ):
+            with pytest.raises(TypeError, match="Argument transforms should be a sequence of callables"):
                 cls(lambda x: x)
 
         with pytest.raises(ValueError, match="at least one transform"):
             transforms.Compose([])
 
         for p in [-1, 2]:
-            with pytest.raises(
-                ValueError, match=re.escape("value in the interval [0.0, 1.0]")
-            ):
+            with pytest.raises(ValueError, match=re.escape("value in the interval [0.0, 1.0]")):
                 transforms.RandomApply([lambda x: x], p=p)
 
         for transforms_, p in [([lambda x: x], []), ([], [1.0])]:
-            with pytest.raises(
-                ValueError, match="Length of p doesn't match the number of transforms"
-            ):
+            with pytest.raises(ValueError, match="Length of p doesn't match the number of transforms"):
                 transforms.RandomChoice(transforms_, p=p)

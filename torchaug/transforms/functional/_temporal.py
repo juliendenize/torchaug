@@ -4,8 +4,7 @@ import torch
 import torchvision.transforms.v2.functional as TVF
 
 from torchaug import ta_tensors
-
-from torchaug.utils import _log_api_usage_once
+from torchaug._utils import _log_api_usage_once
 
 from ._utils._kernel import _get_kernel, _register_kernel_internal
 
@@ -24,7 +23,5 @@ def uniform_temporal_subsample(inpt: torch.Tensor, num_samples: int) -> torch.Te
 @_register_kernel_internal(uniform_temporal_subsample, torch.Tensor)
 @_register_kernel_internal(uniform_temporal_subsample, ta_tensors.Video)
 @_register_kernel_internal(uniform_temporal_subsample, ta_tensors.BatchVideos)
-def uniform_temporal_subsample_video(
-    video: torch.Tensor, num_samples: int
-) -> torch.Tensor:
+def uniform_temporal_subsample_video(video: torch.Tensor, num_samples: int) -> torch.Tensor:
     return TVF.uniform_temporal_subsample_video(video=video, num_samples=num_samples)

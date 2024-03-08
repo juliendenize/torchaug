@@ -3,20 +3,18 @@
 from __future__ import annotations
 
 import collections.abc
-
 import contextlib
 from collections import defaultdict
 from copy import copy
 
 import PIL.Image
-
 import torch
-
 from torchvision import datasets
 from torchvision.transforms.v2.functional._type_conversion import pil_to_tensor
 
 from torchaug import ta_tensors
 from torchaug.transforms import functional as F
+
 
 __all__ = ["wrap_dataset_for_transforms_v2"]
 
@@ -94,29 +92,19 @@ def wrap_dataset_for_transforms_v2(dataset, target_keys=None):
     if not (
         target_keys is None
         or target_keys == "all"
-        or (
-            isinstance(target_keys, collections.abc.Collection)
-            and all(isinstance(key, str) for key in target_keys)
-        )
+        or (isinstance(target_keys, collections.abc.Collection) and all(isinstance(key, str) for key in target_keys))
     ):
         raise ValueError(
             f"`target_keys` can be None, 'all', or a collection of strings denoting the keys to be returned, "
             f"but got {target_keys}"
         )
 
-    # Imagine we have isinstance(dataset, datasets.ImageNet). This will create a new class with the name
-    # "WrappedImageNet" at runtime that doubly inherits from VisionDatasetTATensorWrapper (see below) as well as the
-    # original ImageNet class. This allows the user to do regular isinstance(wrapped_dataset, datasets.ImageNet) checks,
-    # while we can still inject everything that we need.
     wrapped_dataset_cls = type(
         f"Wrapped{type(dataset).__name__}",
         (VisionDatasetTATensorWrapper, type(dataset)),
         {},
     )
-    # Since VisionDatasetTATensorWrapper comes before ImageNet in the MRO, calling the class hits
-    # VisionDatasetTATensorWrapper.__init__ first. Since we are never doing super().__init__(...), the constructor of
-    # ImageNet is never hit. That is by design, since we don't want to create the dataset instance again, but rather
-    # have the existing instance as attribute on the new object.
+
     return wrapped_dataset_cls(dataset, target_keys)
 
 
@@ -273,8 +261,7 @@ def wrap_target_by_type(target, *, target_types, type_wrappers):
         target = [target]
 
     wrapped_target = tuple(
-        type_wrappers.get(target_type, identity)(item)
-        for target_type, item in zip(target_types, target)
+        type_wrappers.get(target_type, identity)(item) for target_type, item in zip(target_types, target)
     )
 
     if len(wrapped_target) == 1:
@@ -388,7 +375,7 @@ def coco_dectection_wrapper_factory(dataset, target_keys):
         image = F.to_image(image)
 
         if not target:
-            return image, dict(image_id=image_id)
+            return image, {"image_id": image_id}
 
         canvas_size = tuple(F.get_size(image))
 
@@ -455,9 +442,7 @@ VOC_DETECTION_CATEGORIES = [
     "train",
     "tvmonitor",
 ]
-VOC_DETECTION_CATEGORY_TO_IDX = dict(
-    zip(VOC_DETECTION_CATEGORIES, range(len(VOC_DETECTION_CATEGORIES)))
-)
+VOC_DETECTION_CATEGORY_TO_IDX = dict(zip(VOC_DETECTION_CATEGORIES, range(len(VOC_DETECTION_CATEGORIES))))
 
 
 @WRAPPER_FACTORIES.register(datasets.VOCDetection)
@@ -480,9 +465,7 @@ def voc_detection_wrapper_factory(dataset, target_keys):
             pil_to_tensor(image)
         image = F.to_image(image)
 
-        batched_instances = list_of_dicts_to_dict_of_lists(
-            target["annotation"]["object"]
-        )
+        batched_instances = list_of_dicts_to_dict_of_lists(target["annotation"]["object"])
 
         if "annotation" not in target_keys:
             target = {}
@@ -499,10 +482,7 @@ def voc_detection_wrapper_factory(dataset, target_keys):
 
         if "labels" in target_keys:
             target["labels"] = torch.tensor(
-                [
-                    VOC_DETECTION_CATEGORY_TO_IDX[category]
-                    for category in batched_instances["name"]
-                ]
+                [VOC_DETECTION_CATEGORY_TO_IDX[category] for category in batched_instances["name"]]
             )
 
         return image, target
@@ -521,9 +501,7 @@ def sbd_wrapper(dataset, target_keys):
 @WRAPPER_FACTORIES.register(datasets.CelebA)
 def celeba_wrapper_factory(dataset, target_keys):
     if any(target_type in dataset.target_type for target_type in ["attr", "landmarks"]):
-        raise_not_supported(
-            "`CelebA` dataset with `target_type=['attr', 'landmarks', ...]`"
-        )
+        raise_not_supported("`CelebA` dataset with `target_type=['attr', 'landmarks', ...]`")
 
     def wrapper(idx, sample):
         image, target = sample
@@ -606,9 +584,7 @@ def kitti_wrapper_factory(dataset, target_keys):
             )
 
         if "labels" in target_keys:
-            target["labels"] = torch.tensor(
-                [KITTI_CATEGORY_TO_IDX[category] for category in batched_target["type"]]
-            )
+            target["labels"] = torch.tensor([KITTI_CATEGORY_TO_IDX[category] for category in batched_target["type"]])
 
         for target_key in target_keys - {"boxes", "labels"}:
             target[target_key] = batched_target[target_key]
@@ -643,9 +619,7 @@ def oxford_iiit_pet_wrapper_factor(dataset, target_keys):
 @WRAPPER_FACTORIES.register(datasets.Cityscapes)
 def cityscapes_wrapper_factory(dataset, target_keys):
     if any(target_type in dataset.target_type for target_type in ["polygon", "color"]):
-        raise_not_supported(
-            "`Cityscapes` dataset with `target_type=['polygon', 'color', ...]`"
-        )
+        raise_not_supported("`Cityscapes` dataset with `target_type=['polygon', 'color', ...]`")
 
     def instance_segmentation_wrapper(mask):
         # See https://github.com/mcordts/cityscapesScripts/blob/8da5dd00c9069058ccc134654116aac52d4f6fa2/cityscapesscripts/preparation/json2instanceImg.py#L7-L21
@@ -658,9 +632,7 @@ def cityscapes_wrapper_factory(dataset, target_keys):
             if label >= 1_000:
                 label //= 1_000
             labels.append(label)
-        return dict(
-            masks=ta_tensors.Mask(torch.stack(masks)), labels=torch.stack(labels)
-        )
+        return {"masks": ta_tensors.Mask(torch.stack(masks)), "labels": torch.stack(labels)}
 
     def wrapper(idx, sample):
         image, target = sample

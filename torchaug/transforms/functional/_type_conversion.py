@@ -14,9 +14,7 @@ def to_image(inpt: torch.Tensor | np.ndarray) -> ta_tensors.Image:
     elif isinstance(inpt, torch.Tensor):
         output = inpt
     else:
-        raise TypeError(
-            f"Input can either be a pure Tensor, a numpy array, but got {type(inpt)} instead."
-        )
+        raise TypeError(f"Input can either be a pure Tensor, a numpy array, but got {type(inpt)} instead.")
     return ta_tensors.Image(output)
 
 

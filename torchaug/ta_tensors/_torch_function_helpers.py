@@ -1,5 +1,6 @@
 import torch
 
+
 _TORCHFUNCTION_SUBCLASS = False
 
 
@@ -56,13 +57,9 @@ def set_return_type(return_type: str):
     to_restore = _TORCHFUNCTION_SUBCLASS
 
     try:
-        _TORCHFUNCTION_SUBCLASS = {"tensor": False, "tatensor": True}[
-            return_type.lower()
-        ]
+        _TORCHFUNCTION_SUBCLASS = {"tensor": False, "tatensor": True}[return_type.lower()]
     except KeyError:
-        raise ValueError(
-            f"return_type must be 'TATensor' or 'Tensor', got {return_type}"
-        ) from None
+        raise ValueError(f"return_type must be 'TATensor' or 'Tensor', got {return_type}") from None
 
     return _ReturnTypeCM(to_restore)
 
