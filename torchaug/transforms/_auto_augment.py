@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import math
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, Type, Union
 
 import torch
 from torch.utils._pytree import TreeSpec, tree_flatten, tree_unflatten
@@ -33,7 +33,7 @@ class _AutoAugmentBase(Transform):
         self,
         *,
         interpolation: InterpolationMode | int = InterpolationMode.NEAREST,
-        fill: _FillType | Dict[Type | str, _FillType] = None,
+        fill: _FillType | dict[Type | str, _FillType] = None,
         batch_transform: bool = False,
     ) -> None:
         super().__init__(batch_transform=batch_transform)
@@ -41,7 +41,7 @@ class _AutoAugmentBase(Transform):
         self.fill = fill
         self._fill = _setup_fill_arg(fill)
 
-    def _get_random_item(self, dct: Dict[str, Tuple[Callable, bool]]) -> Tuple[str, Tuple[Callable, bool]]:
+    def _get_random_item(self, dct: dict[str, tuple[Callable, bool]]) -> tuple[str, tuple[Callable, bool]]:
         keys = tuple(dct.keys())
         key = keys[int(torch.randint(len(keys), ()))]
         return key, dct[key]
@@ -49,13 +49,13 @@ class _AutoAugmentBase(Transform):
     def _flatten_and_extract_image_or_video(
         self,
         inputs: Any,
-        unsupported_types: Tuple[Type, ...] = (
+        unsupported_types: tuple[Type, ...] = (
             ta_tensors.Mask,
             ta_tensors.BoundingBoxes,
             ta_tensors.BatchBoundingBoxes,
             ta_tensors.BatchMasks,
         ),
-    ) -> Tuple[Tuple[List[Any], TreeSpec, int], ImageOrVideo]:
+    ) -> tuple[tuple[list[Any], TreeSpec, int], ImageOrVideo]:
         if self.batch_transform:
             unsupported_types = tuple(list(unsupported_types) + [ta_tensors.Image, ta_tensors.Video])
         flat_inputs, spec = tree_flatten(inputs if len(inputs) > 1 else inputs[0])
@@ -96,7 +96,7 @@ class _AutoAugmentBase(Transform):
 
     def _unflatten_and_insert_image_or_video(
         self,
-        flat_inputs_with_spec: Tuple[List[Any], TreeSpec, int],
+        flat_inputs_with_spec: tuple[list[Any], TreeSpec, int],
         image_or_video: ImageOrVideo,
     ) -> Any:
         flat_inputs, spec, idx = flat_inputs_with_spec
@@ -108,8 +108,8 @@ class _AutoAugmentBase(Transform):
         image: ImageOrVideo,
         transform_id: str,
         magnitude: float,
-        interpolation: Union[InterpolationMode, int],
-        fill: Dict[Union[Type, str], _FillTypeJIT],
+        interpolation: InterpolationMode | int,
+        fill: dict[Type | str, _FillTypeJIT],
     ) -> ImageOrVideo:
         fill_ = _get_fill(fill, type(image))
 
@@ -170,13 +170,13 @@ class _AutoAugmentBase(Transform):
             return F.rotate(image, angle=magnitude, interpolation=interpolation, fill=fill_)
         elif transform_id == "Brightness":
             brightness = F.adjust_brightness_batch if self.batch_transform else F.adjust_brightness
-            return brightness(image, brightness_factor=1.0 + magnitude)
+            return brightness(image, brightness_factor=1.0 + magnitude)  # type: ignore[operator]
         elif transform_id == "Color":
             saturation = F.adjust_saturation_batch if self.batch_transform else F.adjust_saturation
-            return saturation(image, saturation_factor=1.0 + magnitude)
+            return saturation(image, saturation_factor=1.0 + magnitude)  # type: ignore[operator]
         elif transform_id == "Contrast":
             contrast = F.adjust_contrast_batch if self.batch_transform else F.adjust_contrast
-            return contrast(image, contrast_factor=1.0 + magnitude)
+            return contrast(image, contrast_factor=1.0 + magnitude)  # type: ignore[operator]
         elif transform_id == "Sharpness":
             sharpness = F.adjust_sharpness
             return sharpness(image, sharpness_factor=1.0 + magnitude)
@@ -268,7 +268,7 @@ class AutoAugment(_AutoAugmentBase):
         self,
         policy: AutoAugmentPolicy = AutoAugmentPolicy.IMAGENET,
         interpolation: InterpolationMode | int = InterpolationMode.NEAREST,
-        fill: _FillType | Dict[Type | str, _FillType] = None,
+        fill: _FillType | dict[Type | str, _FillType] = None,
     ) -> None:
         super().__init__(interpolation=interpolation, fill=fill)
         self.policy = policy
@@ -276,7 +276,7 @@ class AutoAugment(_AutoAugmentBase):
 
     def _get_policies(
         self, policy: AutoAugmentPolicy
-    ) -> List[Tuple[Tuple[str, float, Optional[int]], Tuple[str, float, Optional[int]]]]:
+    ) -> list[tuple[tuple[str, float, int | None], tuple[str, float, int | None]]]:
         if policy == AutoAugmentPolicy.IMAGENET:
             return [
                 (("Posterize", 0.4, 8), ("Rotate", 0.6, 9)),
@@ -476,7 +476,7 @@ class RandAugment(_AutoAugmentBase):
         magnitude: int = 9,
         num_magnitude_bins: int = 31,
         interpolation: InterpolationMode | int = InterpolationMode.NEAREST,
-        fill: _FillType | Dict[Type | str, _FillType] = None,
+        fill: _FillType | dict[Type | str, _FillType] = None,
     ) -> None:
         super().__init__(interpolation=interpolation, fill=fill)
         self.num_ops = num_ops
@@ -583,7 +583,7 @@ class TrivialAugmentWide(_AutoAugmentBase):
         self,
         num_magnitude_bins: int = 31,
         interpolation: InterpolationMode | int = InterpolationMode.NEAREST,
-        fill: _FillType | Dict[Type | str, _FillType] = None,
+        fill: _FillType | dict[Type | str, _FillType] = None,
     ):
         super().__init__(interpolation=interpolation, fill=fill)
         self.num_magnitude_bins = num_magnitude_bins
@@ -671,7 +671,7 @@ class AugMix(_AutoAugmentBase):
         "AutoContrast": (lambda num_bins, height, width: None, False),
         "Equalize": (lambda num_bins, height, width: None, False),
     }
-    _AUGMENTATION_SPACE: Dict[str, Tuple[Callable[[int, int, int], torch.Tensor | None], bool]] = {
+    _AUGMENTATION_SPACE: dict[str, tuple[Callable[[int, int, int], torch.Tensor | None], bool]] = {
         **_PARTIAL_AUGMENTATION_SPACE,
         "Brightness": (
             lambda num_bins, height, width: torch.linspace(0.0, 0.9, num_bins),
@@ -699,7 +699,7 @@ class AugMix(_AutoAugmentBase):
         alpha: float = 1.0,
         all_ops: bool = True,
         interpolation: InterpolationMode | int = InterpolationMode.BILINEAR,
-        fill: _FillType | Dict[Type | str, _FillType] = None,
+        fill: _FillType | dict[Type | str, _FillType] = None,
     ) -> None:
         super().__init__(interpolation=interpolation, fill=fill, batch_transform=True)
         self._PARAMETER_MAX = 10
@@ -718,19 +718,14 @@ class AugMix(_AutoAugmentBase):
     def forward(self, *inputs: Any) -> Any:
         (
             flat_inputs_with_spec,
-            orig_image_or_video,
+            image_or_video,
         ) = self._flatten_and_extract_image_or_video(inputs)
-        height, width = get_size(orig_image_or_video)
-
-        if isinstance(orig_image_or_video, torch.Tensor):
-            image_or_video = orig_image_or_video
-        else:  # isinstance(inpt, PIL.Image.Image):
-            image_or_video = F.pil_to_tensor(orig_image_or_video)
+        height, width = get_size(image_or_video)
 
         augmentation_space = self._AUGMENTATION_SPACE if self.all_ops else self._PARTIAL_AUGMENTATION_SPACE
 
         orig_dims = list(image_or_video.shape)
-        expected_ndim = 5 if isinstance(orig_image_or_video, ta_tensors.BatchVideos) else 4
+        expected_ndim = 5 if isinstance(image_or_video, ta_tensors.BatchVideos) else 4
         batch = image_or_video.reshape([1] * max(expected_ndim - image_or_video.ndim, 0) + orig_dims)
         batch_dims = [batch.size(0)] + [1] * (batch.ndim - 1)
 
@@ -772,7 +767,7 @@ class AugMix(_AutoAugmentBase):
             mix.add_(combined_weights[:, i].reshape(batch_dims) * aug)
         mix = mix.reshape(orig_dims).to(dtype=image_or_video.dtype)
 
-        if isinstance(orig_image_or_video, (ta_tensors.BatchImages, ta_tensors.BatchVideos)):
-            mix = ta_tensors.wrap(mix, like=orig_image_or_video)
+        if isinstance(image_or_video, (ta_tensors.BatchImages, ta_tensors.BatchVideos)):
+            mix = ta_tensors.wrap(mix, like=image_or_video)
 
         return self._unflatten_and_insert_image_or_video(flat_inputs_with_spec, mix)

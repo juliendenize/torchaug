@@ -1,5 +1,3 @@
-# type: ignore
-
 from __future__ import annotations
 
 import collections.abc
@@ -14,9 +12,6 @@ from torchvision.transforms.v2.functional._type_conversion import pil_to_tensor
 
 from torchaug import ta_tensors
 from torchaug.transforms import functional as F
-
-
-__all__ = ["wrap_dataset_for_transforms_v2"]
 
 
 def wrap_dataset_for_transforms_v2(dataset, target_keys=None):

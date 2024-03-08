@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Mapping, Sequence, Tuple
+from typing import Any, Mapping, Sequence, TypeAlias
 
 import torch
 from torch.utils._pytree import tree_flatten
@@ -9,7 +9,7 @@ from torchvision.tv_tensors import BoundingBoxFormat as TVBoundingBoxFormat
 from ._ta_tensor import TATensor
 
 
-BoundingBoxFormat = TVBoundingBoxFormat
+BoundingBoxFormat: TypeAlias = TVBoundingBoxFormat
 
 
 class BoundingBoxes(TATensor):
@@ -34,7 +34,7 @@ class BoundingBoxes(TATensor):
     """
 
     format: BoundingBoxFormat
-    canvas_size: Tuple[int, int]
+    canvas_size: tuple[int, int]
 
     @classmethod
     def _wrap(
@@ -42,7 +42,7 @@ class BoundingBoxes(TATensor):
         tensor: torch.Tensor,
         *,
         format: BoundingBoxFormat | str,
-        canvas_size: Tuple[int, int],
+        canvas_size: tuple[int, int],
         check_dims: bool = True,
     ) -> BoundingBoxes:  # type: ignore[override]
         if check_dims:
@@ -51,7 +51,7 @@ class BoundingBoxes(TATensor):
             elif tensor.ndim != 2:
                 raise ValueError(f"Expected a 1D or 2D tensor, got {tensor.ndim}D")
         if isinstance(format, str):
-            format = BoundingBoxFormat[format.upper()]
+            format = BoundingBoxFormat[format.upper()]  # type: ignore[misc]
         bounding_boxes = tensor.as_subclass(cls)
         bounding_boxes.format = format
         bounding_boxes.canvas_size = canvas_size
@@ -62,10 +62,10 @@ class BoundingBoxes(TATensor):
         data: Any,
         *,
         format: BoundingBoxFormat | str,
-        canvas_size: Tuple[int, int],
+        canvas_size: tuple[int, int],
         dtype: torch.dtype | None = None,
         device: torch.device | str | int | None = None,
-        requires_grad: bool = None,
+        requires_grad: bool | None = None,
     ) -> BoundingBoxes:
         tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
         return cls._wrap(tensor, format=format, canvas_size=canvas_size)

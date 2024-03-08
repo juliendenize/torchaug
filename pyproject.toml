@@ -61,9 +61,13 @@ readme = {file = ["README.md"], content-type = "text/markdown"}
 exclude = ["docs*", "test*", "examples*"]
 namespaces = false
 
+[tool.ruff]
+line-length = 119
+
 [tool.ruff.lint]
 ignore=["D205", "C901"]
 select = ["C", "E", "F", "I", "W", "D"]
+ignore-init-module-imports = true
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["D", "C408", "C901"]
@@ -76,18 +80,8 @@ known-first-party = ["torchaug"]
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
-[tool.ruff]
-line-length = 119
-
 [tool.ruff.format]
-# Like Black, use double quotes for strings.
 quote-style = "double"
-
-# Like Black, indent with spaces, rather than tabs.
 indent-style = "space"
-
-# Like Black, respect magic trailing commas.
 skip-magic-trailing-comma = false
-
-# Like Black, automatically detect the appropriate line ending.
 line-ending = "auto"

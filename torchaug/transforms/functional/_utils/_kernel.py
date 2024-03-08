@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import functools
-from typing import Callable, Dict, List, Optional, Sequence, Type, Union
+from typing import Callable, Sequence, Type, Union
 
 import torch
 
@@ -9,11 +9,11 @@ from torchaug import ta_tensors
 
 
 _FillType = Union[int, float, Sequence[int], Sequence[float], None]
-_FillTypeJIT = Optional[List[float]]
+_FillTypeJIT = list[float] | None
 
 
 # {functional: {input_type: type_specific_kernel}}
-_KERNEL_REGISTRY: Dict[Callable, Dict[Type, Callable]] = {}
+_KERNEL_REGISTRY: dict[Callable, dict[Type, Callable]] = {}
 
 
 def _kernel_ta_tensor_wrapper(kernel):

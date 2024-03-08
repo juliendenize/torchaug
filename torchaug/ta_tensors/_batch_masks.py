@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, List, Mapping, Sequence
+from typing import Any, Mapping, Sequence
 
 import torch
 from torch import Tensor
@@ -76,7 +76,7 @@ class BatchMasks(TATensor):
 
     """
 
-    idx_sample: List[int]
+    idx_sample: list[int]
 
     @property
     def batch_size(self) -> int:
@@ -139,7 +139,7 @@ class BatchMasks(TATensor):
         cls,
         tensor: Tensor,
         *,
-        idx_sample: List[int],
+        idx_sample: list[int],
         check_dims: bool = True,
     ) -> BatchMasks:  # type: ignore[override]
         if check_dims and tensor.ndim < 2:
@@ -152,7 +152,7 @@ class BatchMasks(TATensor):
         cls,
         data: Any,
         *,
-        idx_sample: List[int],
+        idx_sample: list[int],
         dtype: torch.dtype | None = None,
         device: torch.device | str | int | None = None,
         requires_grad: bool | None = None,

@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import Any, Callable, List, Optional, Sequence, Union
+from typing import Any, Callable, Sequence
 
 import torch
-from torch import Tensor, nn
+from torch import nn
 from torch.utils._pytree import tree_flatten, tree_unflatten
 
 from torchaug._utils import _log_api_usage_once
@@ -56,7 +56,7 @@ class Compose(Transform):
             inputs = outputs if needs_unpacking else (outputs,)
         return outputs
 
-    def extra_repr(self) -> str:
+    def extra_repr(self) -> str:  # type: ignore[override]
         format_string = []
         for t in self.transforms:
             format_string.append(f"    {t}")
@@ -83,7 +83,7 @@ class RandomApply(Transform):
         p: probability of applying the list of transforms.
     """
 
-    def __init__(self, transforms: Union[Sequence[Callable], nn.ModuleList], p: float = 0.5) -> None:
+    def __init__(self, transforms: Sequence[Callable | nn.ModuleList], p: float = 0.5) -> None:
         super().__init__()
 
         if not isinstance(transforms, (Sequence, nn.ModuleList)):
@@ -105,7 +105,7 @@ class RandomApply(Transform):
             inputs = outputs if needs_unpacking else (outputs,)
         return outputs
 
-    def extra_repr(self) -> str:
+    def extra_repr(self) -> str:  # type: ignore[override]
         format_string = []
         for t in self.transforms:
             format_string.append(f"    {t}")
@@ -127,7 +127,7 @@ class RandomChoice(Transform):
     def __init__(
         self,
         transforms: Sequence[Callable],
-        p: Optional[List[float]] = None,
+        p: list[float] | None = None,
     ) -> None:
         if not isinstance(transforms, Sequence):
             raise TypeError("Argument transforms should be a sequence of callables")
@@ -141,10 +141,10 @@ class RandomChoice(Transform):
 
         self.transforms = transforms
         total = sum(p)
-        self.p = [prob / total for prob in p]
+        self.p_choices = [prob / total for prob in p]
 
     def forward(self, *inputs: Any) -> Any:
-        idx = int(torch.multinomial(torch.tensor(self.p), 1))
+        idx = int(torch.multinomial(torch.tensor(self.p_choices), 1))
         transform = self.transforms[idx]
         return transform(*inputs)
 
@@ -181,7 +181,7 @@ class SequentialTransform(Transform):
         batch_inplace: Whether to perform the transforms in-place.
     """
 
-    def __init__(self, transforms: List[RandomApplyTransform], batch_inplace: bool = False) -> None:
+    def __init__(self, transforms: list[RandomApplyTransform], batch_inplace: bool = False) -> None:
         super().__init__()
         _log_api_usage_once(self)
 
@@ -197,7 +197,7 @@ class SequentialTransform(Transform):
         import inspect
 
         if isinstance(transform, RandomApplyTransform):
-            init_signature = inspect.signature(transform.__init__)
+            init_signature = inspect.signature(transform.__init__)  # type: ignore[misc]
             parameters = init_signature.parameters
             for key in ["inplace", "batch_inplace"]:
                 has_key = key in parameters
@@ -220,14 +220,14 @@ class SequentialTransform(Transform):
             flat_inputs = list(inputs)
 
         for transform in self.transforms:
-            flat_inputs: Tensor = transform(*flat_inputs)
+            flat_inputs = transform(*flat_inputs)
 
         if self._receive_flatten_inputs:
             return tree_unflatten(flat_inputs, spec)
 
         return flat_inputs
 
-    def extra_repr(self) -> str:
+    def extra_repr(self) -> str:  # type: ignore[override]
         format_string = []
         for t in self.transforms:
             format_string.append(f"    {t}")

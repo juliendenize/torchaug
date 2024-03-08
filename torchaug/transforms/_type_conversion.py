@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Union
+from typing import Any
 
 import numpy as np
 import torch
@@ -21,7 +21,7 @@ class ToImage(Transform):
 
     _transformed_types = (is_pure_tensor, np.ndarray, ta_tensors.BatchImages)
 
-    def _transform(self, inpt: Union[torch.Tensor, np.ndarray], params: Dict[str, Any]) -> ta_tensors.Image:
+    def _transform(self, inpt: torch.Tensor | np.ndarray, params: dict[str, Any]) -> ta_tensors.Image:
         return F.to_image(inpt)
 
 
@@ -36,8 +36,8 @@ class ToBatchImages(Transform):
 
     def _transform(
         self,
-        inpt: Union[torch.Tensor, ta_tensors.Image, np.ndarray],
-        params: Dict[str, Any],
+        inpt: torch.Tensor | ta_tensors.Image | np.ndarray,
+        params: dict[str, Any],
     ) -> ta_tensors.BatchImages:
         return F.to_batch_images(inpt)
 
@@ -48,7 +48,7 @@ class ToPureTensor(Transform):
     This doesn't scale or change the values, only the type.
     """
 
-    _transformed_types = ta_tensors.TATensor
+    _transformed_types = (ta_tensors.TATensor,)
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> torch.Tensor:
+    def _transform(self, inpt: Any, params: dict[str, Any]) -> torch.Tensor:
         return inpt.as_subclass(torch.Tensor)

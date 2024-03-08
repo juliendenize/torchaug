@@ -1,7 +1,7 @@
 import math
 import numbers
 import warnings
-from typing import Any, Callable, Dict, List, Tuple
+from typing import Any, Callable
 
 import torch
 from torch.nn.functional import one_hot
@@ -38,8 +38,8 @@ class RandomErasing(RandomApplyTransform):
     def __init__(
         self,
         p: float = 0.5,
-        scale: Tuple[float, float] = (0.02, 0.33),
-        ratio: Tuple[float, float] = (0.3, 3.3),
+        scale: tuple[float, float] = (0.02, 0.33),
+        ratio: tuple[float, float] = (0.3, 3.3),
         value: float = 0.0,
         inplace: bool = False,
         batch_inplace: bool = False,
@@ -100,10 +100,10 @@ class RandomErasing(RandomApplyTransform):
 
     def _get_params(
         self,
-        flat_inputs: List[Any],
+        flat_inputs: list[Any],
         num_chunks: int,
-        chunks_indices: List[torch.Tensor],
-    ) -> List[Dict[str, Any]]:
+        chunks_indices: tuple[torch.Tensor],
+    ) -> list[dict[str, Any]]:
         img_c, img_h, img_w = query_chw(flat_inputs)
 
         if self.value is not None and len(self.value) not in (1, img_c):
@@ -146,7 +146,7 @@ class RandomErasing(RandomApplyTransform):
 
         return params
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def _transform(self, inpt: Any, params: dict[str, Any]) -> Any:
         if params["v"] is not None:
             inpt = self._call_kernel(
                 F.erase,
@@ -196,8 +196,10 @@ class _BaseMixUpCutMix(Transform):
             "labels": labels,
             "batch_size": labels.shape[0],
             **self._get_params(
-                [inpt for (inpt, needs_transform) in zip(flat_inputs, needs_transform_list) if needs_transform]
-            ),
+                [inpt for (inpt, needs_transform) in zip(flat_inputs, needs_transform_list) if needs_transform],
+                1,
+                [torch.arange(labels.shape[0], device=labels.device)],
+            )[0],
         }
 
         # By default, the labels will be False inside needs_transform_list, since they are a torch.Tensor coming
@@ -253,10 +255,12 @@ class MixUp(_BaseMixUpCutMix):
             It can also be a callable that takes the same input as the transform, and returns the labels.
     """
 
-    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
-        return {"lam": float(self._dist.sample(()))}  # type: ignore[arg-type]
+    def _get_params(
+        self, flat_inputs: list[Any], num_chunks: int, chunks_indices: tuple[torch.Tensor]
+    ) -> list[dict[str, Any]]:
+        return [{"lam": float(self._dist.sample(()))}]
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def _transform(self, inpt: Any, params: dict[str, Any]) -> Any:
         lam = params["lam"]
 
         if inpt is params["labels"]:
@@ -311,7 +315,9 @@ class CutMix(_BaseMixUpCutMix):
             It can also be a callable that takes the same input as the transform, and returns the labels.
     """
 
-    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
+    def _get_params(
+        self, flat_inputs: list[Any], num_chunks: int, chunks_indices: tuple[torch.Tensor]
+    ) -> list[dict[str, Any]]:
         lam = float(self._dist.sample(()))  # type: ignore[arg-type]
 
         H, W = query_size(flat_inputs)
@@ -331,9 +337,9 @@ class CutMix(_BaseMixUpCutMix):
 
         lam_adjusted = float(1.0 - (x2 - x1) * (y2 - y1) / (W * H))
 
-        return {"box": box, "lam_adjusted": lam_adjusted}
+        return [{"box": box, "lam_adjusted": lam_adjusted}]
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def _transform(self, inpt: Any, params: dict[str, Any]) -> Any:
         if inpt is params["labels"]:
             return self._mixup_label(inpt, lam=params["lam_adjusted"])
         elif isinstance(

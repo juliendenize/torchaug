@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, List, Mapping, Sequence, Tuple
+from typing import Any, Mapping, Sequence
 
 import torch
 from torch import Tensor
@@ -93,8 +93,8 @@ class BatchBoundingBoxes(TATensor):
     """
 
     format: BoundingBoxFormat
-    canvas_size: Tuple[int, int]
-    idx_sample: List[int]
+    canvas_size: tuple[int, int]
+    idx_sample: list[int]
 
     @property
     def batch_size(self) -> int:
@@ -161,14 +161,14 @@ class BatchBoundingBoxes(TATensor):
         tensor: Tensor,
         *,
         format: BoundingBoxFormat | str,
-        canvas_size: Tuple[int, int],
-        idx_sample: List[int],
+        canvas_size: tuple[int, int],
+        idx_sample: list[int],
         check_dims: bool = True,
     ) -> BatchBoundingBoxes:  # type: ignore[override]
         if check_dims and tensor.ndim != 2:
             raise ValueError(f"Expected a 2D tensor, got {tensor.ndim}D.")
         if isinstance(format, str):
-            format = BoundingBoxFormat[format.upper()]
+            format = BoundingBoxFormat[format.upper()]  # type: ignore[misc]
         batch_bounding_boxes = tensor.as_subclass(cls)
         batch_bounding_boxes.format = format
         batch_bounding_boxes.canvas_size = canvas_size
@@ -181,7 +181,7 @@ class BatchBoundingBoxes(TATensor):
         *,
         format: BoundingBoxFormat | str,
         canvas_size: Tensor,
-        idx_sample: List[int],
+        idx_sample: list[int],
         dtype: torch.dtype | None = None,
         device: torch.device | str | int | None = None,
         requires_grad: bool | None = None,
@@ -193,7 +193,7 @@ class BatchBoundingBoxes(TATensor):
     def _wrap_output(
         cls,
         output: torch.Tensor,
-        args: list[Any] = (),
+        args: Sequence[Any] = (),
         kwargs: Mapping[str, Any] | None = None,
     ) -> BatchBoundingBoxes:
         # If there are BatchBoundingBoxes instances in the output, their metadata got lost when we called

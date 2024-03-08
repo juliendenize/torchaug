@@ -1,10 +1,8 @@
-# ruff: noqa
-
 from ._kernel import (
     _BUILTIN_DATAPOINT_TYPES,
+    _KERNEL_REGISTRY,
     _FillType,
     _FillTypeJIT,
-    _KERNEL_REGISTRY,
     _kernel_ta_tensor_wrapper,
     _name_to_functional,
     _register_five_ten_crop_kernel_internal,

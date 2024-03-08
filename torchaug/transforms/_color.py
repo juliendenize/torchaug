@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import collections.abc
 from itertools import permutations
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Sequence
 
 import torch
 
@@ -30,14 +30,14 @@ class Grayscale(Transform):
         )
         self.num_output_channels = num_output_channels
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def _transform(self, inpt: Any, params: dict[str, Any]) -> Any:
         return self._call_kernel(
             F.rgb_to_grayscale,
             inpt,
             num_output_channels=self.num_output_channels,
         )
 
-    def extra_repr(self) -> str:
+    def extra_repr(self) -> str:  # type: ignore[override]
         return super().extra_repr(exclude_names=["num_chunks", "permute_chunks"])
 
 
@@ -63,18 +63,18 @@ class RandomGrayscale(RandomApplyTransform):
             batch_transform=batch_transform,
         )
 
-    def _get_params(self, flat_inputs: List[Any], *args, **kwargs) -> List[Dict[str, Any]]:
+    def _get_params(self, flat_inputs: list[Any], *args, **kwargs) -> list[dict[str, Any]]:
         num_input_channels, *_ = query_chw(flat_inputs)
         return [{"num_input_channels": num_input_channels}]
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def _transform(self, inpt: Any, params: dict[str, Any]) -> Any:
         return self._call_kernel(
             F.rgb_to_grayscale,
             inpt,
             num_output_channels=params["num_input_channels"],
         )
 
-    def extra_repr(self) -> str:
+    def extra_repr(self) -> str:  # type: ignore[override]
         return super().extra_repr(exclude_names=["num_chunks", "permute_chunks"])
 
 
@@ -109,10 +109,10 @@ class RandomColorJitter(RandomApplyTransform):
 
     def __init__(
         self,
-        brightness: Union[float, Sequence[float]] | None = None,
-        contrast: Union[float, Sequence[float]] | None = None,
-        saturation: Union[float, Sequence[float]] | None = None,
-        hue: Union[float, Sequence[float]] | None = None,
+        brightness: float | Sequence[float] | None = None,
+        contrast: float | Sequence[float] | None = None,
+        saturation: float | Sequence[float] | None = None,
+        hue: float | Sequence[float] | None = None,
         p: float = 0.5,
         batch_inplace: bool = False,
         num_chunks: int = 1,
@@ -138,12 +138,12 @@ class RandomColorJitter(RandomApplyTransform):
 
     def _check_input(
         self,
-        value: Union[float, Sequence[float]] | None,
+        value: float | Sequence[float] | None,
         name: str,
         center: float = 1.0,
-        bound: Tuple[float, float] = (0, float("inf")),
+        bound: tuple[float, float] = (0, float("inf")),
         clip_first_on_zero: bool = True,
-    ) -> Optional[Tuple[float, float]]:
+    ) -> tuple[float, float] | None:
         if value is None:
             return None
 
@@ -178,10 +178,10 @@ class RandomColorJitter(RandomApplyTransform):
 
     def _get_params(
         self,
-        flat_inputs: List[Any],
+        flat_inputs: list[Any],
         num_chunks: int,
-        chunks_indices: List[torch.Tensor],
-    ) -> List[Dict[str, Any]]:
+        chunks_indices: tuple[torch.Tensor],
+    ) -> list[dict[str, Any]]:
         if num_chunks == 1:
             idx_perms = [torch.randint(0, len(self._combinations), (1,)).item()]
         else:
@@ -250,7 +250,7 @@ class RandomColorJitter(RandomApplyTransform):
 
         return params
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def _transform(self, inpt: Any, params: dict[str, Any]) -> Any:
         output = inpt
         brightness_factor = params["brightness_factor"]
         contrast_factor = params["contrast_factor"]
@@ -259,25 +259,25 @@ class RandomColorJitter(RandomApplyTransform):
         for fn_id in params["fn_idx"]:
             if fn_id == 0 and brightness_factor is not None:
                 output = self._call_kernel(
-                    F.adjust_brightness_batch if self.batch_transform else F.adjust_brightness,
+                    F.adjust_brightness_batch if self.batch_transform else F.adjust_brightness,  # type: ignore[arg-type]
                     output,
                     brightness_factor=brightness_factor,
                 )
             elif fn_id == 1 and contrast_factor is not None:
                 output = self._call_kernel(
-                    F.adjust_contrast_batch if self.batch_transform else F.adjust_contrast,
+                    F.adjust_contrast_batch if self.batch_transform else F.adjust_contrast,  # type: ignore[arg-type]
                     output,
                     contrast_factor=contrast_factor,
                 )
             elif fn_id == 2 and saturation_factor is not None:
                 output = self._call_kernel(
-                    F.adjust_saturation_batch if self.batch_transform else F.adjust_saturation,
+                    F.adjust_saturation_batch if self.batch_transform else F.adjust_saturation,  # type: ignore[arg-type]
                     output,
                     saturation_factor=saturation_factor,
                 )
             elif fn_id == 3 and hue_factor is not None:
                 output = self._call_kernel(
-                    F.adjust_hue_batch if self.batch_transform else F.adjust_hue,
+                    F.adjust_hue_batch if self.batch_transform else F.adjust_hue,  # type: ignore[arg-type]
                     output,
                     hue_factor=hue_factor,
                 )
@@ -315,10 +315,10 @@ class ColorJitter(RandomColorJitter):
 
     def __init__(
         self,
-        brightness: Union[float, Sequence[float]] | None = None,
-        contrast: Union[float, Sequence[float]] | None = None,
-        saturation: Union[float, Sequence[float]] | None = None,
-        hue: Union[float, Sequence[float]] | None = None,
+        brightness: float | Sequence[float] | None = None,
+        contrast: float | Sequence[float] | None = None,
+        saturation: float | Sequence[float] | None = None,
+        hue: float | Sequence[float] | None = None,
         batch_inplace: bool = False,
         num_chunks: int = 1,
         permute_chunks: bool = False,
@@ -336,7 +336,7 @@ class ColorJitter(RandomColorJitter):
             batch_transform=batch_transform,
         )
 
-    def extra_repr(self) -> str:
+    def extra_repr(self) -> str:  # type: ignore[override]
         return super().extra_repr(exclude_names=["p"])
 
 
@@ -370,10 +370,10 @@ class RandomChannelPermutation(RandomApplyTransform):
 
     def _get_params(
         self,
-        flat_inputs: List[Any],
+        flat_inputs: list[Any],
         num_chunks: int,
-        chunks_indices: List[torch.Tensor],
-    ) -> Dict[str, Any]:
+        chunks_indices: tuple[torch.Tensor],
+    ) -> list[dict[str, Any]]:
         num_channels, *_ = query_chw(flat_inputs)
 
         params = []
@@ -381,7 +381,7 @@ class RandomChannelPermutation(RandomApplyTransform):
             params.append({"permutation": torch.randperm(num_channels).tolist()})
         return params
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def _transform(self, inpt: Any, params: dict[str, Any]) -> Any:
         return self._call_kernel(F.permute_channels, inpt, params["permutation"])
 
 
@@ -416,10 +416,10 @@ class RandomPhotometricDistort(RandomApplyTransform):
 
     def __init__(
         self,
-        brightness: Tuple[float, float] = (0.875, 1.125),
-        contrast: Tuple[float, float] = (0.5, 1.5),
-        saturation: Tuple[float, float] = (0.5, 1.5),
-        hue: Tuple[float, float] = (-0.05, 0.05),
+        brightness: tuple[float, float] = (0.875, 1.125),
+        contrast: tuple[float, float] = (0.5, 1.5),
+        saturation: tuple[float, float] = (0.5, 1.5),
+        hue: tuple[float, float] = (-0.05, 0.05),
         p_transform: float = 0.5,
         p: float = 0.5,
         batch_inplace: bool = False,
@@ -441,15 +441,15 @@ class RandomPhotometricDistort(RandomApplyTransform):
         self.p_transform = p_transform
 
     def _get_params(
-        self, flat_inputs: List[Any], num_chunks: int, chunks_indices: torch.Tensor
-    ) -> List[Dict[str, Any]]:
+        self, flat_inputs: list[Any], num_chunks: int, chunks_indices: torch.Tensor
+    ) -> list[dict[str, Any]]:
         num_channels, *_ = query_chw(flat_inputs)
 
         params = []
         device = flat_inputs[0].device
 
         for i in range(num_chunks):
-            chunk_params: Dict[str, Any] = {
+            chunk_params: dict[str, Any] = {
                 key: ColorJitter._generate_value(
                     range[0],
                     range[1],
@@ -475,34 +475,34 @@ class RandomPhotometricDistort(RandomApplyTransform):
 
         return params
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def _transform(self, inpt: Any, params: dict[str, Any]) -> Any:
         if params["brightness_factor"] is not None:
             inpt = self._call_kernel(
-                F.adjust_brightness_batch if self.batch_transform else F.adjust_brightness_batch,
+                F.adjust_brightness_batch if self.batch_transform else F.adjust_brightness_batch,  # type: ignore[arg-type]
                 inpt,
                 brightness_factor=params["brightness_factor"],
             )
         if params["contrast_factor"] is not None and params["contrast_before"]:
             inpt = self._call_kernel(
-                F.adjust_contrast_batch if self.batch_transform else F.adjust_contrast,
+                F.adjust_contrast_batch if self.batch_transform else F.adjust_contrast,  # type: ignore[arg-type]
                 inpt,
                 contrast_factor=params["contrast_factor"],
             )
         if params["saturation_factor"] is not None:
             inpt = self._call_kernel(
-                F.adjust_saturation_batch if self.batch_transform else F.adjust_saturation,
+                F.adjust_saturation_batch if self.batch_transform else F.adjust_saturation,  # type: ignore[arg-type]
                 inpt,
                 saturation_factor=params["saturation_factor"],
             )
         if params["hue_factor"] is not None:
             inpt = self._call_kernel(
-                F.adjust_hue_batch if self.batch_transform else F.adjust_hue,
+                F.adjust_hue_batch if self.batch_transform else F.adjust_hue,  # type: ignore[arg-type]
                 inpt,
                 hue_factor=params["hue_factor"],
             )
         if params["contrast_factor"] is not None and not params["contrast_before"]:
             inpt = self._call_kernel(
-                F.adjust_contrast_batch if self.batch_transform else F.adjust_contrast,
+                F.adjust_contrast_batch if self.batch_transform else F.adjust_contrast,  # type: ignore[arg-type]
                 inpt,
                 contrast_factor=params["contrast_factor"],
             )
@@ -534,10 +534,10 @@ class RandomEqualize(RandomApplyTransform):
             batch_transform=batch_transform,
         )
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def _transform(self, inpt: Any, params: dict[str, Any]) -> Any:
         return self._call_kernel(F.equalize, inpt)
 
-    def extra_repr(self) -> str:
+    def extra_repr(self) -> str:  # type: ignore[override]
         return super().extra_repr(exclude_names=["num_chunks", "permute_chunks"])
 
 
@@ -561,10 +561,10 @@ class RandomInvert(RandomApplyTransform):
             batch_transform=batch_transform,
         )
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def _transform(self, inpt: Any, params: dict[str, Any]) -> Any:
         return self._call_kernel(F.invert, inpt)
 
-    def extra_repr(self) -> str:
+    def extra_repr(self) -> str:  # type: ignore[override]
         return super().extra_repr(exclude_names=["num_chunks", "permute_chunks"])
 
 
@@ -597,14 +597,14 @@ class RandomPosterize(RandomApplyTransform):
         )
         self.bits = bits
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def _transform(self, inpt: Any, params: dict[str, Any]) -> Any:
         return self._call_kernel(
             F.posterize,
             inpt,
             bits=self.bits,
         )
 
-    def extra_repr(self) -> str:
+    def extra_repr(self) -> str:  # type: ignore[override]
         return super().extra_repr(exclude_names=["num_chunks", "permute_chunks"])
 
 
@@ -633,14 +633,14 @@ class RandomSolarize(RandomApplyTransform):
         super().__init__(p=p, batch_inplace=batch_inplace, batch_transform=batch_transform)
         self.threshold = threshold
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def _transform(self, inpt: Any, params: dict[str, Any]) -> Any:
         return self._call_kernel(
             F.solarize,
             inpt,
             threshold=self.threshold,
         )
 
-    def extra_repr(self) -> str:
+    def extra_repr(self) -> str:  # type: ignore[override]
         return super().extra_repr(exclude_names=["num_chunks", "permute_chunks"])
 
 
@@ -663,10 +663,10 @@ class RandomAutocontrast(RandomApplyTransform):
             batch_transform=batch_transform,
         )
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def _transform(self, inpt: Any, params: dict[str, Any]) -> Any:
         return self._call_kernel(F.autocontrast, inpt)
 
-    def extra_repr(self) -> str:
+    def extra_repr(self) -> str:  # type: ignore[override]
         return super().extra_repr(exclude_names=["num_chunks", "permute_chunks"])
 
 
@@ -698,12 +698,12 @@ class RandomAdjustSharpness(RandomApplyTransform):
         )
         self.sharpness_factor = sharpness_factor
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def _transform(self, inpt: Any, params: dict[str, Any]) -> Any:
         return self._call_kernel(
             F.adjust_sharpness,
             inpt,
             sharpness_factor=self.sharpness_factor,
         )
 
-    def extra_repr(self) -> str:
+    def extra_repr(self) -> str:  # type: ignore[override]
         return super().extra_repr(exclude_names=["num_chunks", "permute_chunks"])

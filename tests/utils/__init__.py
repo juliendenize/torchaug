@@ -1,5 +1,3 @@
-# ruff: noqa
-
 from ._common import (
     assert_equal,
     assert_not_equal,
@@ -7,10 +5,8 @@ from ._common import (
     cpu_and_cuda,
     freeze_rng_state,
     needs_cuda,
-    needs_cuda,
     set_rng_seed,
 )
-
 from ._make_tensors import (
     ALL_IMAGES_MAKERS,
     ALL_MAKERS,
@@ -22,6 +18,9 @@ from ._make_tensors import (
     IMAGE_AND_VIDEO_TENSOR_AND_MAKERS,
     IMAGE_MAKERS,
     IMAGE_TENSOR_AND_MAKERS,
+    MASKS_MAKERS,
+    SAMPLE_MAKERS,
+    VIDEO_MAKERS,
     make_batch_bounding_boxes,
     make_batch_detection_masks,
     make_batch_images,
@@ -37,12 +36,10 @@ from ._make_tensors import (
     make_segmentation_mask,
     make_video,
     make_video_tensor,
-    MASKS_MAKERS,
-    SAMPLE_MAKERS,
-    VIDEO_MAKERS,
 )
-
 from ._transform_utils import (
+    CORRECTNESS_FILLS,
+    EXHAUSTIVE_TYPE_FILLS,
     _script,
     adapt_fill,
     check_batch_transform,
@@ -52,8 +49,6 @@ from ._transform_utils import (
     check_kernel_cuda_vs_cpu,
     check_transform,
     check_type,
-    CORRECTNESS_FILLS,
-    EXHAUSTIVE_TYPE_FILLS,
     param_value_parametrization,
     transform_cls_to_functional,
 )

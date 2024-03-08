@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, Callable, Dict, List, Optional, Sequence, Type, Union, cast
+from typing import Any, Callable, Sequence, Type, cast
 
 import torch
 from torch.utils._pytree import tree_flatten, tree_unflatten
@@ -20,7 +20,7 @@ from ._utils import (
 
 # TODO: do we want/need to expose this?
 class Identity(Transform):
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def _transform(self, inpt: Any, params: dict[str, Any]) -> Any:
         return inpt
 
 
@@ -40,13 +40,13 @@ class Lambda(Transform):
         self.lambd = lambd
         self.types = types or self._transformed_types
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def _transform(self, inpt: Any, params: dict[str, Any]) -> Any:
         if isinstance(inpt, self.types):
             return self.lambd(inpt)
         else:
             return inpt
 
-    def forward_single(self, flat_inputs: List[Any]) -> List[Any]:
+    def forward_single(self, flat_inputs: list[Any]) -> list[Any]:
         if self.p == 1.0:
             pass
         elif self.p == 0.0 or torch.rand(1) >= self.p:
@@ -56,12 +56,12 @@ class Lambda(Transform):
         params = self._get_params(
             [inpt for (inpt, needs_transform) in zip(flat_inputs, needs_transform_list) if needs_transform],
             num_chunks=1,
-            chunks_indices=[
+            chunks_indices=(
                 torch.tensor(
                     [0],
                     device=flat_inputs[0].device if isinstance(flat_inputs[0], torch.Tensor) else "cpu",
-                )
-            ],
+                ),
+            ),
         )[0]
 
         flat_outputs = [
@@ -71,7 +71,7 @@ class Lambda(Transform):
 
         return flat_outputs
 
-    def extra_repr(self) -> str:
+    def extra_repr(self) -> str:  # type: ignore[override]
         extras = []
         name = getattr(self.lambd, "__name__", None)
         if name:
@@ -140,7 +140,7 @@ class LinearTransformation(Transform):
         self.transformation_matrix = transformation_matrix
         self.mean_vector = mean_vector
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def _transform(self, inpt: Any, params: dict[str, Any]) -> Any:
         shape = inpt.shape
         n = shape[-3] * shape[-2] * shape[-1]
 
@@ -204,7 +204,7 @@ class Normalize(Transform):
         self.std = list(std)
         self.inplace = inplace
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def _transform(self, inpt: Any, params: dict[str, Any]) -> Any:
         return self._call_kernel(F.normalize, inpt, mean=self.mean, std=self.std, inplace=self.inplace)
 
 
@@ -228,8 +228,8 @@ class RandomGaussianBlur(RandomApplyTransform):
 
     def __init__(
         self,
-        kernel_size: Union[int, Sequence[int]],
-        sigma: Union[int, float, Sequence[float]] = (0.1, 2.0),
+        kernel_size: int | Sequence[int],
+        sigma: int | float | Sequence[float] = (0.1, 2.0),
         p: float = 0.5,
         batch_inplace: bool = False,
         batch_transform: bool = False,
@@ -247,10 +247,10 @@ class RandomGaussianBlur(RandomApplyTransform):
 
     def _get_params(
         self,
-        flat_inputs: List[Any],
+        flat_inputs: list[Any],
         num_chunks: int,
-        chunks_indices: List[torch.Tensor],
-    ) -> Dict[str, Any]:
+        chunks_indices: tuple[torch.Tensor],
+    ) -> list[dict[str, Any]]:
         params = []
 
         for _ in range(num_chunks):
@@ -269,9 +269,9 @@ class RandomGaussianBlur(RandomApplyTransform):
 
         return params
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def _transform(self, inpt: Any, params: dict[str, Any]) -> Any:
         return self._call_kernel(
-            F.gaussian_blur_batch if self.batch_transform else F.gaussian_blur,
+            F.gaussian_blur_batch if self.batch_transform else F.gaussian_blur,  # type: ignore[arg-type]
             inpt,
             self.kernel_size,
             **params,
@@ -297,8 +297,8 @@ class GaussianBlur(RandomGaussianBlur):
 
     def __init__(
         self,
-        kernel_size: Union[int, Sequence[int]],
-        sigma: Union[int, float, Sequence[float]] = (0.1, 2.0),
+        kernel_size: int | Sequence[int],
+        sigma: int | float | Sequence[float] = (0.1, 2.0),
         batch_inplace: bool = False,
         batch_transform: bool = False,
     ) -> None:
@@ -329,7 +329,7 @@ class ToDtype(Transform):
 
     def __init__(
         self,
-        dtype: Union[torch.dtype, Dict[Union[Type, str], Optional[torch.dtype]]],
+        dtype: torch.dtype | dict[Type | str, torch.dtype | None],
         scale: bool = False,
     ) -> None:
         super().__init__()
@@ -358,7 +358,7 @@ class ToDtype(Transform):
         self.dtype = dtype
         self.scale = scale
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def _transform(self, inpt: Any, params: dict[str, Any]) -> Any:
         if isinstance(self.dtype, torch.dtype):
             # For consistency / BC with ConvertImageDtype, we only care about images or videos when dtype
             # is a simple torch.dtype
@@ -373,7 +373,7 @@ class ToDtype(Transform):
             ):
                 return inpt
 
-            dtype: Optional[torch.dtype] = self.dtype
+            dtype: torch.dtype | None = self.dtype
         elif type(inpt) in self.dtype:
             dtype = self.dtype[type(inpt)]
         elif "others" in self.dtype:
@@ -436,7 +436,7 @@ class SanitizeBoundingBoxes(Transform):
     def __init__(
         self,
         min_size: float = 1.0,
-        labels_getter: Union[Callable[[Any], Optional[torch.Tensor]], str, None] = "default",
+        labels_getter: Callable[[Any], torch.Tensor | None] | str | None = "default",
     ) -> None:
         super().__init__()
 
@@ -484,7 +484,7 @@ class SanitizeBoundingBoxes(Transform):
             )
 
         ws, hs = boxes[:, 2] - boxes[:, 0], boxes[:, 3] - boxes[:, 1]
-        valid = (ws >= self.min_size) & (hs >= self.min_size) & (boxes >= 0).all(dim=-1)
+        valid = (ws >= self.min_size) & (hs >= self.min_size) & (boxes >= 0).all(dim=-1)  # type: ignore[attr-defined]
         # TODO: Do we really need to check for out of bounds here? All
         # transforms should be clamping anyway, so this should never happen?
         image_h, image_w = boxes.canvas_size
@@ -501,7 +501,7 @@ class SanitizeBoundingBoxes(Transform):
 
         return tree_unflatten(flat_outputs, spec)
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def _transform(self, inpt: Any, params: dict[str, Any]) -> Any:
         is_label = inpt is not None and inpt is params["labels"]
         is_bounding_boxes = isinstance(inpt, (ta_tensors.BoundingBoxes, ta_tensors.BatchBoundingBoxes))
         is_mask = isinstance(inpt, (ta_tensors.Mask, ta_tensors.BatchMasks))

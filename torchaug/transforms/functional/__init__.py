@@ -1,5 +1,3 @@
-# ruff: noqa
-
 from torchvision.transforms import InterpolationMode
 
 from ._augment import erase, erase_image, erase_video
@@ -103,7 +101,6 @@ from ._geometry import (
     resize,
     resize_bounding_boxes,
     resize_image,
-    resize_image,
     resize_mask,
     resize_video,
     resized_crop,
@@ -158,5 +155,4 @@ from ._misc import (
 )
 from ._temporal import uniform_temporal_subsample, uniform_temporal_subsample_video
 from ._type_conversion import to_batch_images, to_image
-
 from ._utils import is_pure_tensor, register_kernel
