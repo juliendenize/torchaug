@@ -17,9 +17,11 @@
 import os
 import sys
 
+
 sys.path.insert(0, os.path.abspath("../../"))
 
 import torchaug
+
 
 # -- Project information -----------------------------------------------------
 
@@ -37,7 +39,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     # "sphinx.ext.doctest",
-    # "sphinx.ext.intersphinx",
+    "sphinx.ext.intersphinx",
     "sphinx.ext.todo",
     # "sphinx.ext.mathjax",
     "sphinx.ext.napoleon",
@@ -59,10 +61,9 @@ extensions = [
 #     "remove_config_comments": True,
 # }
 
+docstring_default_arg_substitution = "Default: "
+autodoc_preserve_defaults = True
 napoleon_use_ivar = True
-napoleon_numpy_docstring = False
-napoleon_google_docstring = True
-autosummary_generate = True
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -102,11 +103,8 @@ html_theme_options = {
     "source_directory": "docs/source/",
 }
 
-
-rst_prolog = (
-    """
-.. |default| raw:: html
-
-    <div class="default-value-section">"""
-    + ' <span class="default-value-label">Default:</span>'
-)
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3", None),
+    "torch": ("https://pytorch.org/docs/stable", None),
+    "torchvision": ("https://pytorch.org/vision/stable", None),
+}

@@ -1,8 +1,9 @@
 .. role:: hidden
-    :class: hidden-section
+    :class: hidden
 .. currentmodule:: {{ module }}
 
 
-{{ name | underline}}
+{{ name }}
+{{ '-' * name|length }}
 
 .. autofunction:: {{ name }}

@@ -1,7 +1,7 @@
 **/__pycache__/*
 **/_build/*
 **/build/
-**/notebooks/*
+**/*.ipynb
 *.egg-info
 .coverage
 .pytest_cache/*
