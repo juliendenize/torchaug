@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, List, Mapping, Sequence
+from typing import Any, List, Mapping, Optional, Sequence, Union
 
 import torch
 from torch import Tensor
@@ -153,9 +153,9 @@ class BatchMasks(TATensor):
         data: Any,
         *,
         idx_sample: List[int],
-        dtype: torch.dtype | None = None,
-        device: torch.device | str | int | None = None,
-        requires_grad: bool | None = None,
+        dtype: Optional[torch.dtype] = None,
+        device: Optional[Union[torch.device, str, int]] = None,
+        requires_grad: Optional[bool] = None,
     ) -> BatchMasks:
         tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
 
@@ -169,7 +169,7 @@ class BatchMasks(TATensor):
         cls,
         output: torch.Tensor,
         args: Sequence[Any] = (),
-        kwargs: Mapping[str, Any] | None = None,
+        kwargs: Optional[Mapping[str, Any]] = None,
     ) -> BatchMasks:
         # If there are BatchMasks instances in the output, their metadata got lost when we called
         # super().__torch_function__. We need to restore the metadata somehow, so we choose to take

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import enum
 from math import ceil, floor
-from typing import Any, Callable, Dict, List, Tuple, Type
+from typing import Any, Callable, Dict, List, Tuple, Type, Union
 
 import torch
 from torch import nn
@@ -18,7 +18,7 @@ from .functional._utils._kernel import _get_kernel
 
 
 class RandomApplyTransform(nn.Module):
-    _transformed_types: Tuple[Type | Callable[[Any], bool], ...] = (torch.Tensor,)
+    _transformed_types: Tuple[Union[Type, Callable[[Any], bool]], ...] = (torch.Tensor,)
     _reshape_transform: bool = False
     _receive_flatten_inputs: bool = False
 

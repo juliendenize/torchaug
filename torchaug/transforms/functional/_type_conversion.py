@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Union
+
 import numpy as np
 import torch
 
@@ -7,7 +9,7 @@ from torchaug import ta_tensors
 
 
 @torch.jit.unused
-def to_image(inpt: torch.Tensor | np.ndarray) -> ta_tensors.Image:
+def to_image(inpt: Union[torch.Tensor, np.ndarray]) -> ta_tensors.Image:
     """See :class:`~torchaug.transforms.ToImage` for details."""
     if isinstance(inpt, np.ndarray):
         output = torch.from_numpy(np.atleast_3d(inpt)).permute((2, 0, 1)).contiguous()

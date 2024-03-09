@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import collections
 from contextlib import suppress
-from typing import Any, Callable, List, Sequence, Tuple
+from typing import Any, Callable, List, Optional, Sequence, Tuple, Union
 
 import torch
 from torch import nn
@@ -78,8 +78,8 @@ def _find_labels_default_heuristic(inputs: Any) -> torch.Tensor:
 
 
 def _parse_labels_getter(
-    labels_getter: str | Callable[[Any], torch.Tensor | None] | None,
-) -> Callable[[Any], torch.Tensor | None]:
+    labels_getter: Optional[Union[str, Callable[[Any], Optional[torch.Tensor]]]],
+) -> Callable[[Any], Optional[torch.Tensor]]:
     if labels_getter == "default":
         return _find_labels_default_heuristic
     elif callable(labels_getter):
@@ -124,7 +124,7 @@ def get_batch_bounding_boxes(flat_inputs: List[Any]) -> ta_tensors.BatchBounding
 
 def get_sample_or_batch_bounding_boxes(
     flat_inputs: List[Any],
-) -> ta_tensors.BoundingBoxes | ta_tensors.BatchBoundingBoxes:
+) -> Union[ta_tensors.BoundingBoxes, ta_tensors.BatchBoundingBoxes]:
     """Get the bounding boxes from a list of inputs.
 
     Args:

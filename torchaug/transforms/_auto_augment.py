@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import math
-from typing import Any, Callable, Dict, List, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 import torch
 from torch.utils._pytree import TreeSpec, tree_flatten, tree_unflatten
@@ -32,8 +32,8 @@ class _AutoAugmentBase(Transform):
     def __init__(
         self,
         *,
-        interpolation: InterpolationMode | int = InterpolationMode.NEAREST,
-        fill: _FillType | Dict[Type | str, _FillType] = None,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
+        fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = None,
         batch_transform: bool = False,
     ) -> None:
         super().__init__(batch_transform=batch_transform)
@@ -108,8 +108,8 @@ class _AutoAugmentBase(Transform):
         image: ImageOrVideo,
         transform_id: str,
         magnitude: float,
-        interpolation: InterpolationMode | int,
-        fill: Dict[Type | str, _FillTypeJIT],
+        interpolation: Union[InterpolationMode, int],
+        fill: Dict[Union[Type, str], _FillTypeJIT],
     ) -> ImageOrVideo:
         fill_ = _get_fill(fill, type(image))
 
@@ -267,8 +267,8 @@ class AutoAugment(_AutoAugmentBase):
     def __init__(
         self,
         policy: AutoAugmentPolicy = AutoAugmentPolicy.IMAGENET,
-        interpolation: InterpolationMode | int = InterpolationMode.NEAREST,
-        fill: _FillType | Dict[Type | str, _FillType] = None,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
+        fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = None,
     ) -> None:
         super().__init__(interpolation=interpolation, fill=fill)
         self.policy = policy
@@ -276,7 +276,7 @@ class AutoAugment(_AutoAugmentBase):
 
     def _get_policies(
         self, policy: AutoAugmentPolicy
-    ) -> List[Tuple[Tuple[str, float, int | None], Tuple[str, float, int | None]]]:
+    ) -> List[Tuple[Tuple[str, float, Optional[int]], Tuple[str, float, Optional[int]]]]:
         if policy == AutoAugmentPolicy.IMAGENET:
             return [
                 (("Posterize", 0.4, 8), ("Rotate", 0.6, 9)),
@@ -475,8 +475,8 @@ class RandAugment(_AutoAugmentBase):
         num_ops: int = 2,
         magnitude: int = 9,
         num_magnitude_bins: int = 31,
-        interpolation: InterpolationMode | int = InterpolationMode.NEAREST,
-        fill: _FillType | Dict[Type | str, _FillType] = None,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
+        fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = None,
     ) -> None:
         super().__init__(interpolation=interpolation, fill=fill)
         self.num_ops = num_ops
@@ -582,8 +582,8 @@ class TrivialAugmentWide(_AutoAugmentBase):
     def __init__(
         self,
         num_magnitude_bins: int = 31,
-        interpolation: InterpolationMode | int = InterpolationMode.NEAREST,
-        fill: _FillType | Dict[Type | str, _FillType] = None,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
+        fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = None,
     ):
         super().__init__(interpolation=interpolation, fill=fill)
         self.num_magnitude_bins = num_magnitude_bins
@@ -671,7 +671,7 @@ class AugMix(_AutoAugmentBase):
         "AutoContrast": (lambda num_bins, height, width: None, False),
         "Equalize": (lambda num_bins, height, width: None, False),
     }
-    _AUGMENTATION_SPACE: Dict[str, Tuple[Callable[[int, int, int], torch.Tensor | None], bool]] = {
+    _AUGMENTATION_SPACE: Dict[str, Tuple[Callable[[int, int, int], Optional[torch.Tensor]], bool]] = {
         **_PARTIAL_AUGMENTATION_SPACE,
         "Brightness": (
             lambda num_bins, height, width: torch.linspace(0.0, 0.9, num_bins),
@@ -698,8 +698,8 @@ class AugMix(_AutoAugmentBase):
         chain_depth: int = -1,
         alpha: float = 1.0,
         all_ops: bool = True,
-        interpolation: InterpolationMode | int = InterpolationMode.BILINEAR,
-        fill: _FillType | Dict[Type | str, _FillType] = None,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
+        fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = None,
     ) -> None:
         super().__init__(interpolation=interpolation, fill=fill, batch_transform=True)
         self._PARAMETER_MAX = 10

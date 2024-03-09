@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Optional, Union
 
 import torch
 
@@ -17,10 +17,10 @@ def _transfer_tensor_on_device(tensor: torch.Tensor, device: torch.device, non_b
 
 
 def _get_batch_factor(
-    factor: int | float | torch.Tensor,
+    factor: Union[int, float, torch.Tensor],
     batch_size: int,
     device: torch.device,
-    dtype: torch.dtype | None = None,
+    dtype: Optional[torch.dtype] = None,
     value_check: bool = False,
     min_value: float = 0.0,
     max_value: float = torch.inf,

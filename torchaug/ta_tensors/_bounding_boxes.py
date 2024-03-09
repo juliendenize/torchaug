@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Mapping, Sequence, Tuple
+from typing import Any, Mapping, Optional, Sequence, Tuple, Union
 
 import torch
 from torch.utils._pytree import tree_flatten
@@ -66,7 +66,7 @@ class BoundingBoxes(TATensor):
         cls,
         tensor: torch.Tensor,
         *,
-        format: BoundingBoxFormat | str,
+        format: Union[BoundingBoxFormat, str],
         canvas_size: Tuple[int, int],
         check_dims: bool = True,
     ) -> BoundingBoxes:  # type: ignore[override]
@@ -86,11 +86,11 @@ class BoundingBoxes(TATensor):
         cls,
         data: Any,
         *,
-        format: BoundingBoxFormat | str,
+        format: Union[BoundingBoxFormat, str],
         canvas_size: Tuple[int, int],
-        dtype: torch.dtype | None = None,
-        device: torch.device | str | int | None = None,
-        requires_grad: bool | None = None,
+        dtype: Optional[torch.dtype] = None,
+        device: Optional[Union[torch.device, str, int]] = None,
+        requires_grad: Optional[bool] = None,
     ) -> BoundingBoxes:
         tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
         return cls._wrap(tensor, format=format, canvas_size=canvas_size)
@@ -100,7 +100,7 @@ class BoundingBoxes(TATensor):
         cls,
         output: torch.Tensor,
         args: Sequence[Any] = (),
-        kwargs: Mapping[str, Any] | None = None,
+        kwargs: Optional[Mapping[str, Any]] = None,
     ) -> BoundingBoxes:
         # If there are BoundingBoxes instances in the output, their metadata got lost when we called
         # super().__torch_function__. We need to restore the metadata somehow, so we choose to take

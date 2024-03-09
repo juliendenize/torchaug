@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Optional, Union
 
 import torch
 
@@ -24,9 +24,9 @@ class Video(TATensor):
         cls,
         data: Any,
         *,
-        dtype: torch.dtype | None = None,
-        device: torch.device | str | int | None = None,
-        requires_grad: bool | None = None,
+        dtype: Optional[torch.dtype] = None,
+        device: Optional[Union[torch.device, str, int]] = None,
+        requires_grad: Optional[bool] = None,
     ) -> Video:
         tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
         if data.ndim < 4:

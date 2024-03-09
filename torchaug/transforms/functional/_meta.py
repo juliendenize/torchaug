@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 import torch
 import torchvision.transforms.v2.functional as TVF
@@ -141,8 +141,8 @@ def _convert_bounding_box_format(
 
 def convert_bounding_box_format(
     inpt: torch.Tensor,
-    old_format: ta_tensors.BoundingBoxFormat | None = None,
-    new_format: ta_tensors.BoundingBoxFormat | None = None,
+    old_format: Optional[ta_tensors.BoundingBoxFormat] = None,
+    new_format: Optional[ta_tensors.BoundingBoxFormat] = None,
     inplace: bool = False,
 ) -> torch.Tensor:
     """See :func:`~torchaug.transforms.ConvertBoundingBoxFormat` for details."""
@@ -209,8 +209,8 @@ def _clamp_bounding_boxes(
 
 def clamp_bounding_boxes(
     inpt: torch.Tensor,
-    format: ta_tensors.BoundingBoxFormat | None = None,
-    canvas_size: Tuple[int, int] | None = None,
+    format: Optional[ta_tensors.BoundingBoxFormat] = None,
+    canvas_size: Optional[Tuple[int, int]] = None,
 ) -> torch.Tensor:
     """See :func:`~torchaug.transforms.ClampBoundingBoxes` for details."""
     if not torch.jit.is_scripting():

@@ -5,10 +5,12 @@ from typing import (
     Callable,
     Dict,
     Mapping,
+    Optional,
     Sequence,
     Tuple,
     Type,
     TypeVar,
+    Union,
 )
 
 import torch
@@ -34,9 +36,9 @@ class TATensor(torch.Tensor):
     @staticmethod
     def _to_tensor(
         data: Any,
-        dtype: torch.dtype | None = None,
-        device: torch.device | str | int | None = None,
-        requires_grad: bool | None = None,
+        dtype: Optional[torch.dtype] = None,
+        device: Optional[Union[torch.device, str, int]] = None,
+        requires_grad: Optional[bool] = None,
     ) -> torch.Tensor:
         if requires_grad is None:
             requires_grad = data.requires_grad if isinstance(data, torch.Tensor) else False
@@ -47,7 +49,7 @@ class TATensor(torch.Tensor):
         cls,
         output: torch.Tensor,
         args: Sequence[Any] = (),
-        kwargs: Mapping[str, Any] | None = None,
+        kwargs: Optional[Mapping[str, Any]] = None,
     ) -> torch.Tensor:
         # Same as torch._tensor._convert
         if isinstance(output, torch.Tensor) and not isinstance(output, cls):
@@ -64,7 +66,7 @@ class TATensor(torch.Tensor):
         func: Callable[..., torch.Tensor],
         types: Tuple[Type[torch.Tensor], ...],
         args: Sequence[Any] = (),
-        kwargs: Mapping[str, Any] | None = None,
+        kwargs: Optional[Mapping[str, Any]] = None,
     ) -> torch.Tensor:
         """For general information about how the __torch_function__ protocol works,
         see https://pytorch.org/docs/stable/notes/extending.html#extending-torch.

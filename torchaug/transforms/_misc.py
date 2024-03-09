@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, Callable, Dict, List, Sequence, Tuple, Type, cast
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union, cast
 
 import torch
 from torch.utils._pytree import tree_flatten, tree_unflatten
@@ -228,8 +228,8 @@ class RandomGaussianBlur(RandomApplyTransform):
 
     def __init__(
         self,
-        kernel_size: int | Sequence[int],
-        sigma: int | float | Sequence[float] = (0.1, 2.0),
+        kernel_size: Union[int, Sequence[int]],
+        sigma: Union[int, float, Sequence[float]] = (0.1, 2.0),
         p: float = 0.5,
         batch_inplace: bool = False,
         batch_transform: bool = False,
@@ -297,8 +297,8 @@ class GaussianBlur(RandomGaussianBlur):
 
     def __init__(
         self,
-        kernel_size: int | Sequence[int],
-        sigma: int | float | Sequence[float] = (0.1, 2.0),
+        kernel_size: Union[int, Sequence[int]],
+        sigma: Union[int, float, Sequence[float]] = (0.1, 2.0),
         batch_inplace: bool = False,
         batch_transform: bool = False,
     ) -> None:
@@ -329,7 +329,7 @@ class ToDtype(Transform):
 
     def __init__(
         self,
-        dtype: torch.dtype | Dict[Type | str, torch.dtype | None],
+        dtype: Union[torch.dtype, Dict[Union[Type, str], Optional[torch.dtype]]],
         scale: bool = False,
     ) -> None:
         super().__init__()
@@ -373,7 +373,7 @@ class ToDtype(Transform):
             ):
                 return inpt
 
-            dtype: torch.dtype | None = self.dtype
+            dtype: Optional[torch.dtype] = self.dtype
         elif type(inpt) in self.dtype:
             dtype = self.dtype[type(inpt)]
         elif "others" in self.dtype:
@@ -436,7 +436,7 @@ class SanitizeBoundingBoxes(Transform):
     def __init__(
         self,
         min_size: float = 1.0,
-        labels_getter: Callable[[Any], torch.Tensor | None] | str | None = "default",
+        labels_getter: Optional[Union[Callable[[Any], Optional[torch.Tensor]], str]] = "default",
     ) -> None:
         super().__init__()
 

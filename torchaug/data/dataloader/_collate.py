@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import contextlib
-from typing import Callable, Dict, Tuple, Type, Union
+from typing import Callable, Dict, Optional, Tuple, Type, Union
 
 import torch
 from torch.utils.data._utils.collate import (
@@ -28,7 +28,7 @@ from ...ta_tensors._video import Video
 def collate_ta_tensor_fn(
     batch,
     *,
-    collate_fn_map: Dict[Type | Tuple[Type, ...], Callable] | None = None,
+    collate_fn_map: Optional[Dict[Union[Type, Tuple[Type, ...]], Callable]] = None,
 ):
     elem = batch[0]
     if isinstance(elem, Image):

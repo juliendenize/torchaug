@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List
+from typing import List, Union
 
 import torch
 import torchvision.transforms.v2.functional as TVF
@@ -81,7 +81,7 @@ def adjust_brightness(inpt: torch.Tensor, brightness_factor: float) -> torch.Ten
 
 def adjust_brightness_batch(
     inpt: torch.Tensor,
-    brightness_factor: float | torch.Tensor,
+    brightness_factor: Union[float, torch.Tensor],
     value_check: bool = False,
 ) -> torch.Tensor:
     """Adjust brightness."""
@@ -111,7 +111,7 @@ def adjust_brightness_video(video: torch.Tensor, brightness_factor: float) -> to
 @_register_kernel_internal(adjust_brightness_batch, ta_tensors.BatchImages)
 def adjust_brightness_batch_images(
     images: torch.Tensor,
-    brightness_factor: float | torch.Tensor,
+    brightness_factor: Union[float, torch.Tensor],
     value_check: bool = False,
 ) -> torch.Tensor:
     c = images.shape[-3]
@@ -135,7 +135,7 @@ def adjust_brightness_batch_images(
 @_register_kernel_internal(adjust_brightness_batch, ta_tensors.BatchVideos)
 def adjust_brightness_batch_videos(
     videos: torch.Tensor,
-    brightness_factor: float | torch.Tensor,
+    brightness_factor: Union[float, torch.Tensor],
     value_check: bool = False,
 ):
     return adjust_brightness_batch_images(images=videos, brightness_factor=brightness_factor, value_check=value_check)
@@ -154,7 +154,7 @@ def adjust_saturation(inpt: torch.Tensor, saturation_factor: float) -> torch.Ten
 
 def adjust_saturation_batch(
     inpt: torch.Tensor,
-    saturation_factor: float | torch.Tensor,
+    saturation_factor: Union[float, torch.Tensor],
     value_check: bool = False,
 ) -> torch.Tensor:
     """Adjust saturation."""
@@ -184,7 +184,7 @@ def adjust_saturation_video(video: torch.Tensor, saturation_factor: float) -> to
 @_register_kernel_internal(adjust_saturation_batch, ta_tensors.BatchImages)
 def adjust_saturation_batch_images(
     images: torch.Tensor,
-    saturation_factor: float | torch.Tensor,
+    saturation_factor: Union[float, torch.Tensor],
     value_check: bool = False,
 ) -> torch.Tensor:
     c = images.shape[-3]
@@ -202,7 +202,7 @@ def adjust_saturation_batch_images(
 @_register_kernel_internal(adjust_saturation_batch, ta_tensors.BatchVideos)
 def adjust_saturation_batch_videos(
     video: torch.Tensor,
-    saturation_factor: float | torch.Tensor,
+    saturation_factor: Union[float, torch.Tensor],
     value_check: bool = False,
 ) -> torch.Tensor:
     return adjust_saturation_batch_images(video, saturation_factor=saturation_factor, value_check=value_check)
@@ -220,7 +220,7 @@ def adjust_contrast(inpt: torch.Tensor, contrast_factor: float) -> torch.Tensor:
 
 
 def adjust_contrast_batch(
-    inpt: torch.Tensor, contrast_factor: float | torch.Tensor, value_check: bool = False
+    inpt: torch.Tensor, contrast_factor: Union[float, torch.Tensor], value_check: bool = False
 ) -> torch.Tensor:
     """Adjust contrast."""
     if torch.jit.is_scripting():
@@ -249,7 +249,7 @@ def adjust_contrast_video(video: torch.Tensor, contrast_factor: float) -> torch.
 @_register_kernel_internal(adjust_contrast_batch, ta_tensors.BatchImages)
 def adjust_contrast_batch_images(
     images: torch.Tensor,
-    contrast_factor: float | torch.Tensor,
+    contrast_factor: Union[float, torch.Tensor],
     value_check: bool = False,
 ) -> torch.Tensor:
     c = images.shape[-3]
@@ -271,7 +271,7 @@ def adjust_contrast_batch_images(
 
 
 @_register_kernel_internal(adjust_contrast_batch, ta_tensors.BatchVideos)
-def adjust_contrast_batch_videos(videos: torch.Tensor, contrast_factor: float | torch.Tensor) -> torch.Tensor:
+def adjust_contrast_batch_videos(videos: torch.Tensor, contrast_factor: Union[float, torch.Tensor]) -> torch.Tensor:
     return adjust_contrast_batch_images(videos, contrast_factor=contrast_factor)
 
 
@@ -310,7 +310,9 @@ def adjust_hue(inpt: torch.Tensor, hue_factor: float) -> torch.Tensor:
     return kernel(inpt, hue_factor=hue_factor)
 
 
-def adjust_hue_batch(inpt: torch.Tensor, hue_factor: float | torch.Tensor, value_check: bool = False) -> torch.Tensor:
+def adjust_hue_batch(
+    inpt: torch.Tensor, hue_factor: Union[float, torch.Tensor], value_check: bool = False
+) -> torch.Tensor:
     """Adjust hue."""
     if torch.jit.is_scripting():
         return adjust_hue_batch_images(inpt, hue_factor=hue_factor, value_check=value_check)
@@ -337,7 +339,7 @@ def adjust_hue_video(video: torch.Tensor, hue_factor: float) -> torch.Tensor:
 @_register_kernel_internal(adjust_hue_batch, torch.Tensor)
 @_register_kernel_internal(adjust_hue_batch, ta_tensors.BatchImages)
 def adjust_hue_batch_images(
-    images: torch.Tensor, hue_factor: float | torch.Tensor, value_check: bool = False
+    images: torch.Tensor, hue_factor: Union[float, torch.Tensor], value_check: bool = False
 ) -> torch.Tensor:
     c = images.shape[-3]
     if c not in [1, 3]:
@@ -378,7 +380,7 @@ def adjust_hue_batch_images(
 
 @_register_kernel_internal(adjust_hue_batch, ta_tensors.BatchVideos)
 def adjust_hue_batch_videos(
-    videos: torch.Tensor, hue_factor: float | torch.Tensor, value_check: bool = False
+    videos: torch.Tensor, hue_factor: Union[float, torch.Tensor], value_check: bool = False
 ) -> torch.Tensor:
     return adjust_hue_batch_images(images=videos, hue_factor=hue_factor, value_check=value_check)
 

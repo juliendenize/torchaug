@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, List, Mapping, Sequence, Tuple
+from typing import Any, List, Mapping, Optional, Sequence, Tuple, Union
 
 import torch
 from torch import Tensor
@@ -160,7 +160,7 @@ class BatchBoundingBoxes(TATensor):
         cls,
         tensor: Tensor,
         *,
-        format: BoundingBoxFormat | str,
+        format: Union[BoundingBoxFormat, str],
         canvas_size: Tuple[int, int],
         idx_sample: List[int],
         check_dims: bool = True,
@@ -179,12 +179,12 @@ class BatchBoundingBoxes(TATensor):
         cls,
         data: Any,
         *,
-        format: BoundingBoxFormat | str,
+        format: Union[BoundingBoxFormat, str],
         canvas_size: Tensor,
         idx_sample: List[int],
-        dtype: torch.dtype | None = None,
-        device: torch.device | str | int | None = None,
-        requires_grad: bool | None = None,
+        dtype: Optional[torch.dtype] = None,
+        device: Optional[Union[torch.device, str, int]] = None,
+        requires_grad: Optional[bool] = None,
     ) -> BatchBoundingBoxes:
         tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
         return cls._wrap(tensor, format=format, canvas_size=canvas_size, idx_sample=idx_sample)
@@ -194,7 +194,7 @@ class BatchBoundingBoxes(TATensor):
         cls,
         output: torch.Tensor,
         args: Sequence[Any] = (),
-        kwargs: Mapping[str, Any] | None = None,
+        kwargs: Optional[Mapping[str, Any]] = None,
     ) -> BatchBoundingBoxes:
         # If there are BatchBoundingBoxes instances in the output, their metadata got lost when we called
         # super().__torch_function__. We need to restore the metadata somehow, so we choose to take

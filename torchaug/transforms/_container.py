@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, List, Sequence
+from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
 import torch
 from torch import nn
@@ -83,7 +83,7 @@ class RandomApply(Transform):
         p: probability of applying the list of transforms.
     """
 
-    def __init__(self, transforms: Sequence[Callable | nn.ModuleList], p: float = 0.5) -> None:
+    def __init__(self, transforms: Sequence[Union[Callable, nn.ModuleList]], p: float = 0.5) -> None:
         super().__init__()
 
         if not isinstance(transforms, (Sequence, nn.ModuleList)):
@@ -127,7 +127,7 @@ class RandomChoice(Transform):
     def __init__(
         self,
         transforms: Sequence[Callable],
-        p: List[float] | None = None,
+        p: Optional[List[float]] = None,
     ) -> None:
         if not isinstance(transforms, Sequence):
             raise TypeError("Argument transforms should be a sequence of callables")
@@ -191,7 +191,7 @@ class SequentialTransform(Transform):
     def __init__(
         self,
         transforms: List[RandomApplyTransform],
-        transforms_parameters_override: Dict[str, Any] | None = {
+        transforms_parameters_override: Optional[Dict[str, Any]] = {
             "inplace": True,
             "batch_inplace": True,
             "batch_transform": True,

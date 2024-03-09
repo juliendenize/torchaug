@@ -9,9 +9,11 @@ from typing import (
     Dict,
     List,
     Literal,
+    Optional,
     Sequence,
     Tuple,
     Type,
+    Union,
 )
 
 import torch
@@ -127,9 +129,9 @@ class Resize(Transform):
 
     def __init__(
         self,
-        size: int | Sequence[int],
-        interpolation: InterpolationMode | int = InterpolationMode.BILINEAR,
-        max_size: int | None = None,
+        size: Union[int, Sequence[int]],
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
+        max_size: Optional[int] = None,
         antialias: bool = True,
     ) -> None:
         super().__init__()
@@ -177,7 +179,7 @@ class CenterCrop(Transform):
 
     _reshape_transform = True
 
-    def __init__(self, size: int | Sequence[int]) -> None:
+    def __init__(self, size: Union[int, Sequence[int]]) -> None:
         super().__init__()
 
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
@@ -223,10 +225,10 @@ class RandomResizedCrop(Transform):
 
     def __init__(
         self,
-        size: int | Sequence[int],
+        size: Union[int, Sequence[int]],
         scale: Tuple[float, float] = (0.08, 1.0),
         ratio: Tuple[float, float] = (3.0 / 4.0, 4.0 / 3.0),
-        interpolation: InterpolationMode | int = InterpolationMode.BILINEAR,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
         antialias: bool = True,
         num_chunks: int = 1,
         permute_chunks: bool = False,
@@ -352,7 +354,7 @@ class FiveCrop(Transform):
 
     _reshape_transform = True
 
-    def __init__(self, size: int | Sequence[int]) -> None:
+    def __init__(self, size: Union[int, Sequence[int]]) -> None:
         super().__init__()
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
 
@@ -410,7 +412,7 @@ class TenCrop(Transform):
 
     _reshape_transform = True
 
-    def __init__(self, size: int | Sequence[int], vertical_flip: bool = False) -> None:
+    def __init__(self, size: Union[int, Sequence[int]], vertical_flip: bool = False) -> None:
         super().__init__()
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
         self.vertical_flip = vertical_flip
@@ -486,8 +488,8 @@ class Pad(Transform):
 
     def __init__(
         self,
-        padding: int | Sequence[int],
-        fill: _FillType | Dict[Type | str, _FillType] = 0,
+        padding: Union[int, Sequence[int]],
+        fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = 0,
         padding_mode: Literal["constant", "edge", "reflect", "symmetric"] = "constant",
     ) -> None:
         super().__init__()
@@ -542,7 +544,7 @@ class RandomZoomOut(RandomApplyTransform):
 
     def __init__(
         self,
-        fill: _FillType | Dict[Type | str, _FillType] = 0,
+        fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = 0,
         side_range: Sequence[float] = (1.0, 4.0),
         p: float = 0.5,
     ) -> None:
@@ -632,11 +634,11 @@ class RandomRotation(Transform):
 
     def __init__(
         self,
-        degrees: numbers.Number | Sequence,
-        interpolation: InterpolationMode | int = InterpolationMode.NEAREST,
+        degrees: Union[numbers.Number, Sequence],
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
         expand: bool = False,
-        center: List[float] | None = None,
-        fill: _FillType | Dict[Type | str, _FillType] = 0,
+        center: Optional[List[float]] = None,
+        fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = 0,
         batch_inplace: bool = False,
         num_chunks: int = 1,
         permute_chunks: bool = False,
@@ -734,13 +736,13 @@ class RandomAffine(Transform):
 
     def __init__(
         self,
-        degrees: numbers.Number | Sequence,
-        translate: Sequence[float] | None = None,
-        scale: Sequence[float] | None = None,
-        shear: int | float | Sequence[float] | None = None,
-        interpolation: InterpolationMode | int = InterpolationMode.NEAREST,
-        fill: _FillType | Dict[Type | str, _FillType] = 0,
-        center: List[float] | None = None,
+        degrees: Union[numbers.Number, Sequence],
+        translate: Optional[Sequence[float]] = None,
+        scale: Optional[Sequence[float]] = None,
+        shear: Optional[Union[int, float, Sequence[float]]] = None,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
+        fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = 0,
+        center: Optional[List[float]] = None,
         batch_inplace: bool = False,
         num_chunks: int = 1,
         permute_chunks: bool = False,
@@ -876,10 +878,10 @@ class RandomCrop(Transform):
 
     def __init__(
         self,
-        size: int | Sequence[int],
-        padding: int | Sequence[int] | None = None,
+        size: Union[int, Sequence[int]],
+        padding: Optional[Union[int, Sequence[int]]] = None,
         pad_if_needed: bool = False,
-        fill: _FillType | Dict[Type | str, _FillType] = 0,
+        fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = 0,
         padding_mode: Literal["constant", "edge", "reflect", "symmetric"] = "constant",
     ) -> None:
         super().__init__()
@@ -1024,8 +1026,8 @@ class RandomPerspective(RandomApplyTransform):
         self,
         distortion_scale: float = 0.5,
         p: float = 0.5,
-        interpolation: InterpolationMode | int = InterpolationMode.BILINEAR,
-        fill: _FillType | Dict[Type | str, _FillType] = 0,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
+        fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = 0,
         batch_inplace: bool = False,
         num_chunks: int = 1,
         permute_chunks: bool = False,
@@ -1150,10 +1152,10 @@ class ElasticTransform(Transform):
 
     def __init__(
         self,
-        alpha: float | Sequence[float] = 50.0,
-        sigma: float | Sequence[float] = 5.0,
-        interpolation: InterpolationMode | int = InterpolationMode.BILINEAR,
-        fill: _FillType | Dict[Type | str, _FillType] = 0,
+        alpha: Union[float, Sequence[float]] = 50.0,
+        sigma: Union[float, Sequence[float]] = 5.0,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
+        fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = 0,
         batch_inplace: bool = False,
         batch_transform: bool = False,
     ) -> None:
@@ -1252,7 +1254,7 @@ class RandomIoUCrop(Transform):
         max_scale: float = 1.0,
         min_aspect_ratio: float = 0.5,
         max_aspect_ratio: float = 2.0,
-        sampler_options: List[float] | None = None,
+        sampler_options: Optional[List[float]] = None,
         trials: int = 40,
         batch_transform: bool = False,
     ):
@@ -1412,7 +1414,7 @@ class ScaleJitter(Transform):
         self,
         target_size: Tuple[int, int],
         scale_range: Tuple[float, float] = (0.1, 2.0),
-        interpolation: InterpolationMode | int = InterpolationMode.BILINEAR,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
         antialias: bool = True,
     ):
         super().__init__()
@@ -1473,9 +1475,9 @@ class RandomShortestSize(Transform):
 
     def __init__(
         self,
-        min_size: List[int] | Tuple[int] | int,
-        max_size: int | None = None,
-        interpolation: InterpolationMode | int = InterpolationMode.BILINEAR,
+        min_size: Union[List[int], Tuple[int], int],
+        max_size: Optional[int] = None,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
         antialias: bool = True,
     ):
         super().__init__()
@@ -1552,7 +1554,7 @@ class RandomResize(Transform):
         self,
         min_size: int,
         max_size: int,
-        interpolation: InterpolationMode | int = InterpolationMode.BILINEAR,
+        interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
         antialias: bool = True,
     ) -> None:
         super().__init__()

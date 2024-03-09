@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Sequence
+from typing import Any, Optional, Sequence, Union
 
 import torch
 from torch._C import device, dtype
@@ -25,9 +25,9 @@ class BatchVideos(TATensor):
         cls,
         data: Any,
         *,
-        dtype: dtype | None = None,
-        device: device | str | int | None = None,
-        requires_grad: bool | None = None,
+        dtype: Optional[dtype] = None,
+        device: Optional[Union[device, str, int]] = None,
+        requires_grad: Optional[bool] = None,
     ) -> BatchVideos:
         tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
         if data.ndim < 5:

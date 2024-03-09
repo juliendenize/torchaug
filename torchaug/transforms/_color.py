@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import collections.abc
 from itertools import permutations
-from typing import Any, Dict, List, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import torch
 
@@ -109,10 +109,10 @@ class RandomColorJitter(RandomApplyTransform):
 
     def __init__(
         self,
-        brightness: float | Sequence[float] | None = None,
-        contrast: float | Sequence[float] | None = None,
-        saturation: float | Sequence[float] | None = None,
-        hue: float | Sequence[float] | None = None,
+        brightness: Optional[Union[float, Sequence[float]]] = None,
+        contrast: Optional[Union[float, Sequence[float]]] = None,
+        saturation: Optional[Union[float, Sequence[float]]] = None,
+        hue: Optional[Union[float, Sequence[float]]] = None,
         p: float = 0.5,
         batch_inplace: bool = False,
         num_chunks: int = 1,
@@ -145,12 +145,12 @@ class RandomColorJitter(RandomApplyTransform):
 
     def _check_input(
         self,
-        value: float | Sequence[float] | None,
+        value: Optional[Union[float, Sequence[float]]],
         name: str,
         center: float = 1.0,
         bound: Tuple[float, float] = (0, float("inf")),
         clip_first_on_zero: bool = True,
-    ) -> Tuple[float, float] | None:
+    ) -> Optional[Tuple[float, float]]:
         if value is None:
             return None
 
@@ -322,10 +322,10 @@ class ColorJitter(RandomColorJitter):
 
     def __init__(
         self,
-        brightness: float | Sequence[float] | None = None,
-        contrast: float | Sequence[float] | None = None,
-        saturation: float | Sequence[float] | None = None,
-        hue: float | Sequence[float] | None = None,
+        brightness: Optional[Union[float, Sequence[float]]] = None,
+        contrast: Optional[Union[float, Sequence[float]]] = None,
+        saturation: Optional[Union[float, Sequence[float]]] = None,
+        hue: Optional[Union[float, Sequence[float]]] = None,
         batch_inplace: bool = False,
         num_chunks: int = 1,
         permute_chunks: bool = False,

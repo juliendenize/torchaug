@@ -1,15 +1,15 @@
 from __future__ import annotations
 
 import functools
-from typing import Callable, Dict, List, Sequence, Type, Union
+from typing import Callable, Dict, List, Optional, Sequence, Type, Union
 
 import torch
 
 from torchaug import ta_tensors
 
 
-_FillType = Union[int, float, Sequence[int], Sequence[float], None]
-_FillTypeJIT = List[float] | None
+_FillType = Optional[Union[int, float, Sequence[int], Sequence[float]]]
+_FillTypeJIT = Optional[List[float]]
 
 
 # {functional: {input_type: type_specific_kernel}}
