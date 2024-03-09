@@ -21,7 +21,9 @@ It **enriches [Torchvision (v2)](https://pytorch.org/vision/stable/index.html)**
 - For data augmentations on GPU, some *CPU/GPU synchronizations* cannot be avoided.
 - For data augmentations applied on batch, the *randomness is sampled for the whole batch* and not each sample.
 
-Torchaug removes these issues and is meant to be used in place of Torchvision. It is based on the code base of Torchvision and therefore follows the same nomenclature as Torchvision with *functional* augmentations and *transforms* class wrappers. We made speed comparison [here](./docs/source/include/comparison.md).
+Torchaug removes these issues and its transforms are meant to be used in place of Torchvision. It is based on the code base of Torchvision and therefore follows the same nomenclature as Torchvision with *functional* augmentations and *transforms* class wrappers. However, **Torchaug does not support transforms on Pillow images**.
+
+We made speed comparison [here](./docs/source/include/comparison.md).
 
 To be sure to retrieve the same data augmentations as Torchvision, **the components are tested to match Torchvision outputs**. However we suggest you to **perform at least some qualitative testing of your own** especially for bouding boxes and masks to be sure we implemented things right.
 
