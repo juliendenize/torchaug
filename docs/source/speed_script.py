@@ -37,7 +37,7 @@ def time_transform(n_runs: int, tensor: torch.Tensor, transform: Callable):
     return results
 
 
-def time_batch_transform_tv(n_runs: int, tensor: torch.Tensor, transform: Callable):
+def time_batch_transform_tv_stack(n_runs: int, tensor: torch.Tensor, transform: Callable):
     results = torch.zeros(n_runs)
     for i in range(n_runs):
         synchro_if_cuda(tensor.device)
@@ -103,6 +103,12 @@ if __name__ == "__main__":
     )
     parser.add_argument("--device", required=False, help="Device for input.", type=str, default="cpu")
     parser.add_argument("--dtype", required=False, help="Device for input.", type=str, default="int")
+    parser.add_argument(
+        "--do-tv",
+        required=False,
+        help="Whether to run torchvision transforms on whole batch.",
+        action="store_true",
+    )
 
     args = parser.parse_args()
 
@@ -118,11 +124,6 @@ if __name__ == "__main__":
 
     if run_single:
         mono_transforms = [
-            (
-                "Normalize",
-                T.Normalize([225], [225]),
-                F.Normalize([225], [225]).to(device=device),
-            ),
             (
                 "RandomColorJitter",
                 T.RandomApply([T.ColorJitter(0.5, 0.5, 0.5, 0.1)], 0.5),
@@ -193,6 +194,7 @@ if __name__ == "__main__":
                 "RandomColorJitter",
                 "1",
                 None,
+                T.RandomApply([T.GaussianBlur([23, 23], [0.1, 2.0])], 0.5),
                 F.RandomColorJitter(
                     0.5,
                     0.5,
@@ -207,6 +209,7 @@ if __name__ == "__main__":
             (
                 "RandomColorJitter",
                 "8",
+                None,
                 None,
                 F.RandomColorJitter(
                     0.5,
@@ -223,6 +226,7 @@ if __name__ == "__main__":
                 "RandomColorJitter",
                 "-1",
                 T.RandomApply([T.ColorJitter(0.5, 0.5, 0.5, 0.1)], 0.5),
+                None,
                 F.RandomColorJitter(
                     0.5,
                     0.5,
@@ -238,6 +242,7 @@ if __name__ == "__main__":
                 "RandomGaussianBlur",
                 "",
                 T.RandomApply([T.GaussianBlur([23, 23], [0.1, 2.0])], 0.5),
+                T.RandomApply([T.GaussianBlur([23, 23], [0.1, 2.0])], 0.5),
                 F.RandomGaussianBlur([23, 23], [0.1, 2], 0.5, batch_inplace=True, batch_transform=True).to(
                     device=device
                 ),
@@ -246,11 +251,13 @@ if __name__ == "__main__":
                 "RandomGrayscale",
                 "",
                 T.RandomApply([T.Grayscale(num_output_channels=3)], 0.5),
+                T.RandomApply([T.Grayscale(num_output_channels=3)], 0.5),
                 F.RandomGrayscale(0.5, batch_inplace=True, batch_transform=True).to(device=device),
             ),
             (
                 "RandomHorizontalFlip",
                 "",
+                T.RandomHorizontalFlip(0.5),
                 T.RandomHorizontalFlip(0.5),
                 F.RandomHorizontalFlip(0.5, batch_inplace=True, batch_transform=True).to(device=device),
             ),
@@ -258,11 +265,13 @@ if __name__ == "__main__":
                 "RandomResizedCrop",
                 "1",
                 None,
+                T.RandomResizedCrop([224, 224], antialias=True),
                 F.RandomResizedCrop([224, 224], num_chunks=1, batch_transform=True).to(device=device),
             ),
             (
                 "RandomResizedCrop",
                 "8",
+                None,
                 None,
                 F.RandomResizedCrop([224, 224], num_chunks=8, batch_transform=True).to(device=device),
             ),
@@ -270,17 +279,20 @@ if __name__ == "__main__":
                 "RandomResizedCrop",
                 "16",
                 None,
+                None,
                 F.RandomResizedCrop([224, 224], num_chunks=16, batch_transform=True).to(device=device),
             ),
             (
                 "RandomResizedCrop",
                 "-1",
                 T.RandomResizedCrop([224, 224], antialias=True),
+                None,
                 F.RandomResizedCrop([224, 224], num_chunks=-1, batch_transform=True).to(device=device),
             ),
             (
                 "RandomSolarize",
                 "",
+                T.RandomSolarize(0.5, 0.5),
                 T.RandomSolarize(0.5, 0.5),
                 F.RandomSolarize(0.5, 0.5, batch_inplace=True, batch_transform=True).to(device=device),
             ),
@@ -289,11 +301,12 @@ if __name__ == "__main__":
         print("Testing batch transforms")
         rows = [["**Batch size**", ""]]
         for batch_size in batch_sizes:
-            rows[0].extend([f"**{batch_size}**"] * 2)
+            rows[0].extend([f"**{batch_size}**"] * (3 if args.do_tv else 2))
 
         for (
             name,
             rand_calls,
+            torchvision_stack_transform,
             torchvision_transform,
             torchaug_transform,
         ) in batch_transforms:
@@ -308,12 +321,30 @@ if __name__ == "__main__":
                 elif args.dtype == "float":
                     input = torch.rand((batch_size, *shape), device=device, dtype=torch.float32)
 
+                do_tv_stack = torchvision_stack_transform is not None
                 do_tv = torchvision_transform is not None
-                if do_tv:
-                    results_torchvision = time_batch_transform_tv(n_runs_batch, input, torchvision_transform)
+
+                if do_tv_stack:
+                    results_torchvision_stack = time_batch_transform_tv_stack(
+                        n_runs_batch, input, torchvision_stack_transform
+                    )
+                    mean_torchvision_stack = float(results_torchvision_stack.mean())
+                    std_torchvision_stack = float(torch.std(results_torchvision_stack))
+                else:
+                    mean_torchvision_stack = 0
+                    std_torchvision_stack = 0
+
+                if do_tv and args.do_tv:
+                    results_torchvision = time_transform(n_runs_batch, input, torchvision_transform)
                     mean_torchvision = float(results_torchvision.mean())
                     std_torchvision = float(torch.std(results_torchvision))
+                else:
+                    mean_torchvision = 0
+                    std_torchvision = 0
 
+                format_torchvision_stack = (
+                    f"{mean_torchvision_stack:.2f}  ± {std_torchvision_stack:.2f}" if do_tv_stack else ""
+                )
                 format_torchvision = f"{mean_torchvision:.2f}  ± {std_torchvision:.2f}" if do_tv else ""
 
                 results_torchaug = time_transform(n_runs_batch, input, torchaug_transform)
@@ -322,16 +353,32 @@ if __name__ == "__main__":
 
                 format_torchaug = f"{mean_torchaug:.2f}  ± {std_torchaug:.2f}"
 
-                if do_tv and mean_torchvision < mean_torchaug:
+                if (
+                    do_tv_stack
+                    and mean_torchvision_stack < mean_torchvision
+                    and mean_torchvision_stack < mean_torchaug
+                ):
+                    format_torchvision_stack = "**" + format_torchvision_stack + "**"
+                elif (
+                    do_tv
+                    and args.do_tv
+                    and mean_torchvision < mean_torchvision_stack
+                    and mean_torchvision < mean_torchaug
+                ):
                     format_torchvision = "**" + format_torchvision + "**"
-                elif do_tv and mean_torchvision > mean_torchaug:
+                elif (mean_torchaug < mean_torchvision_stack or not do_tv_stack) and (
+                    mean_torchaug < mean_torchvision or not do_tv or not args.do_tv
+                ):
                     format_torchaug = "**" + format_torchaug + "**"
 
                 row.extend(
                     [
+                        format_torchvision_stack,
                         format_torchvision,
                         format_torchaug,
                     ]
+                    if args.do_tv
+                    else [format_torchvision_stack, format_torchaug]
                 )
             rows.append(row)
         header = [
@@ -340,7 +387,7 @@ if __name__ == "__main__":
         ]
 
         for i in range(len(batch_sizes)):
-            header.extend(["Torchvision", "Torchaug"])
+            header.extend(["TV (stack)", "TV", "Torchaug"] if args.do_tv else ["TV (stack)", "Torchaug"])
 
         print("\n\n")
         print(f"Input batch sizes {batch_sizes} with shape {shape} on {device}.")
