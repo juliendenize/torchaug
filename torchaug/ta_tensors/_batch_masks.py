@@ -179,7 +179,7 @@ class BatchMasks(TATensor):
         flat_params, _ = tree_flatten(args + (tuple(kwargs.values()) if kwargs else ()))  # type: ignore[operator]
         first_batch_masks_from_args = next(x for x in flat_params if isinstance(x, BatchMasks))
 
-        idx_sample = first_batch_masks_from_args.idx_sample
+        idx_sample = first_batch_masks_from_args.idx_sample.copy()  # clone the list.
 
         if isinstance(output, torch.Tensor) and not isinstance(output, BatchMasks):
             output = BatchMasks._wrap(

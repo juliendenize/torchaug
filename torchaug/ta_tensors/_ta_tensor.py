@@ -96,7 +96,7 @@ class TATensor(torch.Tensor):
 
         if not must_return_subclass and isinstance(output, cls):
             # DisableTorchFunctionSubclass is ignored by inplace ops like `.add_(...)`,
-            # so for those, the output is still a TVTensor. Thus, we need to manually unwrap.
+            # so for those, the output is still a TATensor. Thus, we need to manually unwrap.
             return output.as_subclass(torch.Tensor)
 
         return output

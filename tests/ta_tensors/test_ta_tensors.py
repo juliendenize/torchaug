@@ -286,7 +286,7 @@ def test_force_subclass_with_metadata(return_type):
         [[0, 0, 5, 5], [2, 2, 7, 7], [0, 0, 5, 5], [2, 2, 7, 7]],
         format=format,
         canvas_size=canvas_size,
-        idx_sample=torch.tensor([0, 1, 2]),
+        idx_sample=[0, 1, 2],
     )
 
     ta_tensors.set_return_type(return_type)

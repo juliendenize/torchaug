@@ -29,8 +29,6 @@ More details can be found in the [documentation](https://torchaug.readthedocs.io
 
 ## How to use
 
-0. Install a Pytorch >= 2.0 environment.
-
 1. Install Torchaug.
 
 ```bash
@@ -43,13 +41,13 @@ pip install torchaug
 from torchaug.transforms import (
     RandomColorJitter,
     RandomGaussianBlur,
-    Compose
+    SequentialTransform
 )
 
 
-transform = Compose([
-    RandomColorJitter(..., batch_transform=True),
-    RandomGaussianBlur(..., batch_transform=True)
+transform = SequentialTransform([
+    RandomColorJitter(...),
+    RandomGaussianBlur(...)
 ])
 
 ```

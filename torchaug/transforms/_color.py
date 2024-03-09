@@ -119,9 +119,6 @@ class RandomColorJitter(RandomApplyTransform):
         permute_chunks: bool = False,
         batch_transform: bool = False,
     ) -> None:
-        if num_chunks == -1:
-            num_chunks = 24  # 24 = 4! (factorial of 4) permutations
-
         super().__init__(
             p=p,
             batch_inplace=batch_inplace,
@@ -133,8 +130,18 @@ class RandomColorJitter(RandomApplyTransform):
         self.contrast = self._check_input(contrast, "contrast")
         self.saturation = self._check_input(saturation, "saturation")
         self.hue = self._check_input(hue, "hue", center=0, bound=(-0.5, 0.5), clip_first_on_zero=False)
-
         self._combinations = list(permutations(range(0, 4)))
+        self.num_chunks = num_chunks
+
+    @property
+    def num_chunks(self) -> int:
+        return self._num_chunks
+
+    @num_chunks.setter
+    def num_chunks(self, value: int) -> None:
+        if value == -1 or value > 24:
+            value = 24
+        self._num_chunks = value
 
     def _check_input(
         self,

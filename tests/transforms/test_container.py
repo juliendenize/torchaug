@@ -186,3 +186,61 @@ class TestContainerTransforms:
         for transforms_, p in [([lambda x: x], []), ([], [1.0])]:
             with pytest.raises(ValueError, match="Length of p doesn't match the number of transforms"):
                 transforms.RandomChoice(transforms_, p=p)
+
+
+class TestSequentialTransform:
+    @pytest.mark.parametrize("batch", [True, False])
+    def test_forward(self, batch):
+        transform = transforms.SequentialTransform(
+            [
+                transforms.RandomHorizontalFlip(p=1, batch_transform=batch),
+                transforms.RandomVerticalFlip(p=1, batch_transform=batch),
+            ],
+            None,
+        )
+
+        input = make_image() if not batch else make_batch_images()
+
+        actual = check_transform(transform, input, batch=batch)
+        expected = F.vertical_flip(F.horizontal_flip(input))
+
+        assert_equal(actual, expected)
+
+    @pytest.mark.parametrize("batch_transform", [True, False])
+    @pytest.mark.parametrize("inplace", [True, False])
+    @pytest.mark.parametrize("batch_inplace", [True, False])
+    @pytest.mark.parametrize("num_chunks", [-1, 1, 2])
+    def test_transforms_parameters_override(self, batch_transform, inplace, batch_inplace, num_chunks):
+        if not batch_transform and num_chunks != 1:
+            pytest.skip("num_chunks is only relevant for batch_transform=True")
+
+        transform = transforms.SequentialTransform(
+            [
+                transforms.Normalize([0.5], [0.5]),
+                transforms.RandomColorJitter(),
+            ],
+            {
+                "inplace": inplace,
+                "batch_inplace": batch_inplace,
+                "batch_transform": batch_transform,
+                "num_chunks": num_chunks,
+            },
+        )
+
+        assert transform.transforms[0].inplace == inplace
+        assert transform.transforms[1].batch_inplace == batch_inplace
+        assert transform.transforms[1].batch_transform == batch_transform
+        assert transform.transforms[1].num_chunks == (num_chunks if 24 > num_chunks > -1 else 24)
+
+    def test_errors(self):
+        with pytest.raises(TypeError, match="Collection should be a list of modules."):
+            transforms.SequentialTransform(lambda x: x)
+
+        with pytest.raises(TypeError, match="Collection should be a list of modules."):
+            transforms.SequentialTransform([])
+
+        with pytest.raises(TypeError, match="Collection should be a list of modules."):
+            transforms.SequentialTransform(transforms.RandomHorizontalFlip)
+
+        with pytest.raises(TypeError, match="Collection should be a list of modules."):
+            transforms.SequentialTransform([transforms.RandomHorizontalFlip, lambda x: x])

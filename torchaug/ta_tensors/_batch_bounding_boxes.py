@@ -208,6 +208,7 @@ class BatchBoundingBoxes(TATensor):
             first_batch_bboxes_from_args.canvas_size,
             first_batch_bboxes_from_args.idx_sample,
         )
+        idx_sample = idx_sample.copy()  # clone the list.
 
         if isinstance(output, torch.Tensor) and not isinstance(output, BatchBoundingBoxes):
             output = BatchBoundingBoxes._wrap(

@@ -16,9 +16,20 @@ from torchaug.transforms.functional._utils import is_pure_tensor
 
 def _assert_module_or_list_of_modules(collection: Any):
     if not isinstance(collection, nn.Module) and (
-        not isinstance(collection, Sequence) or not all(isinstance(obj, nn.Module) for obj in collection)
+        not isinstance(collection, Sequence)
+        or not all(isinstance(obj, nn.Module) for obj in collection)
+        or len(collection) == 0
     ):
         raise TypeError("collection should be a module or a list of modules.")
+
+
+def _assert_list_of_modules(collection: Any):
+    if (
+        not isinstance(collection, Sequence)
+        or not all(isinstance(obj, nn.Module) for obj in collection)
+        or len(collection) == 0
+    ):
+        raise TypeError("Collection should be a list of modules.")
 
 
 def _find_labels_default_heuristic(inputs: Any) -> torch.Tensor:

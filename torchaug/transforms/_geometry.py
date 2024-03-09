@@ -1543,6 +1543,8 @@ class RandomResize(Transform):
         antialias: Whether to apply antialiasing.
     """
 
+    _reshape_transform = True
+
     def __init__(
         self,
         min_size: int,

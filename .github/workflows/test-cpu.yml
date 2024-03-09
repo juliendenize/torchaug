@@ -35,7 +35,7 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Test with pytest
       run: |
-        pytest -v --cov=torchaug/ --cov-report=xml --pdb tests
+        pytest -m "not needs_cuda" -v --cov=torchaug/ --cov-report=xml --pdb tests
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v3
       env:

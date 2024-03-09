@@ -38,16 +38,24 @@ class RandomApplyTransform(nn.Module):
             raise ValueError("`inplace` should be False if `_reshape_transform` is True.")
         if (num_chunks == -1 or num_chunks > 1) and not batch_transform:
             raise ValueError("`num_chunks` should be 1 if `batch_transform` is False.")
-        elif num_chunks < -1:
-            raise ValueError("`num_chunks` should be greater than or equal to -1.")
+        elif num_chunks < -1 or num_chunks == 0:
+            raise ValueError("`num_chunks` should be greater than 0 or -1.")
 
         super().__init__()
         _log_api_usage_once(self)
         self.batch_inplace = batch_inplace
-        self.num_chunks = num_chunks
+        self._num_chunks = num_chunks
         self.permute_chunks = permute_chunks
         self.p = p
         self.batch_transform = batch_transform
+
+    @property
+    def num_chunks(self) -> int:
+        """Get the number of chunks to split the input into.
+
+        Some subclasses can have a specific logic to determine the number of chunks.
+        """
+        return self._num_chunks
 
     @staticmethod
     def _get_input_batch_size(inpt: Any):
@@ -244,10 +252,10 @@ class RandomApplyTransform(nn.Module):
                 transform_inpts.append(transform_inpt)
 
         transform_batch_size = indices_transform.shape[0] if not transform_all else batch_size
-        if self.num_chunks == -1:
+        if self._num_chunks == -1:
             num_chunks = transform_batch_size
         else:
-            num_chunks = min(transform_batch_size, self.num_chunks)
+            num_chunks = min(transform_batch_size, self._num_chunks)
 
         chunks_indices = self._get_chunks_indices(transform_batch_size, num_chunks, flat_inputs[0].device)
 
@@ -360,21 +368,32 @@ class RandomApplyTransform(nn.Module):
     def extra_repr(self, exclude_names: list[str] = []) -> str:
         """Set the extra representation of the transform."""
         if not self.batch_transform:
-            exclude_names.extend(["batch_inplace", "num_chunks", "permute_chunks"])
-        exclude_names.append("batch_transform")
+            exclude_names.extend(["batch_inplace", "num_chunks", "permute_chunks", "batch_transform"])
 
-        extra = []
-
-        for name, value in self.__dict__.items():
+        last_extra: dict[str, Any] = {
+            "p": None,
+            "batch_inplace": None,
+            "num_chunks": None,
+            "permute_chunks": None,
+            "batch_transform": None,
+        }
+        transform_extra = []
+        parameters_dict = dict(self.__dict__, num_chunks=self.num_chunks)
+        for name, value in parameters_dict.items():
             if name.startswith("_") or name == "training" or name in exclude_names:
                 continue
 
-            if not isinstance(value, (bool, int, float, str, tuple, list, enum.Enum)):
+            if not isinstance(value, (bool, int, float, str, tuple, list, enum.Enum)) and value is not None:
                 continue
 
-            extra.append(f"{name}={value}")
+            if name in last_extra:
+                last_extra[name] = value
+            else:
+                transform_extra.append(f"{name}={value}")
 
-        return ", ".join(extra) + (", batch_transform=True" if self.batch_transform else "")
+        extra = transform_extra + [f"{name}={value}" for name, value in last_extra.items() if value is not None]
+
+        return ", ".join(extra)
 
 
 class Transform(RandomApplyTransform):

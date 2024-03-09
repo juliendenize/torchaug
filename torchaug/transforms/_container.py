@@ -7,7 +7,7 @@ from torch import nn
 from torch.utils._pytree import tree_flatten, tree_unflatten
 
 from torchaug._utils import _log_api_usage_once
-from torchaug.transforms._utils import _assert_module_or_list_of_modules
+from torchaug.transforms._utils import _assert_list_of_modules
 
 from ._transform import RandomApplyTransform, Transform
 
@@ -176,41 +176,58 @@ class RandomOrder(Transform):
 class SequentialTransform(Transform):
     """Sequentially apply a list of transforms.
 
+    .. note::
+        By default this SequentialTransform makes all its transforms to be inplace, batch_inplace, and
+        batch_transform with unlimited chunks.
+
     Args:
         transforms: A list of transforms.
-        batch_inplace: Whether to perform the transforms in-place.
+        transforms_parameters_override: A dictionary of parameters to override the default parameters
+            of the transforms if they exist. Useful to make transforms for batches.
     """
 
-    def __init__(self, transforms: list[RandomApplyTransform], batch_inplace: bool = False) -> None:
+    _receive_flatten_inputs = False
+
+    def __init__(
+        self,
+        transforms: list[RandomApplyTransform],
+        transforms_parameters_override: dict[str, Any] | None = {
+            "inplace": True,
+            "batch_inplace": True,
+            "batch_transform": True,
+            "num_chunks": -1,
+            "permute_chunks": False,
+        },
+    ) -> None:
         super().__init__()
         _log_api_usage_once(self)
 
-        _assert_module_or_list_of_modules(transforms)
+        _assert_list_of_modules(transforms)
+
+        self.transforms_parameters_override = transforms_parameters_override
 
         self._prepare_transforms(transforms)
+
         self.transforms = nn.ModuleList(transforms)
 
-        self.batch_inplace = batch_inplace
-
-    @staticmethod
-    def _prepare_transform(transform: nn.Module):
+    def _prepare_transform(self, transform: nn.Module):
         import inspect
 
         if isinstance(transform, RandomApplyTransform):
-            init_signature = inspect.signature(transform.__init__)  # type: ignore[misc]
-            parameters = init_signature.parameters
-            for key in ["inplace", "batch_inplace"]:
-                has_key = key in parameters
-                if has_key:
-                    setattr(transform, key, True)
+            if self.transforms_parameters_override:
+                init_signature = inspect.signature(transform.__init__)  # type: ignore[misc]
+                parameters = init_signature.parameters
+                for key, value in self.transforms_parameters_override.items():
+                    has_key = key in parameters
+                    if has_key:
+                        setattr(transform, key, value)
 
             transform._receive_flatten_inputs = True
 
-    @staticmethod
-    def _prepare_transforms(transforms: list[nn.Module]):
+    def _prepare_transforms(self, transforms: list[nn.Module]):
         for transform in transforms:
-            SequentialTransform._prepare_transform(transform)
-            SequentialTransform._prepare_transforms(list(transform.modules())[1:])
+            self._prepare_transform(transform)
+            self._prepare_transforms(list(transform.modules())[1:])
 
     def forward(self, *inputs: Any) -> Any:
         if not self._receive_flatten_inputs:
@@ -218,11 +235,10 @@ class SequentialTransform(Transform):
             flat_inputs, spec = tree_flatten(inputs)
         else:
             flat_inputs = list(inputs)
-
         for transform in self.transforms:
             flat_inputs = transform(*flat_inputs)
 
-        if self._receive_flatten_inputs:
+        if not self._receive_flatten_inputs:
             return tree_unflatten(flat_inputs, spec)
 
         return flat_inputs
@@ -231,4 +247,6 @@ class SequentialTransform(Transform):
         format_string = []
         for t in self.transforms:
             format_string.append(f"    {t}")
-        return f"batch_inplace={self.batch_inplace}, transforms=\n" + "\n".join(format_string)
+        return f"transforms_parameters_override={self.transforms_parameters_override},\ntransforms=\n" + "\n".join(
+            format_string
+        )
