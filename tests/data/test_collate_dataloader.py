@@ -1,6 +1,7 @@
 import pytest
 import torch
 
+from torchaug.data.dataloader._collate import default_collate
 from torchaug.ta_tensors import (
     BatchBoundingBoxes,
     BatchImages,
@@ -11,7 +12,6 @@ from torchaug.ta_tensors import (
     convert_bboxes_to_batch_bboxes,
     convert_masks_to_batch_masks,
 )
-from torchaug.ta_tensors._collate_dataloader import default_collate
 
 from ..utils import (
     assert_equal,

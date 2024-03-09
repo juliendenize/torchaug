@@ -128,7 +128,7 @@ class VisionDatasetTATensorWrapper:
                 f"This wrapper is meant for subclasses of `torchvision.datasets.VisionDataset`, "
                 f"but got a '{dataset_cls.__name__}' instead.\n"
                 f"For an example of how to perform the wrapping for custom datasets, see\n\n"
-                "https://pytorch.org/vision/main/auto_examples/plot_ta_tensors.html#do-i-have-to-wrap-the-output-of-the-datasets-myself"
+                "https://pytorch.org/vision/main/auto_examples/plot_tv_tensors.html#do-i-have-to-wrap-the-output-of-the-datasets-myself"
             )
 
         for cls in dataset_cls.mro():
@@ -590,7 +590,7 @@ def kitti_wrapper_factory(dataset, target_keys):
 
 
 @WRAPPER_FACTORIES.register(datasets.OxfordIIITPet)
-def oxford_iiit_pet_wrapper_factor(dataset, target_keys):
+def oxford_iiit_pet_wrapper_factory(dataset, target_keys):
     def wrapper(idx, sample):
         image, target = sample
         if isinstance(image, PIL.Image.Image):

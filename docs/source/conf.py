@@ -102,3 +102,9 @@ html_theme_options = {
     "source_branch": "main",
     "source_directory": "docs/source/",
 }
+
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3", None),
+    "torch": ("https://pytorch.org/docs/stable", None),
+    "torchvision": ("https://pytorch.org/vision/stable", None),
+}

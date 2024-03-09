@@ -4,9 +4,10 @@
    :caption: Contents:
 
    include/speed_comparison.rst
-   ta_tensors/ta_tensors.rst
-   transforms/transforms.rst
-   functional/functional.rst
+   data/index.rst
+   ta_tensors/index.rst
+   transforms/index.rst
+   functional/index.rst
 
 
 .. include:: ../../README.md

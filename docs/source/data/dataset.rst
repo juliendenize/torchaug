@@ -2,7 +2,7 @@ Datasets
 ========
 
 
-.. currentmodule:: torchaug.ta_tensors._dataset_wrapper
+.. currentmodule:: torchaug.data.dataset._dataset_wrapper
 
 .. autosummary::
     :toctree: ../generated/

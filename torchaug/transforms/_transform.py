@@ -333,6 +333,14 @@ class RandomApplyTransform(nn.Module):
         return flat_outputs
 
     def forward(self, *inputs: Any) -> Any:
+        """Performs forward pass of the transform.
+
+        Args:
+            inputs: Inputs to the transform.
+
+        Returns:
+            Transformed inputs.
+        """
         if not self._receive_flatten_inputs:
             inputs = inputs if len(inputs) > 1 else inputs[0]
             flat_inputs, spec = tree_flatten(inputs)
@@ -350,6 +358,7 @@ class RandomApplyTransform(nn.Module):
         return flat_outputs
 
     def extra_repr(self, exclude_names: list[str] = []) -> str:
+        """Set the extra representation of the transform."""
         if not self.batch_transform:
             exclude_names.extend(["batch_inplace", "num_chunks", "permute_chunks"])
         exclude_names.append("batch_transform")

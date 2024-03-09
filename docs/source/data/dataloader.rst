@@ -5,7 +5,7 @@ DataLoader
 Collate
 --------
 
-.. currentmodule:: torchaug.ta_tensors._collate_dataloader
+.. currentmodule:: torchaug.data.dataloader._collate
 .. autosummary::
     :toctree: ../generated/
     :template: function.rst

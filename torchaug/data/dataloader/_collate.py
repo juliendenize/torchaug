@@ -13,14 +13,14 @@ from torch.utils.data._utils.collate import (
     default_collate_err_msg_format,
 )
 
-from ._batch_bounding_boxes import BatchBoundingBoxes, convert_bboxes_to_batch_bboxes
-from ._batch_images import BatchImages
-from ._batch_masks import BatchMasks, convert_masks_to_batch_masks
-from ._batch_videos import BatchVideos
-from ._bounding_boxes import BoundingBoxes
-from ._image import Image
-from ._mask import Mask
-from ._video import Video
+from ...ta_tensors._batch_bounding_boxes import BatchBoundingBoxes, convert_bboxes_to_batch_bboxes
+from ...ta_tensors._batch_images import BatchImages
+from ...ta_tensors._batch_masks import BatchMasks, convert_masks_to_batch_masks
+from ...ta_tensors._batch_videos import BatchVideos
+from ...ta_tensors._bounding_boxes import BoundingBoxes
+from ...ta_tensors._image import Image
+from ...ta_tensors._mask import Mask
+from ...ta_tensors._video import Video
 
 
 def collate_ta_tensor_fn(
@@ -50,19 +50,19 @@ def collate_ta_tensor_fn(
         raise TypeError(default_collate_err_msg_format.format(type(batch)))
 
 
-torchaug_default_collate_fn_map: dict[Union[Type, tuple[Type, ...]], Callable] = {torch.Tensor: collate_tensor_fn}
+default_collate_fn_map: dict[Union[Type, tuple[Type, ...]], Callable] = {torch.Tensor: collate_tensor_fn}
 with contextlib.suppress(ImportError):
     import numpy as np
 
     # For both ndarray and memmap (subclass of ndarray)
-    torchaug_default_collate_fn_map[np.ndarray] = collate_numpy_array_fn
+    default_collate_fn_map[np.ndarray] = collate_numpy_array_fn
     # See scalars hierarchy: https://numpy.org/doc/stable/reference/arrays.scalars.html
     # Skip string scalars
-    torchaug_default_collate_fn_map[(np.bool_, np.number, np.object_)] = collate_numpy_scalar_fn
-torchaug_default_collate_fn_map[float] = collate_float_fn
-torchaug_default_collate_fn_map[int] = collate_int_fn
-torchaug_default_collate_fn_map[str] = collate_str_fn
-torchaug_default_collate_fn_map[bytes] = collate_str_fn
+    default_collate_fn_map[(np.bool_, np.number, np.object_)] = collate_numpy_scalar_fn
+default_collate_fn_map[float] = collate_float_fn
+default_collate_fn_map[int] = collate_int_fn
+default_collate_fn_map[str] = collate_str_fn
+default_collate_fn_map[bytes] = collate_str_fn
 
 for ta_type in [
     Image,
@@ -74,7 +74,7 @@ for ta_type in [
     BatchVideos,
     BatchMasks,
 ]:
-    torchaug_default_collate_fn_map[ta_type] = collate_ta_tensor_fn
+    default_collate_fn_map[ta_type] = collate_ta_tensor_fn
 
 
 def default_collate(batch):
@@ -114,4 +114,4 @@ def default_collate(batch):
         batch: a single batch to be collated
 
     """
-    return collate(batch, collate_fn_map=torchaug_default_collate_fn_map)
+    return collate(batch, collate_fn_map=default_collate_fn_map)
