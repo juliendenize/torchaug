@@ -10,6 +10,7 @@ from torchvision.transforms.v2.functional._geometry import _check_interpolation
 
 from torchaug import ta_tensors
 from torchaug._utils import _log_api_usage_once
+from torchaug.ta_tensors._bounding_boxes import _convert_ta_format_to_tv_format
 
 from ._meta import clamp_bounding_boxes, convert_bounding_box_format
 from ._utils._kernel import (
@@ -49,7 +50,9 @@ def horizontal_flip_bounding_boxes(
     format: ta_tensors.BoundingBoxFormat,
     canvas_size: tuple[int, int],
 ) -> torch.Tensor:
-    return TVF.horizontal_flip_bounding_boxes(bounding_boxes=bounding_boxes, format=format, canvas_size=canvas_size)
+    return TVF.horizontal_flip_bounding_boxes(
+        bounding_boxes=bounding_boxes, format=_convert_ta_format_to_tv_format(format), canvas_size=canvas_size
+    )
 
 
 @_register_kernel_internal(horizontal_flip, ta_tensors.BoundingBoxes, ta_tensor_wrapper=False)
@@ -98,7 +101,9 @@ def vertical_flip_bounding_boxes(
     format: ta_tensors.BoundingBoxFormat,
     canvas_size: tuple[int, int],
 ) -> torch.Tensor:
-    return TVF.vertical_flip_bounding_boxes(bounding_boxes=bounding_boxes, format=format, canvas_size=canvas_size)
+    return TVF.vertical_flip_bounding_boxes(
+        bounding_boxes=bounding_boxes, format=_convert_ta_format_to_tv_format(format), canvas_size=canvas_size
+    )
 
 
 @_register_kernel_internal(vertical_flip, ta_tensors.BoundingBoxes, ta_tensor_wrapper=False)
@@ -303,7 +308,7 @@ def affine_bounding_boxes(
 ) -> torch.Tensor:
     return TVF.affine_bounding_boxes(
         bounding_boxes=bounding_boxes,
-        format=format,
+        format=_convert_ta_format_to_tv_format(format),
         canvas_size=canvas_size,
         angle=angle,
         translate=translate,
@@ -468,7 +473,7 @@ def rotate_bounding_boxes(
 ) -> tuple[torch.Tensor, tuple[int, int]]:
     return TVF.rotate_bounding_boxes(
         bounding_boxes=bounding_boxes,
-        format=format,
+        format=_convert_ta_format_to_tv_format(format),
         canvas_size=canvas_size,
         angle=angle,
         expand=expand,
@@ -600,7 +605,7 @@ def pad_bounding_boxes(
 ) -> tuple[torch.Tensor, tuple[int, int]]:
     return TVF.pad_bounding_boxes(
         bounding_boxes=bounding_boxes,
-        format=format,
+        format=_convert_ta_format_to_tv_format(format),
         canvas_size=canvas_size,
         padding=padding,
         padding_mode=padding_mode,
@@ -664,7 +669,7 @@ def crop_bounding_boxes(
 ) -> tuple[torch.Tensor, tuple[int, int]]:
     return TVF.crop_bounding_boxes(
         bounding_boxes=bounding_boxes,
-        format=format,
+        format=_convert_ta_format_to_tv_format(format),
         top=top,
         left=left,
         height=height,
@@ -763,7 +768,7 @@ def perspective_bounding_boxes(
 ) -> torch.Tensor:
     return TVF.perspective_bounding_boxes(
         bounding_boxes=bounding_boxes,
-        format=format,
+        format=_convert_ta_format_to_tv_format(format),
         canvas_size=canvas_size,
         startpoints=startpoints,
         endpoints=endpoints,
@@ -1018,7 +1023,7 @@ def elastic_bounding_boxes(
 ) -> torch.Tensor:
     return TVF.elastic_bounding_boxes(
         bounding_boxes=bounding_boxes,
-        format=format,
+        format=_convert_ta_format_to_tv_format(format),
         canvas_size=canvas_size,
         displacement=displacement,
     )
@@ -1256,7 +1261,7 @@ def center_crop_bounding_boxes(
 ) -> tuple[torch.Tensor, tuple[int, int]]:
     return TVF.center_crop_bounding_boxes(
         bounding_boxes=bounding_boxes,
-        format=format,
+        format=_convert_ta_format_to_tv_format(format),
         canvas_size=canvas_size,
         output_size=output_size,
     )
@@ -1373,7 +1378,7 @@ def resized_crop_bounding_boxes(
 ) -> tuple[torch.Tensor, tuple[int, int]]:
     return TVF.resized_crop_bounding_boxes(
         bounding_boxes=bounding_boxes,
-        format=format,
+        format=_convert_ta_format_to_tv_format(format),
         top=top,
         left=left,
         height=height,

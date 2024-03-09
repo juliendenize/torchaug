@@ -8,6 +8,7 @@ import torchvision.transforms.v2.functional as TVF
 import torchaug.transforms as transforms
 import torchaug.transforms.functional as F
 from torchaug import ta_tensors
+from torchaug.ta_tensors._bounding_boxes import _convert_ta_format_to_tv_format
 
 from ..utils import (
     BOUNDING_BOXES_MAKERS,
@@ -103,7 +104,11 @@ class TestConvertBoundingBoxFormat:
             )
         )
 
-        expected = TVF.convert_bounding_box_format(input, old_format=old_format, new_format=new_format)
+        expected = TVF.convert_bounding_box_format(
+            input,
+            old_format=_convert_ta_format_to_tv_format(old_format),
+            new_format=_convert_ta_format_to_tv_format(new_format),
+        )
 
         old_format = old_format.name
         new_format = new_format.name
@@ -132,7 +137,11 @@ class TestConvertBoundingBoxFormat:
             fn = transforms.ConvertBoundingBoxFormat(format=new_format)
 
         actual = fn(bounding_boxes)
-        expected = TVF.convert_bounding_box_format(bounding_boxes, old_format=old_format, new_format=new_format)
+        expected = TVF.convert_bounding_box_format(
+            bounding_boxes,
+            old_format=_convert_ta_format_to_tv_format(old_format),
+            new_format=_convert_ta_format_to_tv_format(new_format),
+        )
 
         assert_equal(actual, expected)
 

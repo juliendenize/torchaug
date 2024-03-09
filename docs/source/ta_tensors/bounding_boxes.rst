@@ -6,6 +6,7 @@ Bounding Boxes
     :toctree: ../generated/
     :template: class.rst
 
+    BoundingBoxFormat
     BoundingBoxes
 
 

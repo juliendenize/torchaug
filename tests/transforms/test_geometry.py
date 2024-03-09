@@ -13,6 +13,7 @@ from torchvision.transforms.functional import _get_perspective_coeffs
 import torchaug.transforms as transforms
 import torchaug.transforms.functional as F
 from torchaug import ta_tensors
+from torchaug.ta_tensors._bounding_boxes import _convert_ta_format_to_tv_format
 
 from ..utils import (
     ALL_IMAGES_MAKERS,
@@ -3261,7 +3262,7 @@ class TestElastic:
             tensor_box = torch.as_tensor(boxes.get_sample(i))
             e = TVF.elastic_bounding_boxes(
                 tensor_box,
-                format=boxes.format,
+                format=_convert_ta_format_to_tv_format(boxes.format),
                 canvas_size=boxes.canvas_size,
                 displacement=displacement[i].unsqueeze(0),
             )

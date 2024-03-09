@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Mapping, Sequence, TypeAlias
+from enum import Enum
+from typing import Any, Mapping, Sequence
 
 import torch
 from torch.utils._pytree import tree_flatten
@@ -9,7 +10,31 @@ from torchvision.tv_tensors import BoundingBoxFormat as TVBoundingBoxFormat
 from ._ta_tensor import TATensor
 
 
-BoundingBoxFormat: TypeAlias = TVBoundingBoxFormat
+class BoundingBoxFormat(Enum):
+    """Coordinate format of a bounding box.
+
+    Available formats are
+
+    * ``XYXY``
+    * ``XYWH``
+    * ``CXCYWH``
+    """
+
+    XYXY = "XYXY"
+    XYWH = "XYWH"
+    CXCYWH = "CXCYWH"
+
+
+# To make transform jittering easier, we need to convert between the formats of the bounding boxes in a function.
+def _convert_ta_format_to_tv_format(format: BoundingBoxFormat) -> TVBoundingBoxFormat:
+    if format == BoundingBoxFormat.XYXY:
+        return TVBoundingBoxFormat.XYXY
+    elif format == BoundingBoxFormat.XYWH:
+        return TVBoundingBoxFormat.XYWH
+    elif format == BoundingBoxFormat.CXCYWH:
+        return TVBoundingBoxFormat.CXCYWH
+    else:
+        raise ValueError(f"Unsupported format {format}")
 
 
 class BoundingBoxes(TATensor):
