@@ -186,8 +186,6 @@ if __name__ == "__main__":
         print(tabulate.tabulate(rows, header, tablefmt="github"))
         print("\n\n")
 
-        header = ["Transform", "Torchvision", "Torchaug"]
-
     if run_batch:
         batch_transforms = [
             (
@@ -217,7 +215,23 @@ if __name__ == "__main__":
                     0.5,
                     0.1,
                     0.5,
-                    num_chunks=18,
+                    num_chunks=8,
+                    batch_inplace=True,
+                    batch_transform=True,
+                ).to(device=device),
+            ),
+            (
+                "RandomColorJitter",
+                "16",
+                None,
+                None,
+                F.RandomColorJitter(
+                    0.5,
+                    0.5,
+                    0.5,
+                    0.1,
+                    0.5,
+                    num_chunks=16,
                     batch_inplace=True,
                     batch_transform=True,
                 ).to(device=device),
@@ -299,9 +313,10 @@ if __name__ == "__main__":
         ]
 
         print("Testing batch transforms")
-        rows = [["**Batch size**", ""]]
+        rows = [["**Batch size**", "", ""]]
         for batch_size in batch_sizes:
-            rows[0].extend([f"**{batch_size}**"] * (3 if args.do_tv else 2))
+            rows[0].extend(([f"**{batch_size}**"] * (3 if args.do_tv else 2)) + [""])
+        rows[0] = rows[0][:-1]
 
         for (
             name,
@@ -310,9 +325,8 @@ if __name__ == "__main__":
             torchvision_transform,
             torchaug_transform,
         ) in batch_transforms:
+            row = [name, rand_calls, ""]
             print(name, rand_calls)
-            row = [name, rand_calls]
-
             for batch_size in batch_sizes:
                 print("Batch size", batch_size)
 
@@ -331,16 +345,16 @@ if __name__ == "__main__":
                     mean_torchvision_stack = float(results_torchvision_stack.mean())
                     std_torchvision_stack = float(torch.std(results_torchvision_stack))
                 else:
-                    mean_torchvision_stack = 0
-                    std_torchvision_stack = 0
+                    mean_torchvision_stack = 1e9
+                    std_torchvision_stack = 1e9
 
                 if do_tv and args.do_tv:
                     results_torchvision = time_transform(n_runs_batch, input, torchvision_transform)
                     mean_torchvision = float(results_torchvision.mean())
                     std_torchvision = float(torch.std(results_torchvision))
                 else:
-                    mean_torchvision = 0
-                    std_torchvision = 0
+                    mean_torchvision = 1e9
+                    std_torchvision = 1e9
 
                 format_torchvision_stack = (
                     f"{mean_torchvision_stack:.2f}  ± {std_torchvision_stack:.2f}" if do_tv_stack else ""
@@ -353,42 +367,39 @@ if __name__ == "__main__":
 
                 format_torchaug = f"{mean_torchaug:.2f}  ± {std_torchaug:.2f}"
 
-                if (
-                    do_tv_stack
-                    and mean_torchvision_stack < mean_torchvision
-                    and mean_torchvision_stack < mean_torchaug
-                ):
+                if mean_torchvision_stack < mean_torchvision and mean_torchvision_stack < mean_torchaug:
                     format_torchvision_stack = "**" + format_torchvision_stack + "**"
-                elif (
-                    do_tv
-                    and args.do_tv
-                    and mean_torchvision < mean_torchvision_stack
-                    and mean_torchvision < mean_torchaug
-                ):
+                elif mean_torchvision < mean_torchvision_stack and mean_torchvision < mean_torchaug:
                     format_torchvision = "**" + format_torchvision + "**"
-                elif (mean_torchaug < mean_torchvision_stack or not do_tv_stack) and (
-                    mean_torchaug < mean_torchvision or not do_tv or not args.do_tv
-                ):
+                elif mean_torchaug < mean_torchvision_stack and mean_torchaug < mean_torchvision:
                     format_torchaug = "**" + format_torchaug + "**"
 
                 row.extend(
-                    [
-                        format_torchvision_stack,
-                        format_torchvision,
-                        format_torchaug,
-                    ]
-                    if args.do_tv
-                    else [format_torchvision_stack, format_torchaug]
+                    (
+                        [
+                            format_torchvision_stack,
+                            format_torchvision,
+                            format_torchaug,
+                        ]
+                        if args.do_tv
+                        else [format_torchvision_stack, format_torchaug]
+                    )
+                    + [""]
                 )
-            rows.append(row)
+            rows.append(row[:-1])
         header = [
             "Transform",
             "Num chunks",
+            "",
         ]
 
         for i in range(len(batch_sizes)):
-            header.extend(["TV (stack)", "TV", "Torchaug"] if args.do_tv else ["TV (stack)", "Torchaug"])
+            header.extend(["TV (stack)", "TV", "Torchaug"] if args.do_tv else ["TV (stack)", "Torchaug"] + [""])
 
+        print(len(header))
+        print(len(rows[0]))
+
+        print(header)
         print("\n\n")
         print(f"Input batch sizes {batch_sizes} with shape {shape} on {device}.")
         print(tabulate.tabulate(rows, header, tablefmt="github"))
