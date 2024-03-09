@@ -70,8 +70,8 @@ select = ["C", "E", "F", "I", "W", "D"]
 ignore-init-module-imports = true
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["D", "C408", "C901"]
-"docs/*" = ["D"]
+"tests/*" = ["D", "C408", "C901", "F401"]
+"docs/*" = ["D", "F401"]
 
 [tool.ruff.lint.isort]
 lines-after-imports = 2

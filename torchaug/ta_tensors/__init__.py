@@ -1,3 +1,7 @@
+# ruff: noqa: F401
+# ruff: noqa: D104
+
+
 from ._batch_bounding_boxes import (
     BatchBoundingBoxes,
     convert_batch_bboxes_to_bboxes,

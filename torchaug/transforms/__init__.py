@@ -1,3 +1,6 @@
+# ruff: noqa: F401
+# ruff: noqa: D104
+
 from torchvision.transforms import AutoAugmentPolicy, InterpolationMode
 
 from . import functional

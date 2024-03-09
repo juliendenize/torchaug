@@ -1,4 +1,5 @@
-# ruff: noqa
+# ruff: noqa: F401
+# ruff: noqa: D104
 
 from torchaug import ta_tensors, transforms
 

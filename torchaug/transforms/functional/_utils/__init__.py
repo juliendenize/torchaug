@@ -1,3 +1,5 @@
+# ruff: noqa: F401
+
 from ._kernel import (
     _BUILTIN_DATAPOINT_TYPES,
     _KERNEL_REGISTRY,
