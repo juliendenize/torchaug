@@ -25,7 +25,7 @@ Torchaug removes these issues and is meant to be used in place of Torchvision. I
 
 To be sure to retrieve the same data augmentations as Torchvision, **the components are tested to match Torchvision outputs**. However we suggest you to **perform at least some qualitative testing of your own** especially for bouding boxes and masks to be sure we implemented things right.
 
-More details can be found in the [documentation](https://torchaug.readthedocs.io/en/stable/).
+More details can be found in the [documentation](https://torchaug.readthedocs.io/en/).
 
 ## How to use
 
@@ -51,6 +51,8 @@ transform = SequentialTransform([
 ])
 
 ```
+
+For a complete list of transforms please see the [documentation](https://torchaug.readthedocs.io/en/).
 
 ## How to contribute
 
