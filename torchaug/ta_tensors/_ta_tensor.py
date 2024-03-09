@@ -3,8 +3,10 @@ from __future__ import annotations
 from typing import (
     Any,
     Callable,
+    Dict,
     Mapping,
     Sequence,
+    Tuple,
     Type,
     TypeVar,
 )
@@ -60,7 +62,7 @@ class TATensor(torch.Tensor):
     def __torch_function__(
         cls,
         func: Callable[..., torch.Tensor],
-        types: tuple[Type[torch.Tensor], ...],
+        types: Tuple[Type[torch.Tensor], ...],
         args: Sequence[Any] = (),
         kwargs: Mapping[str, Any] | None = None,
     ) -> torch.Tensor:
@@ -129,7 +131,7 @@ class TATensor(torch.Tensor):
         with DisableTorchFunctionSubclass():
             return super().dtype
 
-    def __deepcopy__(self: D, memo: dict[int, Any]) -> D:
+    def __deepcopy__(self: D, memo: Dict[int, Any]) -> D:
         # We need to detach first, since a plain `Tensor.clone` will be part of the computation graph, which does
         # *not* happen for `deepcopy(Tensor)`. A side-effect from detaching is that the `Tensor.requires_grad`
         # attribute is cleared, so we need to refill it before we return.

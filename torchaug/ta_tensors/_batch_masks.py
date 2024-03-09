@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Mapping, Sequence
+from typing import Any, List, Mapping, Sequence
 
 import torch
 from torch import Tensor
@@ -44,7 +44,7 @@ def convert_masks_to_batch_masks(
 
 def convert_batch_masks_to_masks(
     batch_masks: BatchMasks,
-) -> list[Mask]:
+) -> List[Mask]:
     """Convert :class:`~torchaug.torchaug_tensors.BatchMasks` object to a list of
     :class:`~torchaug.ta_tensors.Mask` objects.
     """
@@ -76,7 +76,7 @@ class BatchMasks(TATensor):
 
     """
 
-    idx_sample: list[int]
+    idx_sample: List[int]
 
     @property
     def batch_size(self) -> int:
@@ -139,7 +139,7 @@ class BatchMasks(TATensor):
         cls,
         tensor: Tensor,
         *,
-        idx_sample: list[int],
+        idx_sample: List[int],
         check_dims: bool = True,
     ) -> BatchMasks:  # type: ignore[override]
         if check_dims and tensor.ndim < 2:
@@ -152,7 +152,7 @@ class BatchMasks(TATensor):
         cls,
         data: Any,
         *,
-        idx_sample: list[int],
+        idx_sample: List[int],
         dtype: torch.dtype | None = None,
         device: torch.device | str | int | None = None,
         requires_grad: bool | None = None,

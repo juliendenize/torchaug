@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, Callable, Sequence, Type, cast
+from typing import Any, Callable, Dict, List, Sequence, Tuple, Type, cast
 
 import torch
 from torch.utils._pytree import tree_flatten, tree_unflatten
@@ -20,7 +20,7 @@ from ._utils import (
 
 # TODO: do we want/need to expose this?
 class Identity(Transform):
-    def _transform(self, inpt: Any, params: dict[str, Any]) -> Any:
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return inpt
 
 
@@ -40,13 +40,13 @@ class Lambda(Transform):
         self.lambd = lambd
         self.types = types or self._transformed_types
 
-    def _transform(self, inpt: Any, params: dict[str, Any]) -> Any:
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         if isinstance(inpt, self.types):
             return self.lambd(inpt)
         else:
             return inpt
 
-    def forward_single(self, flat_inputs: list[Any]) -> list[Any]:
+    def forward_single(self, flat_inputs: List[Any]) -> List[Any]:
         if self.p == 1.0:
             pass
         elif self.p == 0.0 or torch.rand(1) >= self.p:
@@ -140,7 +140,7 @@ class LinearTransformation(Transform):
         self.transformation_matrix = transformation_matrix
         self.mean_vector = mean_vector
 
-    def _transform(self, inpt: Any, params: dict[str, Any]) -> Any:
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         shape = inpt.shape
         n = shape[-3] * shape[-2] * shape[-1]
 
@@ -204,7 +204,7 @@ class Normalize(Transform):
         self.std = list(std)
         self.inplace = inplace
 
-    def _transform(self, inpt: Any, params: dict[str, Any]) -> Any:
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(F.normalize, inpt, mean=self.mean, std=self.std, inplace=self.inplace)
 
 
@@ -247,10 +247,10 @@ class RandomGaussianBlur(RandomApplyTransform):
 
     def _get_params(
         self,
-        flat_inputs: list[Any],
+        flat_inputs: List[Any],
         num_chunks: int,
-        chunks_indices: tuple[torch.Tensor],
-    ) -> list[dict[str, Any]]:
+        chunks_indices: Tuple[torch.Tensor],
+    ) -> List[Dict[str, Any]]:
         params = []
 
         for _ in range(num_chunks):
@@ -269,7 +269,7 @@ class RandomGaussianBlur(RandomApplyTransform):
 
         return params
 
-    def _transform(self, inpt: Any, params: dict[str, Any]) -> Any:
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(
             F.gaussian_blur_batch if self.batch_transform else F.gaussian_blur,  # type: ignore[arg-type]
             inpt,
@@ -329,7 +329,7 @@ class ToDtype(Transform):
 
     def __init__(
         self,
-        dtype: torch.dtype | dict[Type | str, torch.dtype | None],
+        dtype: torch.dtype | Dict[Type | str, torch.dtype | None],
         scale: bool = False,
     ) -> None:
         super().__init__()
@@ -358,7 +358,7 @@ class ToDtype(Transform):
         self.dtype = dtype
         self.scale = scale
 
-    def _transform(self, inpt: Any, params: dict[str, Any]) -> Any:
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         if isinstance(self.dtype, torch.dtype):
             # For consistency / BC with ConvertImageDtype, we only care about images or videos when dtype
             # is a simple torch.dtype
@@ -501,7 +501,7 @@ class SanitizeBoundingBoxes(Transform):
 
         return tree_unflatten(flat_outputs, spec)
 
-    def _transform(self, inpt: Any, params: dict[str, Any]) -> Any:
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         is_label = inpt is not None and inpt is params["labels"]
         is_bounding_boxes = isinstance(inpt, (ta_tensors.BoundingBoxes, ta_tensors.BatchBoundingBoxes))
         is_mask = isinstance(inpt, (ta_tensors.Mask, ta_tensors.BatchMasks))

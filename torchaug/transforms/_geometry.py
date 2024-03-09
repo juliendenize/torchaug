@@ -6,8 +6,11 @@ import warnings
 from typing import (
     Any,
     Callable,
+    Dict,
+    List,
     Literal,
     Sequence,
+    Tuple,
     Type,
 )
 
@@ -61,7 +64,7 @@ class RandomHorizontalFlip(RandomApplyTransform):
     def __init__(self, p: float = 0.5, batch_inplace: bool = False, batch_transform: bool = False) -> None:
         super().__init__(p, batch_inplace=batch_inplace, batch_transform=batch_transform)
 
-    def _transform(self, inpt: Any, params: dict[str, Any]) -> Any:
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(F.horizontal_flip, inpt)
 
 
@@ -83,7 +86,7 @@ class RandomVerticalFlip(RandomApplyTransform):
     def __init__(self, p: float = 0.5, batch_inplace: bool = False, batch_transform: bool = False) -> None:
         super().__init__(p, batch_inplace=batch_inplace, batch_transform=batch_transform)
 
-    def _transform(self, inpt: Any, params: dict[str, Any]) -> Any:
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(F.vertical_flip, inpt)
 
 
@@ -144,7 +147,7 @@ class Resize(Transform):
         self.max_size = max_size
         self.antialias = antialias
 
-    def _transform(self, inpt: Any, params: dict[str, Any]) -> Any:
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(
             F.resize,
             inpt,
@@ -179,7 +182,7 @@ class CenterCrop(Transform):
 
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
 
-    def _transform(self, inpt: Any, params: dict[str, Any]) -> Any:
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(F.center_crop, inpt, output_size=self.size)
 
 
@@ -221,8 +224,8 @@ class RandomResizedCrop(Transform):
     def __init__(
         self,
         size: int | Sequence[int],
-        scale: tuple[float, float] = (0.08, 1.0),
-        ratio: tuple[float, float] = (3.0 / 4.0, 4.0 / 3.0),
+        scale: Tuple[float, float] = (0.08, 1.0),
+        ratio: Tuple[float, float] = (3.0 / 4.0, 4.0 / 3.0),
         interpolation: InterpolationMode | int = InterpolationMode.BILINEAR,
         antialias: bool = True,
         num_chunks: int = 1,
@@ -252,10 +255,10 @@ class RandomResizedCrop(Transform):
 
     def _get_params(
         self,
-        flat_inputs: list[Any],
+        flat_inputs: List[Any],
         num_chunks: int,
-        chunks_indices: tuple[torch.Tensor],
-    ) -> list[dict[str, Any]]:
+        chunks_indices: Tuple[torch.Tensor],
+    ) -> List[Dict[str, Any]]:
         height, width = query_size(flat_inputs)
         area = height * width
 
@@ -299,7 +302,7 @@ class RandomResizedCrop(Transform):
 
         return params
 
-    def _transform(self, inpt: Any, params: dict[str, Any]) -> Any:
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(
             F.resized_crop,
             inpt,
@@ -329,7 +332,7 @@ class FiveCrop(Transform):
 
     Example:
         >>> class BatchMultiCrop(transforms.Transform):
-        ...     def forward(self, sample: tuple[tuple[Union[ta_tensors.Image, ta_tensors.Video], ...], int]):
+        ...     def forward(self, sample: Tuple[Tuple[Union[ta_tensors.Image, ta_tensors.Video], ...], int]):
         ...         images_or_videos, labels = sample
         ...         batch_size = len(images_or_videos)
         ...         image_or_video = images_or_videos[0]
@@ -369,10 +372,10 @@ class FiveCrop(Transform):
             )
         return super()._call_kernel(functional, inpt, *args, **kwargs)
 
-    def _transform(self, inpt: Any, params: dict[str, Any]) -> Any:
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(F.five_crop, inpt, self.size)
 
-    def _check_inputs(self, flat_inputs: list[Any]) -> None:
+    def _check_inputs(self, flat_inputs: List[Any]) -> None:
         if has_any(
             flat_inputs,
             ta_tensors.BoundingBoxes,
@@ -428,7 +431,7 @@ class TenCrop(Transform):
             )
         return super()._call_kernel(functional, inpt, *args, **kwargs)
 
-    def _check_inputs(self, flat_inputs: list[Any]) -> None:
+    def _check_inputs(self, flat_inputs: List[Any]) -> None:
         if has_any(
             flat_inputs,
             ta_tensors.BoundingBoxes,
@@ -438,7 +441,7 @@ class TenCrop(Transform):
         ):
             raise TypeError(f"BoundingBoxes'es and Mask's are not supported by {type(self).__name__}()")
 
-    def _transform(self, inpt: Any, params: dict[str, Any]) -> Any:
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(F.ten_crop, inpt, self.size, vertical_flip=self.vertical_flip)
 
 
@@ -484,7 +487,7 @@ class Pad(Transform):
     def __init__(
         self,
         padding: int | Sequence[int],
-        fill: _FillType | dict[Type | str, _FillType] = 0,
+        fill: _FillType | Dict[Type | str, _FillType] = 0,
         padding_mode: Literal["constant", "edge", "reflect", "symmetric"] = "constant",
     ) -> None:
         super().__init__()
@@ -492,7 +495,7 @@ class Pad(Transform):
         _check_padding_arg(padding)
         _check_padding_mode_arg(padding_mode)
 
-        # This cast does Sequence[int] -> list[int] and is required to make mypy happy
+        # This cast does Sequence[int] -> List[int] and is required to make mypy happy
         if not isinstance(padding, int):
             padding = list(padding)
         self.padding = padding
@@ -500,7 +503,7 @@ class Pad(Transform):
         self._fill = _setup_fill_arg(fill)
         self.padding_mode = padding_mode
 
-    def _transform(self, inpt: Any, params: dict[str, Any]) -> Any:
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = _get_fill(self._fill, type(inpt))
         return self._call_kernel(F.pad, inpt, padding=self.padding, fill=fill, padding_mode=self.padding_mode)  # type: ignore[arg-type]
 
@@ -539,7 +542,7 @@ class RandomZoomOut(RandomApplyTransform):
 
     def __init__(
         self,
-        fill: _FillType | dict[Type | str, _FillType] = 0,
+        fill: _FillType | Dict[Type | str, _FillType] = 0,
         side_range: Sequence[float] = (1.0, 4.0),
         p: float = 0.5,
     ) -> None:
@@ -556,10 +559,10 @@ class RandomZoomOut(RandomApplyTransform):
 
     def _get_params(
         self,
-        flat_inputs: list[Any],
+        flat_inputs: List[Any],
         num_chunks: int,
-        chunks_indices: tuple[torch.Tensor],
-    ) -> list[dict[str, Any]]:
+        chunks_indices: Tuple[torch.Tensor],
+    ) -> List[Dict[str, Any]]:
         orig_h, orig_w = query_size(flat_inputs)
         params = []
 
@@ -579,7 +582,7 @@ class RandomZoomOut(RandomApplyTransform):
 
         return params
 
-    def _transform(self, inpt: Any, params: dict[str, Any]) -> Any:
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = _get_fill(self._fill, type(inpt))
         return self._call_kernel(F.pad, inpt, **params, fill=fill)
 
@@ -632,8 +635,8 @@ class RandomRotation(Transform):
         degrees: numbers.Number | Sequence,
         interpolation: InterpolationMode | int = InterpolationMode.NEAREST,
         expand: bool = False,
-        center: list[float] | None = None,
-        fill: _FillType | dict[Type | str, _FillType] = 0,
+        center: List[float] | None = None,
+        fill: _FillType | Dict[Type | str, _FillType] = 0,
         batch_inplace: bool = False,
         num_chunks: int = 1,
         permute_chunks: bool = False,
@@ -663,16 +666,16 @@ class RandomRotation(Transform):
 
     def _get_params(
         self,
-        flat_inputs: list[Any],
+        flat_inputs: List[Any],
         num_chunks: int,
-        chunks_indices: tuple[torch.Tensor],
-    ) -> list[dict[str, Any]]:
+        chunks_indices: Tuple[torch.Tensor],
+    ) -> List[Dict[str, Any]]:
         params = [
             {"angle": torch.empty(1).uniform_(self.degrees[0], self.degrees[1]).item()} for _ in range(num_chunks)
         ]
         return params
 
-    def _transform(self, inpt: Any, params: dict[str, Any]) -> Any:
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = _get_fill(self._fill, type(inpt))
         return self._call_kernel(
             F.rotate,
@@ -736,8 +739,8 @@ class RandomAffine(Transform):
         scale: Sequence[float] | None = None,
         shear: int | float | Sequence[float] | None = None,
         interpolation: InterpolationMode | int = InterpolationMode.NEAREST,
-        fill: _FillType | dict[Type | str, _FillType] = 0,
-        center: list[float] | None = None,
+        fill: _FillType | Dict[Type | str, _FillType] = 0,
+        center: List[float] | None = None,
         batch_inplace: bool = False,
         num_chunks: int = 1,
         permute_chunks: bool = False,
@@ -779,10 +782,10 @@ class RandomAffine(Transform):
 
     def _get_params(
         self,
-        flat_inputs: list[Any],
+        flat_inputs: List[Any],
         num_chunks: int,
-        chunks_indices: tuple[torch.Tensor],
-    ) -> list[dict[str, Any]]:
+        chunks_indices: Tuple[torch.Tensor],
+    ) -> List[Dict[str, Any]]:
         height, width = query_size(flat_inputs)
 
         params = []
@@ -814,7 +817,7 @@ class RandomAffine(Transform):
 
         return params
 
-    def _transform(self, inpt: Any, params: dict[str, Any]) -> Any:
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = _get_fill(self._fill, type(inpt))
         return self._call_kernel(
             F.affine,
@@ -876,7 +879,7 @@ class RandomCrop(Transform):
         size: int | Sequence[int],
         padding: int | Sequence[int] | None = None,
         pad_if_needed: bool = False,
-        fill: _FillType | dict[Type | str, _FillType] = 0,
+        fill: _FillType | Dict[Type | str, _FillType] = 0,
         padding_mode: Literal["constant", "edge", "reflect", "symmetric"] = "constant",
     ) -> None:
         super().__init__()
@@ -896,10 +899,10 @@ class RandomCrop(Transform):
 
     def _get_params(
         self,
-        flat_inputs: list[Any],
+        flat_inputs: List[Any],
         num_chunks: int,
-        chunks_indices: tuple[torch.Tensor],
-    ) -> list[dict[str, Any]]:
+        chunks_indices: Tuple[torch.Tensor],
+    ) -> List[Dict[str, Any]]:
         padded_height, padded_width = query_size(flat_inputs)
 
         if self.padding is not None:
@@ -967,7 +970,7 @@ class RandomCrop(Transform):
 
         return params
 
-    def _transform(self, inpt: Any, params: dict[str, Any]) -> Any:
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         if params["needs_pad"]:
             fill = _get_fill(self._fill, type(inpt))
             inpt = self._call_kernel(
@@ -1022,7 +1025,7 @@ class RandomPerspective(RandomApplyTransform):
         distortion_scale: float = 0.5,
         p: float = 0.5,
         interpolation: InterpolationMode | int = InterpolationMode.BILINEAR,
-        fill: _FillType | dict[Type | str, _FillType] = 0,
+        fill: _FillType | Dict[Type | str, _FillType] = 0,
         batch_inplace: bool = False,
         num_chunks: int = 1,
         permute_chunks: bool = False,
@@ -1046,10 +1049,10 @@ class RandomPerspective(RandomApplyTransform):
 
     def _get_params(
         self,
-        flat_inputs: list[Any],
+        flat_inputs: List[Any],
         num_chunks: int,
-        chunks_indices: tuple[torch.Tensor],
-    ) -> list[dict[str, Any]]:
+        chunks_indices: Tuple[torch.Tensor],
+    ) -> List[Dict[str, Any]]:
         height, width = query_size(flat_inputs)
 
         distortion_scale = self.distortion_scale
@@ -1090,7 +1093,7 @@ class RandomPerspective(RandomApplyTransform):
 
         return params
 
-    def _transform(self, inpt: Any, params: dict[str, Any]) -> Any:
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = _get_fill(self._fill, type(inpt))
         return self._call_kernel(
             F.perspective,
@@ -1150,7 +1153,7 @@ class ElasticTransform(Transform):
         alpha: float | Sequence[float] = 50.0,
         sigma: float | Sequence[float] = 5.0,
         interpolation: InterpolationMode | int = InterpolationMode.BILINEAR,
-        fill: _FillType | dict[Type | str, _FillType] = 0,
+        fill: _FillType | Dict[Type | str, _FillType] = 0,
         batch_inplace: bool = False,
         batch_transform: bool = False,
     ) -> None:
@@ -1164,10 +1167,10 @@ class ElasticTransform(Transform):
 
     def _get_params(
         self,
-        flat_inputs: list[Any],
+        flat_inputs: List[Any],
         num_chunks: int,
-        chunks_indices: tuple[torch.Tensor],
-    ) -> list[dict[str, Any]]:
+        chunks_indices: Tuple[torch.Tensor],
+    ) -> List[Dict[str, Any]]:
         size = list(query_size(flat_inputs))
         device = chunks_indices[0].device
         gaussian_blur = F.gaussian_blur_batch if self.batch_transform else F.gaussian_blur
@@ -1204,7 +1207,7 @@ class ElasticTransform(Transform):
             params.append({"displacement": displacement})
         return params
 
-    def _transform(self, inpt: Any, params: dict[str, Any]) -> Any:
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = _get_fill(self._fill, type(inpt))
         return self._call_kernel(
             F.elastic if not self.batch_transform else F.elastic_batch,
@@ -1249,7 +1252,7 @@ class RandomIoUCrop(Transform):
         max_scale: float = 1.0,
         min_aspect_ratio: float = 0.5,
         max_aspect_ratio: float = 2.0,
-        sampler_options: list[float] | None = None,
+        sampler_options: List[float] | None = None,
         trials: int = 40,
         batch_transform: bool = False,
     ):
@@ -1264,7 +1267,7 @@ class RandomIoUCrop(Transform):
         self.options = sampler_options
         self.trials = trials
 
-    def _check_inputs(self, flat_inputs: list[Any]) -> None:
+    def _check_inputs(self, flat_inputs: List[Any]) -> None:
         if not self.batch_transform:
             if not (
                 has_all(flat_inputs, ta_tensors.BoundingBoxes)
@@ -1286,14 +1289,14 @@ class RandomIoUCrop(Transform):
 
     def _get_params(
         self,
-        flat_inputs: list[Any],
+        flat_inputs: List[Any],
         num_chunks: int,
-        chunks_indices: tuple[torch.Tensor],
-    ) -> list[dict[str, Any]]:
+        chunks_indices: Tuple[torch.Tensor],
+    ) -> List[Dict[str, Any]]:
         orig_h, orig_w = query_size(flat_inputs)
         bboxes = get_batch_bounding_boxes(flat_inputs) if self.batch_transform else get_bounding_boxes(flat_inputs)
 
-        params: list[dict[str, Any]] = []
+        params: List[Dict[str, Any]] = []
         for _ in range(num_chunks):
             valid = False
             while not valid:
@@ -1362,7 +1365,7 @@ class RandomIoUCrop(Transform):
 
         return params
 
-    def _transform(self, inpt: Any, params: dict[str, Any]) -> Any:
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         if len(params) < 1:
             return inpt
 
@@ -1407,8 +1410,8 @@ class ScaleJitter(Transform):
 
     def __init__(
         self,
-        target_size: tuple[int, int],
-        scale_range: tuple[float, float] = (0.1, 2.0),
+        target_size: Tuple[int, int],
+        scale_range: Tuple[float, float] = (0.1, 2.0),
         interpolation: InterpolationMode | int = InterpolationMode.BILINEAR,
         antialias: bool = True,
     ):
@@ -1420,10 +1423,10 @@ class ScaleJitter(Transform):
 
     def _get_params(
         self,
-        flat_inputs: list[Any],
+        flat_inputs: List[Any],
         num_chunks: int,
-        chunks_indices: tuple[torch.Tensor],
-    ) -> list[dict[str, Any]]:
+        chunks_indices: Tuple[torch.Tensor],
+    ) -> List[Dict[str, Any]]:
         orig_height, orig_width = query_size(flat_inputs)
 
         params = []
@@ -1438,7 +1441,7 @@ class ScaleJitter(Transform):
 
         return params
 
-    def _transform(self, inpt: Any, params: dict[str, Any]) -> Any:
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(
             F.resize,
             inpt,
@@ -1470,7 +1473,7 @@ class RandomShortestSize(Transform):
 
     def __init__(
         self,
-        min_size: list[int] | tuple[int] | int,
+        min_size: List[int] | Tuple[int] | int,
         max_size: int | None = None,
         interpolation: InterpolationMode | int = InterpolationMode.BILINEAR,
         antialias: bool = True,
@@ -1483,10 +1486,10 @@ class RandomShortestSize(Transform):
 
     def _get_params(
         self,
-        flat_inputs: list[Any],
+        flat_inputs: List[Any],
         num_chunks: int,
-        chunks_indices: tuple[torch.Tensor],
-    ) -> list[dict[str, Any]]:
+        chunks_indices: Tuple[torch.Tensor],
+    ) -> List[Dict[str, Any]]:
         orig_height, orig_width = query_size(flat_inputs)
 
         params = []
@@ -1504,7 +1507,7 @@ class RandomShortestSize(Transform):
 
         return params
 
-    def _transform(self, inpt: Any, params: dict[str, Any]) -> Any:
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(
             F.resize,
             inpt,
@@ -1560,13 +1563,13 @@ class RandomResize(Transform):
 
     def _get_params(
         self,
-        flat_inputs: list[Any],
+        flat_inputs: List[Any],
         num_chunks: int,
-        chunks_indices: tuple[torch.Tensor],
-    ) -> list[dict[str, Any]]:
+        chunks_indices: Tuple[torch.Tensor],
+    ) -> List[Dict[str, Any]]:
         return [{"size": [int(torch.randint(self.min_size, self.max_size, ()))]} for _ in range(num_chunks)]
 
-    def _transform(self, inpt: Any, params: dict[str, Any]) -> Any:
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(
             F.resize,
             inpt,

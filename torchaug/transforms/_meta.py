@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Dict
 
 from torchaug import ta_tensors
 
@@ -26,7 +26,7 @@ class ConvertBoundingBoxFormat(Transform):
     def _transform(
         self,
         inpt: ta_tensors.BoundingBoxes | ta_tensors.BatchBoundingBoxes,
-        params: dict[str, Any],
+        params: Dict[str, Any],
     ) -> ta_tensors.BoundingBoxes | ta_tensors.BatchBoundingBoxes:
         return F.convert_bounding_box_format(inpt, new_format=self.format)  # type: ignore[return-value, arg-type]
 
@@ -45,6 +45,6 @@ class ClampBoundingBoxes(Transform):
     def _transform(
         self,
         inpt: ta_tensors.BoundingBoxes | ta_tensors.BatchBoundingBoxes,
-        params: dict[str, Any],
+        params: Dict[str, Any],
     ) -> ta_tensors.BoundingBoxes | ta_tensors.BatchBoundingBoxes:
         return F.clamp_bounding_boxes(inpt)  # type: ignore[return-value]

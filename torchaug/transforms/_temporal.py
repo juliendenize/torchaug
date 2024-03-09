@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Dict
 
 import torch
 
@@ -26,5 +26,5 @@ class UniformTemporalSubsample(Transform):
         super().__init__()
         self.num_samples = num_samples
 
-    def _transform(self, inpt: Any, params: dict[str, Any]) -> Any:
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(F.uniform_temporal_subsample, inpt, self.num_samples)

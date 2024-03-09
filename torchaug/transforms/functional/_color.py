@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import List
+
 import torch
 import torchvision.transforms.v2.functional as TVF
 from torchvision.transforms.v2.functional._color import _hsv_to_rgb, _rgb_to_hsv
@@ -529,7 +531,7 @@ def invert_video(video: torch.Tensor) -> torch.Tensor:
     return invert_image(image=video)
 
 
-def permute_channels(inpt: torch.Tensor, permutation: list[int]) -> torch.Tensor:
+def permute_channels(inpt: torch.Tensor, permutation: List[int]) -> torch.Tensor:
     """Permute the channels of the input according to the given permutation."""
     if torch.jit.is_scripting():
         return permute_channels_image(inpt, permutation=permutation)
@@ -543,11 +545,11 @@ def permute_channels(inpt: torch.Tensor, permutation: list[int]) -> torch.Tensor
 @_register_kernel_internal(permute_channels, torch.Tensor)
 @_register_kernel_internal(permute_channels, ta_tensors.Image)
 @_register_kernel_internal(permute_channels, ta_tensors.BatchImages)
-def permute_channels_image(image: torch.Tensor, permutation: list[int]) -> torch.Tensor:
+def permute_channels_image(image: torch.Tensor, permutation: List[int]) -> torch.Tensor:
     return TVF.permute_channels_image(image=image, permutation=permutation)
 
 
 @_register_kernel_internal(permute_channels, ta_tensors.Video)
 @_register_kernel_internal(permute_channels, ta_tensors.BatchVideos)
-def permute_channels_video(video: torch.Tensor, permutation: list[int]) -> torch.Tensor:
+def permute_channels_video(video: torch.Tensor, permutation: List[int]) -> torch.Tensor:
     return permute_channels_image(image=video, permutation=permutation)

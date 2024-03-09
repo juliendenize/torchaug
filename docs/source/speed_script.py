@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import argparse
 import time
-from typing import Callable
+from typing import Callable, List
 
 import tabulate
 import torch
@@ -110,8 +110,8 @@ if __name__ == "__main__":
     n_runs_batch: int = args.n_runs_batch
     run_single: bool = args.run_single
     run_batch: bool = args.run_batch
-    shape: list[int] = args.shape
-    batch_sizes: list[int] = sorted(args.batch_sizes, reverse=True)
+    shape: List[int] = args.shape
+    batch_sizes: List[int] = sorted(args.batch_sizes, reverse=True)
     device = args.device
 
     print(args)

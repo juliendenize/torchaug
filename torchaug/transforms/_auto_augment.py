@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import math
-from typing import Any, Callable, Type, Union
+from typing import Any, Callable, Dict, List, Tuple, Type, Union
 
 import torch
 from torch.utils._pytree import TreeSpec, tree_flatten, tree_unflatten
@@ -33,7 +33,7 @@ class _AutoAugmentBase(Transform):
         self,
         *,
         interpolation: InterpolationMode | int = InterpolationMode.NEAREST,
-        fill: _FillType | dict[Type | str, _FillType] = None,
+        fill: _FillType | Dict[Type | str, _FillType] = None,
         batch_transform: bool = False,
     ) -> None:
         super().__init__(batch_transform=batch_transform)
@@ -41,7 +41,7 @@ class _AutoAugmentBase(Transform):
         self.fill = fill
         self._fill = _setup_fill_arg(fill)
 
-    def _get_random_item(self, dct: dict[str, tuple[Callable, bool]]) -> tuple[str, tuple[Callable, bool]]:
+    def _get_random_item(self, dct: Dict[str, Tuple[Callable, bool]]) -> Tuple[str, Tuple[Callable, bool]]:
         keys = tuple(dct.keys())
         key = keys[int(torch.randint(len(keys), ()))]
         return key, dct[key]
@@ -49,13 +49,13 @@ class _AutoAugmentBase(Transform):
     def _flatten_and_extract_image_or_video(
         self,
         inputs: Any,
-        unsupported_types: tuple[Type, ...] = (
+        unsupported_types: Tuple[Type, ...] = (
             ta_tensors.Mask,
             ta_tensors.BoundingBoxes,
             ta_tensors.BatchBoundingBoxes,
             ta_tensors.BatchMasks,
         ),
-    ) -> tuple[tuple[list[Any], TreeSpec, int], ImageOrVideo]:
+    ) -> Tuple[Tuple[List[Any], TreeSpec, int], ImageOrVideo]:
         if self.batch_transform:
             unsupported_types = tuple(list(unsupported_types) + [ta_tensors.Image, ta_tensors.Video])
         flat_inputs, spec = tree_flatten(inputs if len(inputs) > 1 else inputs[0])
@@ -96,7 +96,7 @@ class _AutoAugmentBase(Transform):
 
     def _unflatten_and_insert_image_or_video(
         self,
-        flat_inputs_with_spec: tuple[list[Any], TreeSpec, int],
+        flat_inputs_with_spec: Tuple[List[Any], TreeSpec, int],
         image_or_video: ImageOrVideo,
     ) -> Any:
         flat_inputs, spec, idx = flat_inputs_with_spec
@@ -109,7 +109,7 @@ class _AutoAugmentBase(Transform):
         transform_id: str,
         magnitude: float,
         interpolation: InterpolationMode | int,
-        fill: dict[Type | str, _FillTypeJIT],
+        fill: Dict[Type | str, _FillTypeJIT],
     ) -> ImageOrVideo:
         fill_ = _get_fill(fill, type(image))
 
@@ -268,7 +268,7 @@ class AutoAugment(_AutoAugmentBase):
         self,
         policy: AutoAugmentPolicy = AutoAugmentPolicy.IMAGENET,
         interpolation: InterpolationMode | int = InterpolationMode.NEAREST,
-        fill: _FillType | dict[Type | str, _FillType] = None,
+        fill: _FillType | Dict[Type | str, _FillType] = None,
     ) -> None:
         super().__init__(interpolation=interpolation, fill=fill)
         self.policy = policy
@@ -276,7 +276,7 @@ class AutoAugment(_AutoAugmentBase):
 
     def _get_policies(
         self, policy: AutoAugmentPolicy
-    ) -> list[tuple[tuple[str, float, int | None], tuple[str, float, int | None]]]:
+    ) -> List[Tuple[Tuple[str, float, int | None], Tuple[str, float, int | None]]]:
         if policy == AutoAugmentPolicy.IMAGENET:
             return [
                 (("Posterize", 0.4, 8), ("Rotate", 0.6, 9)),
@@ -476,7 +476,7 @@ class RandAugment(_AutoAugmentBase):
         magnitude: int = 9,
         num_magnitude_bins: int = 31,
         interpolation: InterpolationMode | int = InterpolationMode.NEAREST,
-        fill: _FillType | dict[Type | str, _FillType] = None,
+        fill: _FillType | Dict[Type | str, _FillType] = None,
     ) -> None:
         super().__init__(interpolation=interpolation, fill=fill)
         self.num_ops = num_ops
@@ -583,7 +583,7 @@ class TrivialAugmentWide(_AutoAugmentBase):
         self,
         num_magnitude_bins: int = 31,
         interpolation: InterpolationMode | int = InterpolationMode.NEAREST,
-        fill: _FillType | dict[Type | str, _FillType] = None,
+        fill: _FillType | Dict[Type | str, _FillType] = None,
     ):
         super().__init__(interpolation=interpolation, fill=fill)
         self.num_magnitude_bins = num_magnitude_bins
@@ -671,7 +671,7 @@ class AugMix(_AutoAugmentBase):
         "AutoContrast": (lambda num_bins, height, width: None, False),
         "Equalize": (lambda num_bins, height, width: None, False),
     }
-    _AUGMENTATION_SPACE: dict[str, tuple[Callable[[int, int, int], torch.Tensor | None], bool]] = {
+    _AUGMENTATION_SPACE: Dict[str, Tuple[Callable[[int, int, int], torch.Tensor | None], bool]] = {
         **_PARTIAL_AUGMENTATION_SPACE,
         "Brightness": (
             lambda num_bins, height, width: torch.linspace(0.0, 0.9, num_bins),
@@ -699,7 +699,7 @@ class AugMix(_AutoAugmentBase):
         alpha: float = 1.0,
         all_ops: bool = True,
         interpolation: InterpolationMode | int = InterpolationMode.BILINEAR,
-        fill: _FillType | dict[Type | str, _FillType] = None,
+        fill: _FillType | Dict[Type | str, _FillType] = None,
     ) -> None:
         super().__init__(interpolation=interpolation, fill=fill, batch_transform=True)
         self._PARAMETER_MAX = 10

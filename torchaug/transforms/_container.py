@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Sequence
+from typing import Any, Callable, Dict, List, Sequence
 
 import torch
 from torch import nn
@@ -127,7 +127,7 @@ class RandomChoice(Transform):
     def __init__(
         self,
         transforms: Sequence[Callable],
-        p: list[float] | None = None,
+        p: List[float] | None = None,
     ) -> None:
         if not isinstance(transforms, Sequence):
             raise TypeError("Argument transforms should be a sequence of callables")
@@ -190,8 +190,8 @@ class SequentialTransform(Transform):
 
     def __init__(
         self,
-        transforms: list[RandomApplyTransform],
-        transforms_parameters_override: dict[str, Any] | None = {
+        transforms: List[RandomApplyTransform],
+        transforms_parameters_override: Dict[str, Any] | None = {
             "inplace": True,
             "batch_inplace": True,
             "batch_transform": True,
@@ -224,7 +224,7 @@ class SequentialTransform(Transform):
 
             transform._receive_flatten_inputs = True
 
-    def _prepare_transforms(self, transforms: list[nn.Module]):
+    def _prepare_transforms(self, transforms: List[nn.Module]):
         for transform in transforms:
             self._prepare_transform(transform)
             self._prepare_transforms(list(transform.modules())[1:])

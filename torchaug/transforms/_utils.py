@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import collections
 from contextlib import suppress
-from typing import Any, Callable, Sequence
+from typing import Any, Callable, List, Sequence, Tuple
 
 import torch
 from torch import nn
@@ -90,7 +90,7 @@ def _parse_labels_getter(
         raise ValueError(f"labels_getter should either be 'default', a callable, or None, but got {labels_getter}.")
 
 
-def get_bounding_boxes(flat_inputs: list[Any]) -> ta_tensors.BoundingBoxes:
+def get_bounding_boxes(flat_inputs: List[Any]) -> ta_tensors.BoundingBoxes:
     """Get the bounding boxes from a list of inputs.
 
     Args:
@@ -106,7 +106,7 @@ def get_bounding_boxes(flat_inputs: list[Any]) -> ta_tensors.BoundingBoxes:
         raise ValueError("No bounding boxes were found in the sample")
 
 
-def get_batch_bounding_boxes(flat_inputs: list[Any]) -> ta_tensors.BatchBoundingBoxes:
+def get_batch_bounding_boxes(flat_inputs: List[Any]) -> ta_tensors.BatchBoundingBoxes:
     """Get the batch of bounding boxes from a list of inputs.
 
     Args:
@@ -123,7 +123,7 @@ def get_batch_bounding_boxes(flat_inputs: list[Any]) -> ta_tensors.BatchBounding
 
 
 def get_sample_or_batch_bounding_boxes(
-    flat_inputs: list[Any],
+    flat_inputs: List[Any],
 ) -> ta_tensors.BoundingBoxes | ta_tensors.BatchBoundingBoxes:
     """Get the bounding boxes from a list of inputs.
 
@@ -142,7 +142,7 @@ def get_sample_or_batch_bounding_boxes(
         raise ValueError("No bounding boxes were found in the sample")
 
 
-def query_size(flat_inputs: list[Any]) -> tuple[int, int]:
+def query_size(flat_inputs: List[Any]) -> Tuple[int, int]:
     sizes = {
         tuple(get_size(inpt))
         for inpt in flat_inputs
@@ -169,7 +169,7 @@ def query_size(flat_inputs: list[Any]) -> tuple[int, int]:
     return h, w
 
 
-def query_chw(flat_inputs: list[Any]) -> tuple[int, int, int]:
+def query_chw(flat_inputs: List[Any]) -> Tuple[int, int, int]:
     chws = {
         tuple(get_dimensions(inpt))
         for inpt in flat_inputs

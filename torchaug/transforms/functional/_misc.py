@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from typing import List
 
 import torch
 import torchvision.transforms.v2.functional as TVF
@@ -16,8 +17,8 @@ from ._utils._tensor import _transfer_tensor_on_device
 
 def normalize(
     inpt: torch.Tensor,
-    mean: list[float],
-    std: list[float],
+    mean: List[float],
+    std: List[float],
     inplace: bool = False,
 ) -> torch.Tensor:
     """See :class:`~torchaug.transforms.Normalize` for details."""
@@ -35,8 +36,8 @@ def normalize(
 @_register_kernel_internal(normalize, ta_tensors.BatchImages)
 def normalize_image(
     image: torch.Tensor,
-    mean: list[float],
-    std: list[float],
+    mean: List[float],
+    std: List[float],
     inplace: bool = False,
 ) -> torch.Tensor:
     return TVF.normalize_image(image=image, mean=mean, std=std, inplace=inplace)
@@ -44,14 +45,14 @@ def normalize_image(
 
 @_register_kernel_internal(normalize, ta_tensors.Video)
 @_register_kernel_internal(normalize, ta_tensors.BatchVideos)
-def normalize_video(video: torch.Tensor, mean: list[float], std: list[float], inplace: bool = False) -> torch.Tensor:
+def normalize_video(video: torch.Tensor, mean: List[float], std: List[float], inplace: bool = False) -> torch.Tensor:
     return normalize_image(image=video, mean=mean, std=std, inplace=inplace)
 
 
 def gaussian_blur(
     inpt: torch.Tensor,
-    kernel_size: list[int],
-    sigma: list[float] | None = None,
+    kernel_size: List[int],
+    sigma: List[float] | None = None,
 ) -> torch.Tensor:
     """See :class:`~torchaug.transforms.RandomGaussianBlur` for details."""
     if torch.jit.is_scripting():
@@ -65,7 +66,7 @@ def gaussian_blur(
 
 def gaussian_blur_batch(
     inpt: torch.Tensor,
-    kernel_size: list[int],
+    kernel_size: List[int],
     sigma: torch.Tensor | None = None,
     value_check: bool = False,
 ) -> torch.Tensor:
@@ -93,7 +94,7 @@ def _get_gaussian_kernel1d(
 
 
 def _get_gaussian_kernel2d(
-    kernel_size: list[int],
+    kernel_size: List[int],
     sigma: torch.Tensor,
     dtype: torch.dtype,
     device: torch.device,
@@ -109,7 +110,7 @@ def _get_gaussian_kernel2d(
 @_register_kernel_internal(gaussian_blur, torch.Tensor)
 @_register_kernel_internal(gaussian_blur, ta_tensors.Image)
 @_register_kernel_internal(gaussian_blur, ta_tensors.BatchImages)
-def gaussian_blur_image(image: torch.Tensor, kernel_size: list[int], sigma: list[float] | None = None) -> torch.Tensor:
+def gaussian_blur_image(image: torch.Tensor, kernel_size: List[int], sigma: List[float] | None = None) -> torch.Tensor:
     # TODO: consider deprecating integers from sigma on the future
     if isinstance(kernel_size, int):
         kernel_size = [kernel_size, kernel_size]
@@ -181,7 +182,7 @@ def gaussian_blur_image(image: torch.Tensor, kernel_size: list[int], sigma: list
 
 @_register_kernel_internal(gaussian_blur, ta_tensors.Video)
 @_register_kernel_internal(gaussian_blur, ta_tensors.BatchVideos)
-def gaussian_blur_video(video: torch.Tensor, kernel_size: list[int], sigma: list[float] | None = None) -> torch.Tensor:
+def gaussian_blur_video(video: torch.Tensor, kernel_size: List[int], sigma: List[float] | None = None) -> torch.Tensor:
     return gaussian_blur_image(image=video, kernel_size=kernel_size, sigma=sigma)
 
 
@@ -189,7 +190,7 @@ def gaussian_blur_video(video: torch.Tensor, kernel_size: list[int], sigma: list
 @_register_kernel_internal(gaussian_blur_batch, ta_tensors.BatchImages)
 def gaussian_blur_batch_images(
     images: torch.Tensor,
-    kernel_size: list[int],
+    kernel_size: List[int],
     sigma: torch.Tensor | None = None,
     value_check: bool = False,
 ) -> torch.Tensor:
@@ -262,7 +263,7 @@ def gaussian_blur_batch_images(
 @_register_kernel_internal(gaussian_blur_batch, ta_tensors.BatchVideos)
 def gaussian_blur_batch_videos(
     videos: torch.Tensor,
-    kernel_size: list[int],
+    kernel_size: List[int],
     sigma: torch.Tensor | None = None,
     value_check: bool = False,
 ) -> torch.Tensor:

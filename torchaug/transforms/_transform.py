@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import enum
 from math import ceil, floor
-from typing import Any, Callable, Type
+from typing import Any, Callable, Dict, List, Tuple, Type
 
 import torch
 from torch import nn
@@ -18,7 +18,7 @@ from .functional._utils._kernel import _get_kernel
 
 
 class RandomApplyTransform(nn.Module):
-    _transformed_types: tuple[Type | Callable[[Any], bool], ...] = (torch.Tensor,)
+    _transformed_types: Tuple[Type | Callable[[Any], bool], ...] = (torch.Tensor,)
     _reshape_transform: bool = False
     _receive_flatten_inputs: bool = False
 
@@ -70,7 +70,7 @@ class RandomApplyTransform(nn.Module):
 
         return batch_size
 
-    def _get_chunks_indices(self, batch_size: int, num_chunks: int, device: torch.device) -> tuple[torch.Tensor, ...]:
+    def _get_chunks_indices(self, batch_size: int, num_chunks: int, device: torch.device) -> Tuple[torch.Tensor, ...]:
         if num_chunks <= 0:
             raise ValueError("`num_chunks` should be greater than 0.")
         elif num_chunks > batch_size:
@@ -87,7 +87,7 @@ class RandomApplyTransform(nn.Module):
             indices = torch.arange(0, batch_size, device=device)
         return indices.chunk(num_chunks)
 
-    def _needs_transform_list(self, flat_inputs: list[Any]) -> list[bool]:
+    def _needs_transform_list(self, flat_inputs: List[Any]) -> List[bool]:
         # Below is a heuristic on how to deal with pure tensor inputs:
         # 1. Pure tensors, i.e. tensors that are not a ta_tensor, are passed through if there is an explicit image
         #    (`ta_tensors.Image`, `ta_tensors.BatchImages`) or video (`ta_tensors.Video`, `ta_tensors.BatchVideos`)
@@ -136,10 +136,10 @@ class RandomApplyTransform(nn.Module):
 
     def _get_params(
         self,
-        flat_inputs: list[Any],
+        flat_inputs: List[Any],
         num_chunks: int,
-        chunks_indices: tuple[torch.Tensor],
-    ) -> list[dict[str, Any]]:
+        chunks_indices: Tuple[torch.Tensor],
+    ) -> List[Dict[str, Any]]:
         return [{} for _ in range(num_chunks)]
 
     def _get_indices_transform(self, batch_size: int, device: torch.device) -> torch.Tensor:
@@ -168,17 +168,17 @@ class RandomApplyTransform(nn.Module):
             indices_transform = torch.randperm(batch_size, device=device)[:num_transform]
         return indices_transform
 
-    def _check_inputs(self, flat_inputs: list[Any]) -> None:
+    def _check_inputs(self, flat_inputs: List[Any]) -> None:
         pass
 
     def _call_kernel(self, functional: Callable, inpt: Any, *args: Any, **kwargs: Any) -> Any:
         kernel = _get_kernel(functional, type(inpt), allow_passthrough=True)
         return kernel(inpt, *args, **kwargs)
 
-    def _transform(self, inpt: Any, params: dict[str, Any]) -> Any:
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         raise NotImplementedError
 
-    def forward_single(self, flat_inputs: list[Any]) -> list[Any]:
+    def forward_single(self, flat_inputs: List[Any]) -> List[Any]:
         if self.p == 1.0:
             pass
         elif self.p == 0.0 or torch.rand(1) >= self.p:
@@ -198,7 +198,7 @@ class RandomApplyTransform(nn.Module):
 
         return flat_outputs
 
-    def forward_batch(self, flat_inputs: list[Any]) -> list[Any]:
+    def forward_batch(self, flat_inputs: List[Any]) -> List[Any]:
         if self.p == 0:  # if p is 0, return the input directly after checking the input
             return flat_inputs
 
@@ -365,12 +365,12 @@ class RandomApplyTransform(nn.Module):
 
         return flat_outputs
 
-    def extra_repr(self, exclude_names: list[str] = []) -> str:
+    def extra_repr(self, exclude_names: List[str] = []) -> str:
         """Set the extra representation of the transform."""
         if not self.batch_transform:
             exclude_names.extend(["batch_inplace", "num_chunks", "permute_chunks", "batch_transform"])
 
-        last_extra: dict[str, Any] = {
+        last_extra: Dict[str, Any] = {
             "p": None,
             "batch_inplace": None,
             "num_chunks": None,
@@ -412,6 +412,6 @@ class Transform(RandomApplyTransform):
             batch_transform=batch_transform,
         )
 
-    def extra_repr(self, exclude_names: list[str] = []) -> str:
+    def extra_repr(self, exclude_names: List[str] = []) -> str:
         exclude_names.append("p")
         return super().extra_repr(exclude_names)

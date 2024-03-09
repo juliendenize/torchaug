@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Mapping, Sequence
+from typing import Any, List, Mapping, Sequence, Tuple
 
 import torch
 from torch import Tensor
@@ -11,7 +11,7 @@ from ._ta_tensor import TATensor
 
 
 def convert_bboxes_to_batch_bboxes(
-    bboxes: list[BoundingBoxes],
+    bboxes: List[BoundingBoxes],
 ) -> BatchBoundingBoxes:
     """Convert a list of :class:`~torchaug.ta_tensors.BoundingBoxes` objects to a
     :class:`~torchaug.torchaug_tensors.BatchBoundingBoxes` object.
@@ -49,7 +49,7 @@ def convert_bboxes_to_batch_bboxes(
 
 def convert_batch_bboxes_to_bboxes(
     bboxes: BatchBoundingBoxes,
-) -> list[BoundingBoxes]:
+) -> List[BoundingBoxes]:
     """Convert :class:`~torchaug.torchaug_tensors.BatchBoundingBoxes` object to a list of
     :class:`~torchaug.ta_tensors.BoundingBoxes` objects.
     """
@@ -93,8 +93,8 @@ class BatchBoundingBoxes(TATensor):
     """
 
     format: BoundingBoxFormat
-    canvas_size: tuple[int, int]
-    idx_sample: list[int]
+    canvas_size: Tuple[int, int]
+    idx_sample: List[int]
 
     @property
     def batch_size(self) -> int:
@@ -161,8 +161,8 @@ class BatchBoundingBoxes(TATensor):
         tensor: Tensor,
         *,
         format: BoundingBoxFormat | str,
-        canvas_size: tuple[int, int],
-        idx_sample: list[int],
+        canvas_size: Tuple[int, int],
+        idx_sample: List[int],
         check_dims: bool = True,
     ) -> BatchBoundingBoxes:  # type: ignore[override]
         if check_dims and tensor.ndim != 2:
@@ -181,7 +181,7 @@ class BatchBoundingBoxes(TATensor):
         *,
         format: BoundingBoxFormat | str,
         canvas_size: Tensor,
-        idx_sample: list[int],
+        idx_sample: List[int],
         dtype: torch.dtype | None = None,
         device: torch.device | str | int | None = None,
         requires_grad: bool | None = None,

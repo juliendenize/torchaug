@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Mapping, Sequence
+from typing import Any, Mapping, Sequence, Tuple
 
 import torch
 from torch.utils._pytree import tree_flatten
@@ -59,7 +59,7 @@ class BoundingBoxes(TATensor):
     """
 
     format: BoundingBoxFormat
-    canvas_size: tuple[int, int]
+    canvas_size: Tuple[int, int]
 
     @classmethod
     def _wrap(
@@ -67,7 +67,7 @@ class BoundingBoxes(TATensor):
         tensor: torch.Tensor,
         *,
         format: BoundingBoxFormat | str,
-        canvas_size: tuple[int, int],
+        canvas_size: Tuple[int, int],
         check_dims: bool = True,
     ) -> BoundingBoxes:  # type: ignore[override]
         if check_dims:
@@ -87,7 +87,7 @@ class BoundingBoxes(TATensor):
         data: Any,
         *,
         format: BoundingBoxFormat | str,
-        canvas_size: tuple[int, int],
+        canvas_size: Tuple[int, int],
         dtype: torch.dtype | None = None,
         device: torch.device | str | int | None = None,
         requires_grad: bool | None = None,

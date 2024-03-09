@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import contextlib
-from typing import Callable, Type, Union
+from typing import Callable, Dict, Tuple, Type, Union
 
 import torch
 from torch.utils.data._utils.collate import (
@@ -28,7 +28,7 @@ from ...ta_tensors._video import Video
 def collate_ta_tensor_fn(
     batch,
     *,
-    collate_fn_map: dict[Type | tuple[Type, ...], Callable] | None = None,
+    collate_fn_map: Dict[Type | Tuple[Type, ...], Callable] | None = None,
 ):
     elem = batch[0]
     if isinstance(elem, Image):
@@ -52,7 +52,7 @@ def collate_ta_tensor_fn(
         raise TypeError(default_collate_err_msg_format.format(type(batch)))
 
 
-default_collate_fn_map: dict[Union[Type, tuple[Type, ...]], Callable] = {torch.Tensor: collate_tensor_fn}
+default_collate_fn_map: Dict[Union[Type, Tuple[Type, ...]], Callable] = {torch.Tensor: collate_tensor_fn}
 with contextlib.suppress(ImportError):
     import numpy as np
 
@@ -107,7 +107,7 @@ def default_collate(batch):
         * `str` -> `str` (unchanged)
         * `bytes` -> `bytes` (unchanged)
         * `Mapping[K, V_i]` -> `Mapping[K, default_collate([V_1, V_2, ...])]`
-        * `Namedtuple[V1_i, V2_i, ...]` -> `Namedtuple[default_collate([V1_1, V1_2, ...]),
+        * `NamedTuple[V1_i, V2_i, ...]` -> `NamedTuple[default_collate([V1_1, V1_2, ...]),
           default_collate([V2_1, V2_2, ...]), ...]`
         * `Sequence[V1_i, V2_i, ...]` -> `Sequence[default_collate([V1_1, V1_2, ...]),
           default_collate([V2_1, V2_2, ...]), ...]`

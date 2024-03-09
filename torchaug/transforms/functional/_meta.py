@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import List, Tuple
+
 import torch
 import torchvision.transforms.v2.functional as TVF
 from torchvision.transforms.v2.functional._meta import (
@@ -16,7 +18,7 @@ from ._utils._kernel import _get_kernel, _register_kernel_internal
 from ._utils._tensor import is_pure_tensor
 
 
-def get_dimensions(inpt: torch.Tensor) -> list[int]:
+def get_dimensions(inpt: torch.Tensor) -> List[int]:
     if torch.jit.is_scripting():
         return get_dimensions_image(inpt)
 
@@ -29,13 +31,13 @@ def get_dimensions(inpt: torch.Tensor) -> list[int]:
 @_register_kernel_internal(get_dimensions, torch.Tensor)
 @_register_kernel_internal(get_dimensions, ta_tensors.Image, ta_tensor_wrapper=False)
 @_register_kernel_internal(get_dimensions, ta_tensors.BatchImages, ta_tensor_wrapper=False)
-def get_dimensions_image(image: torch.Tensor) -> list[int]:
+def get_dimensions_image(image: torch.Tensor) -> List[int]:
     return TVF.get_dimensions_image(image=image)
 
 
 @_register_kernel_internal(get_dimensions, ta_tensors.Video, ta_tensor_wrapper=False)
 @_register_kernel_internal(get_dimensions, ta_tensors.BatchVideos, ta_tensor_wrapper=False)
-def get_dimensions_video(video: torch.Tensor) -> list[int]:
+def get_dimensions_video(video: torch.Tensor) -> List[int]:
     return get_dimensions_image(image=video)
 
 
@@ -62,7 +64,7 @@ def get_num_channels_video(video: torch.Tensor) -> int:
     return get_num_channels_image(video)
 
 
-def get_size(inpt: torch.Tensor) -> list[int]:
+def get_size(inpt: torch.Tensor) -> List[int]:
     if torch.jit.is_scripting():
         return get_size_image(inpt)
 
@@ -75,25 +77,25 @@ def get_size(inpt: torch.Tensor) -> list[int]:
 @_register_kernel_internal(get_size, torch.Tensor)
 @_register_kernel_internal(get_size, ta_tensors.Image, ta_tensor_wrapper=False)
 @_register_kernel_internal(get_size, ta_tensors.BatchImages, ta_tensor_wrapper=False)
-def get_size_image(image: torch.Tensor) -> list[int]:
+def get_size_image(image: torch.Tensor) -> List[int]:
     return TVF.get_size_image(image=image)
 
 
 @_register_kernel_internal(get_size, ta_tensors.Video, ta_tensor_wrapper=False)
 @_register_kernel_internal(get_size, ta_tensors.BatchVideos, ta_tensor_wrapper=False)
-def get_size_video(video: torch.Tensor) -> list[int]:
+def get_size_video(video: torch.Tensor) -> List[int]:
     return get_size_image(image=video)
 
 
 @_register_kernel_internal(get_size, ta_tensors.Mask, ta_tensor_wrapper=False)
 @_register_kernel_internal(get_size, ta_tensors.BatchMasks, ta_tensor_wrapper=False)
-def get_size_mask(mask: torch.Tensor) -> list[int]:
+def get_size_mask(mask: torch.Tensor) -> List[int]:
     return get_size_image(mask)
 
 
 @_register_kernel_internal(get_size, ta_tensors.BoundingBoxes, ta_tensor_wrapper=False)
 @_register_kernel_internal(get_size, ta_tensors.BatchBoundingBoxes, ta_tensor_wrapper=False)
-def get_size_bounding_boxes(bounding_box: ta_tensors.BoundingBoxes) -> list[int]:
+def get_size_bounding_boxes(bounding_box: ta_tensors.BoundingBoxes) -> List[int]:
     return list(bounding_box.canvas_size)
 
 
@@ -182,7 +184,7 @@ def convert_bounding_box_format(
 def _clamp_bounding_boxes(
     bounding_boxes: torch.Tensor,
     format: ta_tensors.BoundingBoxFormat,
-    canvas_size: tuple[int, int],
+    canvas_size: Tuple[int, int],
 ) -> torch.Tensor:
     # TODO: Investigate if it makes sense from a performance perspective to have an implementation for every
     #  BoundingBoxFormat instead of converting back and forth
@@ -208,7 +210,7 @@ def _clamp_bounding_boxes(
 def clamp_bounding_boxes(
     inpt: torch.Tensor,
     format: ta_tensors.BoundingBoxFormat | None = None,
-    canvas_size: tuple[int, int] | None = None,
+    canvas_size: Tuple[int, int] | None = None,
 ) -> torch.Tensor:
     """See :func:`~torchaug.transforms.ClampBoundingBoxes` for details."""
     if not torch.jit.is_scripting():
