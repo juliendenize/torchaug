@@ -1122,7 +1122,7 @@ def _elastic_batch_bounding_boxes_dispatch(
         raise TypeError("Argument displacement should be a Tensor")
 
     displacement = displacement.repeat_interleave(
-        torch.tensor([inpt.get_num_boxes_sample(i) for i in range(inpt.batch_size)]),
+        torch.tensor([inpt.get_num_boxes_sample(i) for i in range(inpt.batch_size)], device=displacement.device),
         dim=0,
     )
 
@@ -1206,7 +1206,7 @@ def _elastic_batch_masks_dispatch(
         raise TypeError("Argument displacement should be a Tensor")
 
     displacement = displacement.repeat_interleave(
-        torch.tensor([inpt.get_num_masks_sample(i) for i in range(inpt.batch_size)]),
+        torch.tensor([inpt.get_num_masks_sample(i) for i in range(inpt.batch_size)], device=displacement.device),
         dim=0,
     )
 

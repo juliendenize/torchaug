@@ -14,14 +14,12 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
-import os
+import os  # noqa: I001
 import sys
-
 
 sys.path.insert(0, os.path.abspath("../../"))
 
-import torchaug
-
+import torchaug  # noqa: I001
 
 # -- Project information -----------------------------------------------------
 
@@ -53,14 +51,6 @@ extensions = [
     # "beta_status",
 ]
 
-# sphinx_gallery_conf = {
-#     "examples_dirs": "../../gallery/",  # path to your example scripts
-#     "gallery_dirs": "auto_examples",  # path to where to save gallery generated output
-#     "backreferences_dir": "gen_modules/backreferences",
-#     "doc_module": ("torchaug",),
-#     "remove_config_comments": True,
-# }
-
 docstring_default_arg_substitution = "Default: "
 autodoc_preserve_defaults = True
 napoleon_use_ivar = True
@@ -68,9 +58,7 @@ napoleon_use_ivar = True
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
 
-# The suffix(es) of source filenames.
-# You can specify multiple suffix as a list of string:
-#
+
 source_suffix = {
     ".rst": "restructuredtext",
     ".txt": "markdown",
@@ -90,7 +78,6 @@ version = f"{torchaug.__version__}"
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-#
 html_theme = "furo"
 html_title = "Torchaug"
 

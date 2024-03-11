@@ -18,9 +18,18 @@ from .functional._utils._kernel import _get_kernel
 
 
 class RandomApplyTransform(nn.Module):
+    """Base class for all randomly applied transforms.
+
+    Args:
+        p: The probability of applying the transform.
+        batch_inplace: whether to apply the batch transform in-place.
+            Does not prevent functionals to make copy but can reduce time and memory consumption.
+        num_chunks: number of chunks to split the batched input into.
+        permute_chunks: whether to permute the chunks.
+        batch_transform: whether to apply the transform in batch mode.
+    """
+
     _transformed_types: Tuple[Union[Type, Callable[[Any], bool]], ...] = (torch.Tensor,)
-    _reshape_transform: bool = False
-    _receive_flatten_inputs: bool = False
 
     def __init__(
         self,
@@ -36,18 +45,20 @@ class RandomApplyTransform(nn.Module):
             raise ValueError("`p` should be 0 or 1 if `_reshape_transform` is True and `batch_transform` is True.")
         if batch_inplace and self._reshape_transform:
             raise ValueError("`inplace` should be False if `_reshape_transform` is True.")
-        if (num_chunks == -1 or num_chunks > 1) and not batch_transform:
-            raise ValueError("`num_chunks` should be 1 if `batch_transform` is False.")
-        elif num_chunks < -1 or num_chunks == 0:
-            raise ValueError("`num_chunks` should be greater than 0 or -1.")
 
         super().__init__()
         _log_api_usage_once(self)
         self.batch_inplace = batch_inplace
-        self._num_chunks = num_chunks
         self.permute_chunks = permute_chunks
         self.p = p
         self.batch_transform = batch_transform
+        self.num_chunks = num_chunks
+
+        self._receive_flatten_inputs = False
+
+    @property
+    def _reshape_transform(self) -> bool:
+        return False
 
     @property
     def num_chunks(self) -> int:
@@ -56,6 +67,18 @@ class RandomApplyTransform(nn.Module):
         Some subclasses can have a specific logic to determine the number of chunks.
         """
         return self._num_chunks
+
+    @num_chunks.setter
+    def num_chunks(self, num_chunks) -> None:
+        """Get the number of chunks to split the input into.
+
+        Some subclasses can have a specific logic to determine the number of chunks.
+        """
+        if (num_chunks == -1 or num_chunks > 1) and not self.batch_transform:
+            raise ValueError("`num_chunks` should be 1 if `batch_transform` is False.")
+        elif num_chunks < -1 or num_chunks == 0:
+            raise ValueError("`num_chunks` should be greater than 0 or -1.")
+        self._num_chunks = num_chunks
 
     @staticmethod
     def _get_input_batch_size(inpt: Any):
@@ -397,6 +420,17 @@ class RandomApplyTransform(nn.Module):
 
 
 class Transform(RandomApplyTransform):
+    """Base class for all transforms.
+
+    Args:
+        p: The probability of applying the transform.
+        batch_inplace: whether to apply the batch transform in-place.
+            Does not prevent functionals to make copy but can reduce time and memory consumption.
+        num_chunks: number of chunks to split the batched input into.
+        permute_chunks: whether to permute the chunks.
+        batch_transform: whether to apply the transform in batch mode.
+    """
+
     def __init__(
         self,
         batch_inplace: bool = False,

@@ -182,7 +182,7 @@ class SequentialTransform(Transform):
 
     Args:
         transforms: A list of transforms.
-        transforms_parameters_override: A dictionary of parameters to override the default parameters
+        transforms_attributes_override: A dictionary of parameters to override the default parameters
             of the transforms if they exist. Useful to make transforms for batches.
     """
 
@@ -191,7 +191,7 @@ class SequentialTransform(Transform):
     def __init__(
         self,
         transforms: List[RandomApplyTransform],
-        transforms_parameters_override: Optional[Dict[str, Any]] = {
+        transforms_attributes_override: Optional[Dict[str, Any]] = {
             "inplace": True,
             "batch_inplace": True,
             "batch_transform": True,
@@ -204,7 +204,7 @@ class SequentialTransform(Transform):
 
         _assert_list_of_modules(transforms)
 
-        self.transforms_parameters_override = transforms_parameters_override
+        self.transforms_attributes_override = transforms_attributes_override
 
         self._prepare_transforms(transforms)
 
@@ -214,10 +214,10 @@ class SequentialTransform(Transform):
         import inspect
 
         if isinstance(transform, RandomApplyTransform):
-            if self.transforms_parameters_override:
+            if self.transforms_attributes_override:
                 init_signature = inspect.signature(transform.__init__)  # type: ignore[misc]
                 parameters = init_signature.parameters
-                for key, value in self.transforms_parameters_override.items():
+                for key, value in self.transforms_attributes_override.items():
                     has_key = key in parameters
                     if has_key:
                         setattr(transform, key, value)
@@ -247,6 +247,6 @@ class SequentialTransform(Transform):
         format_string = []
         for t in self.transforms:
             format_string.append(f"    {t}")
-        return f"transforms_parameters_override={self.transforms_parameters_override},\ntransforms=\n" + "\n".join(
+        return f"transforms_attributes_override={self.transforms_attributes_override},\ntransforms=\n" + "\n".join(
             format_string
         )

@@ -1,7 +1,7 @@
 TA Tensor
 =========
 
-.. currentmodule:: torchaug.ta_tensors._ta_tensor
+.. currentmodule:: torchaug.ta_tensors
 
 .. autosummary::
     :toctree: ../generated/

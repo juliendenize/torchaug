@@ -1,7 +1,7 @@
 Auto-Augment
 ============
 
-.. currentmodule:: torchaug.transforms._auto_augment
+.. currentmodule:: torchaug.transforms
 
 .. autosummary::
     :toctree: ../generated/

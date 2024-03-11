@@ -1,16 +1,10 @@
 Video
 =====
 
-.. currentmodule:: torchaug.ta_tensors._video
+.. currentmodule:: torchaug.ta_tensors
 .. autosummary::
     :toctree: ../generated/
     :template: class.rst
 
     Video
-
-.. currentmodule:: torchaug.ta_tensors._batch_videos
-.. autosummary::
-    :toctree: ../generated/
-    :template: class.rst
-
     BatchVideos

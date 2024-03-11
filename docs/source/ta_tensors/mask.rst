@@ -1,21 +1,13 @@
 Mask
 =====
 
-.. currentmodule:: torchaug.ta_tensors._mask
+.. currentmodule:: torchaug.ta_tensors
 
 .. autosummary::
     :toctree: ../generated/
     :template: class.rst
 
     Mask
-
-
-.. currentmodule:: torchaug.ta_tensors._batch_masks
-
-.. autosummary::
-    :toctree: ../generated/
-    :template: class.rst
-
     BatchMasks
 
 .. autosummary::

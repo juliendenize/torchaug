@@ -1,7 +1,7 @@
 Meta
 ====
 
-.. currentmodule:: torchaug.transforms.functional._meta
+.. currentmodule:: torchaug.transforms.functional
 
 .. autosummary::
     :toctree: ../generated/
