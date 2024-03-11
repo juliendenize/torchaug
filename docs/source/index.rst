@@ -7,6 +7,7 @@
    functional/index.rst
    ta_tensors/index.rst
    data/index.rst
+   examples/index.rst
    include/speed_comparison.rst
 
 
