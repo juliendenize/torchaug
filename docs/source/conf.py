@@ -36,6 +36,7 @@ language = "en"
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
+    "sphinx.ext.autosectionlabel",
     # "sphinx.ext.doctest",
     "sphinx.ext.intersphinx",
     "sphinx.ext.todo",
@@ -50,7 +51,7 @@ extensions = [
     # "sphinx_copybutton",
     # "beta_status",
 ]
-
+autosectionlabel_prefix_document = True
 docstring_default_arg_substitution = "Default: "
 autodoc_preserve_defaults = True
 napoleon_use_ivar = True

@@ -20,6 +20,8 @@ from .functional._utils._kernel import _get_kernel
 class RandomApplyTransform(nn.Module):
     """Base class for all randomly applied transforms.
 
+    For more details, please see :ref:`tutorial/transforms:Transforms Tutorial`.
+
     Args:
         p: The probability of applying the transform.
         batch_inplace: whether to apply the batch transform in-place.
@@ -422,8 +424,9 @@ class RandomApplyTransform(nn.Module):
 class Transform(RandomApplyTransform):
     """Base class for all transforms.
 
+    For more details, please see :ref:`tutorial/transforms:Transforms Tutorial`.
+
     Args:
-        p: The probability of applying the transform.
         batch_inplace: whether to apply the batch transform in-place.
             Does not prevent functionals to make copy but can reduce time and memory consumption.
         num_chunks: number of chunks to split the batched input into.

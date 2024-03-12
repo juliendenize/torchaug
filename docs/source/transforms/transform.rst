@@ -1,5 +1,5 @@
-Type Conversion
-================
+Transform
+=========
 
 .. currentmodule:: torchaug.transforms
 

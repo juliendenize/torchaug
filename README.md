@@ -23,11 +23,13 @@ It **enriches [Torchvision (v2)](https://pytorch.org/vision/stable/index.html)**
 
 Torchaug removes these issues and its transforms are meant to be used in place of Torchvision. It is based on the code base of Torchvision and therefore follows the same nomenclature as Torchvision with *functional* augmentations and *transforms* class wrappers. However, **Torchaug does not support transforms on Pillow images**.
 
-We made speed comparison [here](./docs/source/include/comparison.md).
-
-To be sure to retrieve the same data augmentations as Torchvision, **the components are tested to match Torchvision outputs**. However we suggest you to **perform at least some qualitative testing of your own** especially for bouding boxes and masks to be sure we implemented things right.
-
 More details can be found in the [documentation](https://torchaug.readthedocs.io/en/).
+
+
+To be sure to retrieve the same data augmentations as Torchvision, **the components are tested to match Torchvision outputs**. We made a speed comparison [here](./docs/source/include/comparison.md).
+
+
+If you find any unexpected behavior or want to suggest a change please open an issue.
 
 ## How to use
 
@@ -58,7 +60,7 @@ For a complete list of transforms please see the [documentation](https://torchau
 
 ## How to contribute
 
-Feel free to contribute to this library by making issues and/or pull requests. For each feature you implement, add tests to make sure it works. Also, make sure to update the documentation.
+Feel free to contribute to this library by making issues and/or pull requests. For each feature you implement, add tests to make sure it works. Also, please update the documentation.
 
 ## LICENSE
 

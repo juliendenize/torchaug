@@ -1,4 +1,4 @@
-# Transforms
+# Transforms Tutorial
 
 ## Torchaug Transforms
 
@@ -22,7 +22,7 @@ class RandomApplyTransform(nn.Module):
         ...
         self._num_chunks = num_chunks
         self._receive_flatten_inputs = False
-    
+
     @property
     def _reshape_transform(self) -> bool:
         # Can be overriden by children.
@@ -39,12 +39,12 @@ class RandomApplyTransform(nn.Module):
 
     def _get_params(self, flat_inputs: List[Any], num_chunks: int, chunks_indices: List[torch.Tensor]) -> List[Dict[str, Any]]:
         ...
-    
+
     def _transform(self, input: torch.Tensor, params: Dict[str, Any]):
         ...
 ```
 Here is the goal of the class attribute:
-- `_transformed_types`: comes from `Torchvision` and defines what types are expected. By default, the transforms can work on all kinds of [tensors](#torch.Tensor), especially [TATensors](#~torchaug.ta_tensors.TATensor).
+- `_transformed_types`: comes from `Torchvision` and defines what types are expected. By default, the transforms can work on all kinds of [tensors](#torch.Tensor), especially [TATensors](#torchaug.ta_tensors.TATensor).
 
 Torchaug defines 7 supplementary instance attributes or properties in the [RandomApplyTransform](#torchaug.transforms.RandomApplyTransform) described below. If they are not relevant, they are not exposed by its children and kept at their defaut value except for `p` that is passed to `1`:
 - `_reshape_transform`: If a transform reshapes the input, then `batch_inplace` is not taken into account and the probability `p` cannot be another value of 1, as all elements in the batch have to be transformed.
@@ -136,4 +136,3 @@ assert color_transform.batch_transform
 assert color_transform.num_chunks == 24 # Look at ColorJitter's documentation to understand why.
 assert resized_crop_transform.batch_transform
 ```
-

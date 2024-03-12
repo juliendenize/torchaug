@@ -6,4 +6,5 @@ In this section we provide several tutorial to understand how to use Torchaug. A
 .. toctree::
     :maxdepth: 2
 
-    transforms.md 
+    transforms
+    ta_tensors
