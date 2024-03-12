@@ -17,4 +17,5 @@ In this section are defined the classes to transform an image or a video.
    meta
    misc
    temporal
+   transform
    type_conversion

@@ -79,7 +79,7 @@ class RandomVerticalFlip(RandomApplyTransform):
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
     Args:
-        p probability of the input being flipped.
+        p: probability of the input being flipped.
         batch_inplace: whether to apply the batch transform in-place.
             Does not prevent functionals to make copy but can reduce time and memory consumption.
         batch_transform: whether to apply the transform in batch mode.
@@ -125,8 +125,6 @@ class Resize(Transform):
         antialias: Whether to apply antialiasing.
     """
 
-    _reshape_transform = True
-
     def __init__(
         self,
         size: Union[int, Sequence[int]],
@@ -148,6 +146,10 @@ class Resize(Transform):
         self.interpolation = interpolation
         self.max_size = max_size
         self.antialias = antialias
+
+    @property
+    def _reshape_transform(self) -> bool:
+        return True
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(
@@ -177,12 +179,14 @@ class CenterCrop(Transform):
         batch_transform: whether to apply the transform in batch mode.
     """
 
-    _reshape_transform = True
-
     def __init__(self, size: Union[int, Sequence[int]]) -> None:
         super().__init__()
 
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
+
+    @property
+    def _reshape_transform(self) -> bool:
+        return True
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(F.center_crop, inpt, output_size=self.size)
@@ -221,8 +225,6 @@ class RandomResizedCrop(Transform):
         batch_transform: whether to apply the transform in batch mode.
     """
 
-    _reshape_transform = True
-
     def __init__(
         self,
         size: Union[int, Sequence[int]],
@@ -254,6 +256,10 @@ class RandomResizedCrop(Transform):
         self.antialias = antialias
 
         self._log_ratio = torch.log(torch.tensor(self.ratio))
+
+    @property
+    def _reshape_transform(self) -> bool:
+        return True
 
     def _get_params(
         self,
@@ -318,8 +324,8 @@ class RandomResizedCrop(Transform):
 class FiveCrop(Transform):
     """Crop the image or video into four corners and the central crop.
 
-    If the input is a :class:`torch.Tensor` or a :class:`torchaug.ta_tensors.Image` or a
-    :class:`torchaug.ta_tensors.Video` it can have arbitrary number of leading batch dimensions.
+    If the input is a :class:`torch.Tensor` or a :class:`~torchaug.ta_tensors.Image` or a
+    :class:`~torchaug.ta_tensors.Video` it can have arbitrary number of leading batch dimensions.
     For example, the image can have ``[..., C, H, W]`` shape.
 
     .. Note::
@@ -352,11 +358,13 @@ class FiveCrop(Transform):
         tensor([3, 3, 3, 3, 3])
     """
 
-    _reshape_transform = True
-
     def __init__(self, size: Union[int, Sequence[int]]) -> None:
         super().__init__()
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
+
+    @property
+    def _reshape_transform(self) -> bool:
+        return True
 
     def _call_kernel(self, functional: Callable, inpt: Any, *args: Any, **kwargs: Any) -> Any:
         if isinstance(
@@ -392,8 +400,8 @@ class TenCrop(Transform):
     """Crop the image or video into four corners and the central crop plus the flipped version of
     these (horizontal flipping is used by default).
 
-    If the input is a :class:`torch.Tensor` or a :class:`torchaug.ta_tensors.Image` or a
-    :class:`torchaug.ta_tensors.Video` it can have arbitrary number of leading batch dimensions.
+    If the input is a :class:`torch.Tensor` or a :class:`~torchaug.ta_tensors.Image` or a
+    :class:`~torchaug.ta_tensors.Video` it can have arbitrary number of leading batch dimensions.
     For example, the image can have ``[..., C, H, W]`` shape.
 
     See :class:`torchvision.transforms.v2.FiveCrop` for an example.
@@ -409,8 +417,6 @@ class TenCrop(Transform):
             made. If provided a sequence of length 1, it will be interpreted as (size[0], size[0]).
         vertical_flip: Use vertical flipping instead of horizontal
     """
-
-    _reshape_transform = True
 
     def __init__(self, size: Union[int, Sequence[int]], vertical_flip: bool = False) -> None:
         super().__init__()
@@ -432,6 +438,10 @@ class TenCrop(Transform):
                 f"ta_tensors.{type(inpt).__name__}. This will likely change in the future."
             )
         return super()._call_kernel(functional, inpt, *args, **kwargs)
+
+    @property
+    def _reshape_transform(self) -> bool:
+        return True
 
     def _check_inputs(self, flat_inputs: List[Any]) -> None:
         if has_any(
@@ -484,8 +494,6 @@ class Pad(Transform):
               will result in [2, 1, 1, 2, 3, 4, 4, 3]
     """
 
-    _reshape_transform = True
-
     def __init__(
         self,
         padding: Union[int, Sequence[int]],
@@ -504,6 +512,10 @@ class Pad(Transform):
         self.fill = fill
         self._fill = _setup_fill_arg(fill)
         self.padding_mode = padding_mode
+
+    @property
+    def _reshape_transform(self) -> bool:
+        return True
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         fill = _get_fill(self._fill, type(inpt))
@@ -531,7 +543,7 @@ class RandomZoomOut(RandomApplyTransform):
 
     Args:
         fill: Pixel fill value used when the  ``padding_mode`` is constant.
-             If a tuple of length 3, it is used to fill R, G, B channels respectively.
+            If a tuple of length 3, it is used to fill R, G, B channels respectively.
             Fill value can be also a dictionary mapping data type to the fill value, e.g.
             ``fill={ta_tensors.Image: 127, ta_tensors.Mask: 0}`` where ``Image`` will be filled with 127 and
             ``Mask`` will be filled with 0.
@@ -539,8 +551,6 @@ class RandomZoomOut(RandomApplyTransform):
             scale the input size.
         p: probability that the zoom operation will be performed.
     """
-
-    _reshape_transform = True
 
     def __init__(
         self,
@@ -558,6 +568,10 @@ class RandomZoomOut(RandomApplyTransform):
         self.side_range = side_range
         if side_range[0] < 1.0 or side_range[0] > side_range[1]:
             raise ValueError(f"Invalid side range provided {side_range}.")
+
+    @property
+    def _reshape_transform(self) -> bool:
+        return True
 
     def _get_params(
         self,
@@ -603,7 +617,7 @@ class RandomRotation(Transform):
             will be (-degrees, +degrees).
         interpolation: Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`.
-             Only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
+            Only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
         expand: Optional expansion flag.
             If true, expands the output to make it large enough to hold the entire rotated image.
             If false or omitted, make the output image the same size as the input image.
@@ -617,8 +631,9 @@ class RandomRotation(Transform):
                 center of rotation. In practice however, due to numerical precision, this can lead to off-by-one
                 differences of the resulting image size compared to using the image center in the first place. Thus,
                 when setting ``expand=True``, it's best to leave ``center=None`` (default).
+
         fill: Pixel fill value used when the  ``padding_mode`` is constant.
-             If a tuple of length 3, it is used to fill R, G, B channels respectively.
+            If a tuple of length 3, it is used to fill R, G, B channels respectively.
             Fill value can be also a dictionary mapping data type to the fill value, e.g.
             ``fill={ta_tensors.Image: 127, ta_tensors.Mask: 0}`` where ``Image`` will be filled with 127 and
             ``Mask`` will be filled with 0.
@@ -647,7 +662,8 @@ class RandomRotation(Transform):
         if expand and batch_transform:
             raise ValueError("expand=True is not supported for batch transforms")
 
-        self._reshape_transform = expand
+        self.expand = expand
+
         super().__init__(
             batch_inplace=batch_inplace,
             num_chunks=num_chunks,
@@ -656,7 +672,6 @@ class RandomRotation(Transform):
         )
         self.degrees = _setup_angle(degrees, name="degrees", req_sizes=(2,))
         self.interpolation = interpolation
-        self.expand = expand
 
         self.fill = fill
         self._fill = _setup_fill_arg(fill)
@@ -665,6 +680,10 @@ class RandomRotation(Transform):
             _check_sequence_input(center, "center", req_sizes=(2,))
 
         self.center = center
+
+    @property
+    def _reshape_transform(self) -> bool:
+        return self.expand
 
     def _get_params(
         self,
@@ -874,8 +893,6 @@ class RandomCrop(Transform):
               will result in [2, 1, 1, 2, 3, 4, 4, 3]
     """
 
-    _reshape_transform = True
-
     def __init__(
         self,
         size: Union[int, Sequence[int]],
@@ -898,6 +915,10 @@ class RandomCrop(Transform):
         self.fill = fill
         self._fill = _setup_fill_arg(fill)
         self.padding_mode = padding_mode
+
+    @property
+    def _reshape_transform(self) -> bool:
+        return True
 
     def _get_params(
         self,
@@ -1011,7 +1032,7 @@ class RandomPerspective(RandomApplyTransform):
             :class:`torchvision.transforms.InterpolationMode`.
             Only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
         fill: Pixel fill value used when the  ``padding_mode`` is constant.
-             If a tuple of length 3, it is used to fill R, G, B channels respectively.
+            If a tuple of length 3, it is used to fill R, G, B channels respectively.
             Fill value can be also a dictionary mapping data type to the fill value, e.g.
             ``fill={ta_tensors.Image: 127, ta_tensors.Mask: 0}`` where ``Image`` will be filled with 127 and
             ``Mask`` will be filled with 0.
@@ -1408,8 +1429,6 @@ class ScaleJitter(Transform):
         antialias: Whether to apply antialiasing.
     """
 
-    _reshape_transform = True
-
     def __init__(
         self,
         target_size: Tuple[int, int],
@@ -1422,6 +1441,10 @@ class ScaleJitter(Transform):
         self.scale_range = scale_range
         self.interpolation = interpolation
         self.antialias = antialias
+
+    @property
+    def _reshape_transform(self) -> bool:
+        return True
 
     def _get_params(
         self,
@@ -1471,8 +1494,6 @@ class RandomShortestSize(Transform):
         antialias: Whether to apply antialiasing.
     """
 
-    _reshape_transform = True
-
     def __init__(
         self,
         min_size: Union[List[int], Tuple[int], int],
@@ -1485,6 +1506,10 @@ class RandomShortestSize(Transform):
         self.max_size = max_size
         self.interpolation = interpolation
         self.antialias = antialias
+
+    @property
+    def _reshape_transform(self) -> bool:
+        return True
 
     def _get_params(
         self,
@@ -1548,8 +1573,6 @@ class RandomResize(Transform):
         antialias: Whether to apply antialiasing.
     """
 
-    _reshape_transform = True
-
     def __init__(
         self,
         min_size: int,
@@ -1562,6 +1585,10 @@ class RandomResize(Transform):
         self.max_size = max_size
         self.interpolation = interpolation
         self.antialias = antialias
+
+    @property
+    def _reshape_transform(self) -> bool:
+        return True
 
     def _get_params(
         self,

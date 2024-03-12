@@ -1,7 +1,7 @@
 Augment
 =======
 
-.. currentmodule:: torchaug.transforms._augment
+.. currentmodule:: torchaug.transforms
 
 
 .. autosummary::

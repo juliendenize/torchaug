@@ -1,7 +1,7 @@
 Augment
 =======
 
-.. currentmodule:: torchaug.transforms.functional._augment
+.. currentmodule:: torchaug.transforms.functional
 
 .. autosummary::
     :toctree: ../generated/

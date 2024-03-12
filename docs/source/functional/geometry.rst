@@ -1,7 +1,7 @@
 Geometry
 ========
 
-.. currentmodule:: torchaug.transforms.functional._geometry
+.. currentmodule:: torchaug.transforms.functional
 
 .. autosummary::
     :toctree: ../generated/

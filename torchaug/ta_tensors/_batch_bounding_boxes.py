@@ -14,7 +14,7 @@ def convert_bboxes_to_batch_bboxes(
     bboxes: List[BoundingBoxes],
 ) -> BatchBoundingBoxes:
     """Convert a list of :class:`~torchaug.ta_tensors.BoundingBoxes` objects to a
-    :class:`~torchaug.torchaug_tensors.BatchBoundingBoxes` object.
+    :class:`~torchaug.ta_tensors.BatchBoundingBoxes` object.
 
     Assumes all bboxes are valid.
     """
@@ -50,7 +50,7 @@ def convert_bboxes_to_batch_bboxes(
 def convert_batch_bboxes_to_bboxes(
     bboxes: BatchBoundingBoxes,
 ) -> List[BoundingBoxes]:
-    """Convert :class:`~torchaug.torchaug_tensors.BatchBoundingBoxes` object to a list of
+    """Convert :class:`~torchaug.ta_tensors.BatchBoundingBoxes` object to a list of
     :class:`~torchaug.ta_tensors.BoundingBoxes` objects.
     """
     canvas_size, format, idx_sample = (
@@ -109,11 +109,12 @@ class BatchBoundingBoxes(TATensor):
 
     @classmethod
     def cat(cls, bounding_boxes_batches: Sequence[BatchBoundingBoxes]) -> BatchBoundingBoxes:
-        """Concatenates the given sequence of :class:`~torchaug.ta_tensors.BatchBoundingBoxes` along
-        the first dimension.
+        """Concatenates the given sequence of :class:`~torchaug.ta_tensors._batch_bounding_boxes.BatchBoundingBoxes`
+        along the first dimension.
 
         Args:
-            bounding_boxes_batches: The sequence of :class:`~torchaug.ta_tensors.BatchBoundingBoxes` to concatenate.
+            bounding_boxes_batches: The sequence of
+                :class:`~torchaug.ta_tensors._batch_bounding_boxes.BatchBoundingBoxes` to concatenate.
 
         Returns:
             BatchBoundingBoxes: The concatenated batch of bounding boxes.

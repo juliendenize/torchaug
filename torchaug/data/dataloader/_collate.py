@@ -46,7 +46,6 @@ def collate_ta_tensor_fn(
     elif isinstance(elem, BatchBoundingBoxes):
         return BatchBoundingBoxes.cat(batch)
     elif isinstance(elem, BatchMasks):
-        print("yoohoho")
         return BatchMasks.cat(batch)
     else:
         raise TypeError(default_collate_err_msg_format.format(type(batch)))
@@ -84,9 +83,9 @@ def default_collate(batch):
     tensor or ta_tensor with an additional outer dimension - batch size if relevant.
 
     The exact output type can be a :class:`torch.Tensor`, a `Sequence` of :class:`torch.Tensor`, a
-    Collection of :class:`torch.Tensor`, :class:`torchaug.ta_tensors.TATensor`, a `Sequence` of
-    :class:`torchaug.ta_tensors.TATensor`, a Collection of :class:`torchaug.ta_tensors.TATensor`, or left unchanged,
-      depending on the input type.
+    Collection of :class:`torch.Tensor`, :class:`~torchaug.ta_tensors.TATensor`, a `Sequence` of
+    :class:`~torchaug.ta_tensors.TATensor`, a Collection of :class:`~torchaug.ta_tensors.TATensor`,
+    or left unchanged, depending on the input type.
     This is used as the default function for collation when
     `batch_size` or `batch_sampler` is defined in :class:`~torch.utils.data.DataLoader`.
 
@@ -95,12 +94,17 @@ def default_collate(batch):
         * :class:`torch.Tensor` -> :class:`torch.Tensor` (with an added outer dimension batch size)
         * :class:`~torchaug.ta_tensors.Image` -> :class:`~torchaug.ta_tensors.BatchImages`
         * :class:`~torchaug.ta_tensors.Video` -> :class:`~torchaug.ta_tensors.BatchVideos`
-        * :class:`~torchaug.ta_tensors.BoundingBoxes` -> :class:`~torchaug.ta_tensors.BatchBoundingBoxes`
+        * :class:`~torchaug.ta_tensors.BoundingBoxes` ->
+          :class:`~torchaug.ta_tensors._batch_bounding_boxes.BatchBoundingBoxes`
         * :class:`~torchaug.ta_tensors.Mask` -> :class:`~torchaug.ta_tensors.BatchMasks`
-        * :class:`~torchaug.ta_tensors.BatchImages` -> :class:`~torchaug.ta_tensors.BatchImages`
-        * :class:`~torchaug.ta_tensors.BatchVideos` -> :class:`~torchaug.ta_tensors.BatchVideos`
-        * :class:`~torchaug.ta_tensors.BatchBoundingBoxes` -> :class:`~torchaug.ta_tensors.BatchBoundingBoxes`
-        * :class:`~torchaug.ta_tensors.BatchMasks` -> :class:`~torchaug.ta_tensors.BatchMasks`
+        * :class:`~torchaug.ta_tensors.BatchImages` ->
+          :class:`~torchaug.ta_tensors.BatchImages`
+        * :class:`~torchaug.ta_tensors.BatchVideos` ->
+          :class:`~torchaug.ta_tensors.BatchVideos`
+        * :class:`~torchaug.ta_tensors._batch_bounding_boxes.BatchBoundingBoxes` ->
+          :class:`~torchaug.ta_tensors._batch_bounding_boxes.BatchBoundingBoxes`
+        * :class:`~torchaug.ta_tensors.BatchMasks` ->
+          :class:`~torchaug.ta_tensors.BatchMasks`
         * NumPy Arrays -> :class:`torch.Tensor`
         * `float` -> :class:`torch.Tensor`
         * `int` -> :class:`torch.Tensor`

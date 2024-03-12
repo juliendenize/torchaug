@@ -1,7 +1,7 @@
 Type Conversion
 ================
 
-.. currentmodule:: torchaug.transforms._type_conversion
+.. currentmodule:: torchaug.transforms
 
 .. autosummary::
     :toctree: ../generated/

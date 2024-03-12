@@ -1,4 +1,4 @@
-Container
+Transform
 =========
 
 .. currentmodule:: torchaug.transforms
@@ -7,8 +7,5 @@ Container
     :toctree: ../generated/
     :template: class.rst
 
-    Compose
-    RandomApply
-    RandomChoice
-    RandomOrder
-    SequentialTransform
+    RandomApplyTransform
+    Transform

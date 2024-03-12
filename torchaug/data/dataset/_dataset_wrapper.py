@@ -15,7 +15,7 @@ from torchaug.transforms import functional as F
 
 
 def wrap_dataset_for_transforms_v2(dataset, target_keys=None):
-    """Wrap a ``torchvision.dataset`` for usage with :mod:`torchaug.transforms`.
+    """Wrap a ``torchvision.dataset`` for usage with ``torchaug.transforms``.
 
     Example:
         >>> dataset = torchvision.datasets.CocoDetection(...)
@@ -33,48 +33,48 @@ def wrap_dataset_for_transforms_v2(dataset, target_keys=None):
 
         * :class:`torchvision.datasets.CocoDetection`: Instead of returning the target as list of dicts, the wrapper
           returns a dict of lists. In addition, the key-value-pairs ``"boxes"`` (in ``XYXY`` coordinate format),
-          ``"masks"`` and ``"labels"`` are added and wrap the data in the corresponding ``torchvision.ta_tensors``.
+          ``"masks"`` and ``"labels"`` are added and wrap the data in the corresponding ``torchaug.ta_tensors``.
           The original keys are preserved. If ``target_keys`` is omitted, returns only the values for the
           ``"image_id"``, ``"boxes"``, and ``"labels"``.
         * :class:`torchvision.datasets.VOCDetection`: The key-value-pairs ``"boxes"`` and ``"labels"`` are added to
-          the target and wrap the data in the corresponding ``torchvision.ta_tensors``. The original keys are
+          the target and wrap the data in the corresponding ``torchaug.ta_tensors``. The original keys are
           preserved. If ``target_keys`` is omitted, returns only the values for the ``"boxes"`` and ``"labels"``.
         * :class:`torchvision.datasets.CelebA`: The target for ``target_type="bbox"`` is converted to the ``XYXY``
-          coordinate format and wrapped into a :class:`torchvision.ta_tensors.BoundingBoxes` ta_tensors.
+          coordinate format and wrapped into a :class:`~torchaug.ta_tensors.BoundingBoxes` ta_tensors.
         * :class:`torchvision.datasets.Kitti`: Instead returning the target as list of dicts, the wrapper returns a
           dict of lists. In addition, the key-value-pairs ``"boxes"`` and ``"labels"`` are added and wrap the data
-          in the corresponding ``torchvision.ta_tensors``. The original keys are preserved. If ``target_keys`` is
+          in the corresponding ``torchaug.ta_tensors``. The original keys are preserved. If ``target_keys`` is
           omitted, returns only the values for the ``"boxes"`` and ``"labels"``.
         * :class:`torchvision.datasets.OxfordIIITPet`: The target for ``target_type="segmentation"`` is wrapped into a
-          :class:`torchvision.ta_tensors.Mask` ta_tensors.
+          :class:`torchaug.ta_tensors._mask.Mask` ta_tensors.
         * :class:`torchvision.datasets.Cityscapes`: The target for ``target_type="semantic"`` is wrapped into a
-          :class:`torchvision.ta_tensors.Mask` ta_tensors. The target for ``target_type="instance"`` is *replaced* by
-          a dictionary with the key-value-pairs ``"masks"`` (as :class:`torchvision.ta_tensors.Mask` ta_tensors) and
-          ``"labels"``.
+          :class:`torchaug.ta_tensors._mask.Mask` ta_tensors. The target for ``target_type="instance"`` is *replaced*
+          by a dictionary with the key-value-pairs ``"masks"`` (as :class:`torchaug.ta_tensors._mask.Mask` ta_tensors)
+          and ``"labels"``.
         * :class:`torchvision.datasets.WIDERFace`: The value for key ``"bbox"`` in the target is converted to ``XYXY``
-          coordinate format and wrapped into a :class:`torchvision.ta_tensors.BoundingBoxes` ta_tensors.
+          coordinate format and wrapped into a :class:`~torchaug.ta_tensors.BoundingBoxes` ta_tensors.
 
     Image classification datasets
 
         This wrapper is a no-op for image classification datasets, since they were already fully supported by
-        :mod:`torchaug.transforms` and thus no change is needed for :mod:`torchaug.transforms`.
+        ``torchaug.transforms`` and thus no change is needed for ``torchaug.transforms``.
 
     Segmentation datasets
 
         Segmentation datasets, e.g. :class:`torchvision.datasets.VOCSegmentation`, return a two-tuple of
         :class:`PIL.Image.Image`'s. This wrapper leaves the image as is (first item), while wrapping the
-        segmentation mask into a :class:`torchvision.ta_tensors.Mask` (second item).
+        segmentation mask into a :class:`torchaug.ta_tensors._mask.Mask` (second item).
 
     Video classification datasets
 
         Video classification datasets, e.g. :class:`torchvision.datasets.Kinetics`, return a three-tuple containing a
         :class:`torch.Tensor` for the video and audio and a :class:`int` as label. This wrapper wraps the video into a
-        :class:`torchvision.ta_tensors.Video` while leaving the other items as is.
+        :class:`~torchaug.ta_tensors.Video` while leaving the other items as is.
 
         .. note::
 
             Only datasets constructed with ``output_format="TCHW"`` are supported, since the alternative
-            ``output_format="THWC"`` is not supported by :mod:`torchaug.transforms`.
+            ``output_format="THWC"`` is not supported by ``torchaug.transforms``.
 
     Args:
         dataset: the dataset instance to wrap for compatibility with transforms v2.
@@ -352,7 +352,7 @@ def coco_dectection_wrapper_factory(dataset, target_keys):
     )
 
     def segmentation_to_mask(segmentation, *, canvas_size):
-        from pycocotools import mask
+        from pycocotools import mask  # noqa: I001
 
         segmentation = (
             mask.frPyObjects(segmentation, *canvas_size)

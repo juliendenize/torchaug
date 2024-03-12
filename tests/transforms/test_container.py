@@ -210,7 +210,7 @@ class TestSequentialTransform:
     @pytest.mark.parametrize("inplace", [True, False])
     @pytest.mark.parametrize("batch_inplace", [True, False])
     @pytest.mark.parametrize("num_chunks", [-1, 1, 2])
-    def test_transforms_parameters_override(self, batch_transform, inplace, batch_inplace, num_chunks):
+    def test_transforms_attributes_override(self, batch_transform, inplace, batch_inplace, num_chunks):
         if not batch_transform and num_chunks != 1:
             pytest.skip("num_chunks is only relevant for batch_transform=True")
 

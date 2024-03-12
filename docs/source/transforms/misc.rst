@@ -1,7 +1,7 @@
 Misc
 ====
 
-.. currentmodule:: torchaug.transforms._misc
+.. currentmodule:: torchaug.transforms
 
 .. autosummary::
     :toctree: ../generated/

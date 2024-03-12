@@ -41,9 +41,9 @@ class BoundingBoxes(TATensor):
     """:class:`torch.Tensor` subclass for bounding boxes.
 
     .. note::
-        There should be only one :class:`torchaug.ta_tensors.BoundingBoxes`
+        There should be only one :class:`~torchaug.ta_tensors.BoundingBoxes`
         instance per sample e.g. ``{"img": img, "bbox": BoundingBoxes(...)}``,
-        although one :class:`torchaug.ta_tensors.BoundingBoxes` object can
+        although one :class:`~torchaug.ta_tensors.BoundingBoxes` object can
         contain multiple bounding boxes.
 
     Args:

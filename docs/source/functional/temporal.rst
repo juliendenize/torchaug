@@ -1,7 +1,7 @@
 Temporal
 ========
 
-.. currentmodule:: torchaug.transforms.functional._temporal
+.. currentmodule:: torchaug.transforms.functional
 
 .. autosummary::
     :toctree: ../generated/

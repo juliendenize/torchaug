@@ -18,7 +18,7 @@ def erase(
     v: torch.Tensor,
     inplace: bool = False,
 ) -> torch.Tensor:
-    """See :class:`~torchaug.transforms.RandomErase` for details."""
+    """See :class:`~torchaug.transforms.RandomErasing` for details."""
     if torch.jit.is_scripting():
         return erase_image(inpt, i=i, j=j, h=h, w=w, v=v, inplace=inplace)
 

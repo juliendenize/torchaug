@@ -8,7 +8,7 @@ from ._ta_tensor import TATensor
 
 @torch.compiler.disable
 def wrap(wrappee, *, like, **kwargs) -> TATensor:
-    """Convert a :class:`torch.Tensor` (``wrappee``) into the same :class:`torchaug.ta_tensors.TATensor`
+    """Convert a :class:`torch.Tensor` (``wrappee``) into the same :class:`~torchaug.ta_tensors.TATensor`
     subclass as ``like``.
 
     If ``like`` is a :class:`torchaug.ta_tensors.BoundingBoxes`, the ``format`` and ``canvas_size`` of
@@ -16,7 +16,7 @@ def wrap(wrappee, *, like, **kwargs) -> TATensor:
 
     Args:
         wrappee (Tensor): The tensor to convert.
-        like (:class:`torchaug.ta_tensors.TATensor`): The reference.
+        like (:class:`~torchaug.ta_tensors.TATensor`): The reference.
             ``wrappee`` will be converted into the same subclass as ``like``.
         kwargs: Can contain "format" and "canvas_size" if ``like`` is a :class:`torchaug.ta_tensors.BoundingBoxes`.
             Ignored otherwise.

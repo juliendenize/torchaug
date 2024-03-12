@@ -14,7 +14,7 @@ def convert_masks_to_batch_masks(
     masks: Sequence[Mask],
 ) -> BatchMasks:
     """Convert a sequence of :class:`~torchaug.ta_tensors.Mask` objects to a
-    :class:`~torchaug.torchaug_tensors.BatchMasks` object.
+    :class:`~torchaug.ta_tensors.BatchMasks` object.
 
     Assumes all masks are valid.
     """
@@ -45,7 +45,7 @@ def convert_masks_to_batch_masks(
 def convert_batch_masks_to_masks(
     batch_masks: BatchMasks,
 ) -> List[Mask]:
-    """Convert :class:`~torchaug.torchaug_tensors.BatchMasks` object to a list of
+    """Convert :class:`~torchaug.ta_tensors.BatchMasks` object to a list of
     :class:`~torchaug.ta_tensors.Mask` objects.
     """
     idx_sample = batch_masks.idx_sample
@@ -91,13 +91,13 @@ class BatchMasks(TATensor):
 
     @classmethod
     def cat(cls, masks_batches: Sequence[BatchMasks]):
-        """Concatenates a sequence of :class:`~torchaug.torchaug_tensors.BatchMasks` along the first dimension.
+        """Concatenates a sequence of :class:`~torchaug.ta_tensors.BatchMasks` along the first dimension.
 
         Args:
-            masks_batches: A sequence of :class:`~torchaug.torchaug_tensors.BatchMasks` to concatenate.
+            masks_batches: A sequence of :class:`~torchaug.ta_tensors.BatchMasks` to concatenate.
 
         Returns:
-            The concatenated :class:`~torchaug.torchaug_tensors.BatchMasks`.
+            The concatenated :class:`~torchaug.ta_tensors.BatchMasks`.
         """
         attrs = [
             "requires_grad",

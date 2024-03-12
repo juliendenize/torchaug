@@ -22,13 +22,15 @@ class Grayscale(Transform):
         batch_transform: whether to apply the transform in batch mode.
     """
 
-    _reshape_transform: bool = True
-
     def __init__(self, num_output_channels: int = 1, batch_transform: bool = False):
         super().__init__(
             batch_transform=batch_transform,
         )
         self.num_output_channels = num_output_channels
+
+    @property
+    def _reshape_transform(self) -> bool:
+        return True
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(

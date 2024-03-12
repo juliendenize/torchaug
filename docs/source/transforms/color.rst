@@ -1,7 +1,7 @@
 Color
 =====
 
-.. currentmodule:: torchaug.transforms._color
+.. currentmodule:: torchaug.transforms
 
 .. autosummary::
     :toctree: ../generated/

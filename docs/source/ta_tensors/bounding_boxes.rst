@@ -1,20 +1,14 @@
 Bounding Boxes
 ==============
 
-.. currentmodule:: torchaug.ta_tensors._bounding_boxes
+.. currentmodule:: torchaug.ta_tensors
+
 .. autosummary::
     :toctree: ../generated/
     :template: class.rst
 
     BoundingBoxFormat
     BoundingBoxes
-
-
-.. currentmodule:: torchaug.ta_tensors._batch_bounding_boxes
-.. autosummary::
-    :toctree: ../generated/
-    :template: class.rst
-
     BatchBoundingBoxes
 
 .. autosummary::

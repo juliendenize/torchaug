@@ -89,7 +89,7 @@ def _get_gaussian_kernel1d(
     sigma = sigma.view(-1, 1)
     x = x.view(1, -1).expand(sigma.shape[0], -1)
 
-    kernel1d = torch.softmax((x.div(sigma)).pow_(2).neg_(), dim=1)
+    kernel1d = torch.softmax((x.div(sigma)).pow_(2).neg_(), dim=1, dtype=dtype)
     return kernel1d
 
 

@@ -102,7 +102,7 @@ def register_kernel(functional, ta_tensor_cls):
 
     if not (isinstance(ta_tensor_cls, type) and issubclass(ta_tensor_cls, ta_tensors.TATensor)):
         raise ValueError(
-            f"Kernels can only be registered for subclasses of torchaug.ta_tensors.TATensor, "
+            f"Kernels can only be registered for subclasses of ~torchaug.ta_tensors.TATensor, "
             f"but got {ta_tensor_cls}."
         )
 
