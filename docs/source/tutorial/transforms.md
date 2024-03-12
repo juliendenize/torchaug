@@ -8,8 +8,6 @@ All transforms are derived from the [RandomApplyTransform](#torchaug.transforms.
 ```python
 class RandomApplyTransform(nn.Module):
     _transformed_types: Tuple[Union[Type, Callable[[Any], bool]], ...] = (torch.Tensor,)
-    _reshape_transform: bool = False
-    _receive_flatten_inputs: bool = False
 
     def __init__(
         self,
