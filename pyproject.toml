@@ -13,7 +13,7 @@ keywords = [
   "pytorch",
 ]
 authors = [
-  { name="Julien Denize", email="julien.denize@hotmail.fr" },
+  { name="Julien Denize", email="julien.denize@cea.fr" },
 ]
 requires-python = ">=3.8,<3.12"
 classifiers = [
@@ -24,7 +24,7 @@ classifiers = [
   "Intended Audience :: Education",
   "Intended Audience :: Information Technology",
   "Intended Audience :: Science/Research",
-  "License :: OSI Approved :: Apache Software License",
+  "License :: CeCILL-C Free Software License Agreement (CECILL-C)",
   "Natural Language :: English",
   "Operating System :: OS Independent",
   "Programming Language :: Python :: 3 :: Only",

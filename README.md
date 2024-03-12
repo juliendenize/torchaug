@@ -6,8 +6,7 @@
 [![PyPI version](https://badge.fury.io/py/torchaug.svg)](https://pypi.org/project/torchaug)
 [![documentation](https://img.shields.io/badge/dynamic/json.svg?label=docs&url=https%3A%2F%2Fpypi.org%2Fpypi%2Ftorchaug%2Fjson&query=%24.info.version&colorB=brightgreen)](https://torchaug.readthedocs.io/en/stable/)
 [![codecov](https://codecov.io/gh/juliendenize/torchaug/branch/main/graph/badge.svg?token=CA266XDW8D)](https://codecov.io/gh/juliendenize/torchaug)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-
+[![License](https://img.shields.io/badge/license-CeCILL--C-blue.svg)](LICENSE)
 <!-- start doc -->
 
 # Torchaug
@@ -62,8 +61,11 @@ For a complete list of transforms please see the [documentation](https://torchau
 
 Feel free to contribute to this library by making issues and/or pull requests. For each feature you implement, add tests to make sure it works. Also, please update the documentation.
 
+## Credits
+
+We would like to thank the authors of Torchvision for generously opening their source code. Portions of Torchaug were originally taken from Torchvision, which is released under the BSD 3-Clause License. Please see their [repository](https://github.com/pytorch/vision/) and their [BSD 3-Clause License](https://github.com/pytorch/vision/blob/main/LICENSE) for more details.
+
 ## LICENSE
 
-This project is under the Apache license 2.0.
-
+Torchaug is licensed under the [CeCILL-C license](LICENSE).
 <!-- end doc -->

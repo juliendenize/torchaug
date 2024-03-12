@@ -1,3 +1,11 @@
+# @Copyright: CEA-LIST/DIASI/SIALV/ (2023-    )
+# @Author: CEA-LIST/DIASI/SIALV/ <julien.denize@cea.fr>
+# @License: CECILL-C
+#
+# Code partially based on Pytorch, available at:
+#   https://github.com/pytorch/pytorch
+
+
 from __future__ import annotations
 
 import contextlib

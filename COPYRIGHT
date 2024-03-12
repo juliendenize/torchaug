@@ -1,0 +1,21 @@
+# Copyright (c) 2023-    , Torchaug Developers, All rights reserved.
+#
+# Licensed under the CeCILL-C license.
+# You may not use this file except in compliance with the CeCILL-C license.
+# You may obtain a copy of the CeCILL-C license at
+#
+#     https://cecill.info/licences/Licence_CeCILL-C_V1-en.txt
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the CeCILL-C license is distributed on an "AS IS" BASIS,
+# without any warranty as to its commercial value, its secured, safe, innovative
+# or relevant nature.
+#
+#
+# Portions of Torchaug were originally taken from Torchvision, which was
+# released under the BSD 3-Clause License. For more information about the
+# Torchvision code and its license, please refer to their GitHub repository
+# and their BSD 3-Clause License.
+#
+# Torchvision GitHub Repository: https://github.com/pytorch/vision
+# Torchvision BSD 3-Clause License: https://github.com/pytorch/vision/blob/main/LICENSE

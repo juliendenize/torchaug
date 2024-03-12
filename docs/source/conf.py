@@ -24,7 +24,7 @@ import torchaug  # noqa: I001
 # -- Project information -----------------------------------------------------
 
 project = "torchaug"
-copyright = "2024, Julien Denize"
+copyright = "2023-present, Torchaug authors"
 author = "Julien Denize"
 language = "en"
 
