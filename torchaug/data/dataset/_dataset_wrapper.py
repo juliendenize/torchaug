@@ -373,7 +373,7 @@ def coco_dectection_wrapper_factory(dataset, target_keys):
 
         image, target = sample
         if isinstance(image, PIL.Image.Image):
-            pil_to_tensor(image)
+            image = pil_to_tensor(image)
         image = F.to_image(image)
 
         if not target:
@@ -464,7 +464,7 @@ def voc_detection_wrapper_factory(dataset, target_keys):
     def wrapper(idx, sample):
         image, target = sample
         if isinstance(image, PIL.Image.Image):
-            pil_to_tensor(image)
+            image = pil_to_tensor(image)
         image = F.to_image(image)
 
         batched_instances = list_of_dicts_to_dict_of_lists(target["annotation"]["object"])
@@ -508,7 +508,7 @@ def celeba_wrapper_factory(dataset, target_keys):
     def wrapper(idx, sample):
         image, target = sample
         if isinstance(image, PIL.Image.Image):
-            pil_to_tensor(image)
+            image = pil_to_tensor(image)
         image = F.to_image(image)
 
         target = wrap_target_by_type(
@@ -569,7 +569,7 @@ def kitti_wrapper_factory(dataset, target_keys):
     def wrapper(idx, sample):
         image, target = sample
         if isinstance(image, PIL.Image.Image):
-            pil_to_tensor(image)
+            image = pil_to_tensor(image)
         image = F.to_image(image)
 
         if target is None:
@@ -601,7 +601,7 @@ def oxford_iiit_pet_wrapper_factory(dataset, target_keys):
     def wrapper(idx, sample):
         image, target = sample
         if isinstance(image, PIL.Image.Image):
-            pil_to_tensor(image)
+            image = pil_to_tensor(image)
         image = F.to_image(image)
 
         if target is not None:
@@ -639,7 +639,7 @@ def cityscapes_wrapper_factory(dataset, target_keys):
     def wrapper(idx, sample):
         image, target = sample
         if isinstance(image, PIL.Image.Image):
-            pil_to_tensor(image)
+            image = pil_to_tensor(image)
         image = F.to_image(image)
 
         target = wrap_target_by_type(
@@ -675,7 +675,7 @@ def widerface_wrapper(dataset, target_keys):
     def wrapper(idx, sample):
         image, target = sample
         if isinstance(image, PIL.Image.Image):
-            pil_to_tensor(image)
+            image = pil_to_tensor(image)
         image = F.to_image(image)
 
         if target is None:
