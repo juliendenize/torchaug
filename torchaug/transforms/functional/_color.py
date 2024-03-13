@@ -283,7 +283,7 @@ def adjust_contrast_batch_videos(videos: torch.Tensor, contrast_factor: Union[fl
 
 
 def adjust_sharpness(inpt: torch.Tensor, sharpness_factor: float) -> torch.Tensor:
-    """See :class:`torchvision.transforms.RandomAdjustSharpness`."""
+    """See :class:`~torchaug.transforms.RandomAdjustSharpness`."""
     if torch.jit.is_scripting():
         return adjust_sharpness_image(inpt, sharpness_factor=sharpness_factor)
 

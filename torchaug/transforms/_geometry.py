@@ -411,7 +411,7 @@ class TenCrop(Transform):
     :class:`~torchaug.ta_tensors.Video` it can have arbitrary number of leading batch dimensions.
     For example, the image can have ``[..., C, H, W]`` shape.
 
-    See :class:`torchvision.transforms.v2.FiveCrop` for an example.
+    See :class:`~torchaug.transforms.FiveCrop` for an example.
 
     .. Note::
          This transform returns a tuple of images and there may be a mismatch in the number of
@@ -1252,17 +1252,18 @@ class RandomIoUCrop(Transform):
     """Random IoU crop transformation from
     `"SSD: Single Shot MultiBox Detector" <https://arxiv.org/abs/1512.02325>`_.
 
-    This transformation requires an image or video data and ``ta_tensors.BoundingBoxes`` in the input.
+    This transformation requires an image or video data and :class:`~torchaug.ta_tensors.BoundingBoxes` in the input,
+    or in batch mode a batch of these (see :class:`~torchaug.ta_tensors.BatchBoundingBoxes`).
 
     .. warning::
         In order to properly remove the bounding boxes below the IoU threshold, `RandomIoUCrop`
-        must be followed by :class:`torchvision.transforms.v2.SanitizeBoundingBoxes`, either immediately
+        must be followed by :class:`~torchaug.transforms.SanitizeBoundingBoxes`, either immediately
         after or later in the transforms pipeline.
 
-    If the input is a :class:`torch.Tensor` or a ``TATensor`` (e.g. :class:`~torchaug.ta_tensors.Image`,
-    :class:`~torchaug.ta_tensors.Video`, :class:`~torchaug.ta_tensors.BoundingBoxes` etc.)
-    it can have arbitrary number of leading batch dimensions. For example,
-    the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
+    If the input is a :class:`torch.Tensor` or a :class:`~torchaug.ta_tensors.TATensor`
+    (e.g. :class:`~torchaug.ta_tensors.Image`, :class:`~torchaug.ta_tensors.Video`,
+    :class:`~torchaug.ta_tensors.BoundingBoxes` etc.) it can have arbitrary number of leading batch dimensions.
+    For example, the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
     Args:
         min_scale: Minimum factors to scale the input size.

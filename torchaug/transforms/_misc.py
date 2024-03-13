@@ -421,11 +421,11 @@ class SanitizeBoundingBoxes(Transform):
 
     - are below a given ``min_size``: by default this also removes degenerate boxes that have e.g. X2 <= X1.
     - have any coordinate outside of their corresponding image. You may want to
-      call :class:`torchvision.transforms.v2.ClampBoundingBoxes` first to avoid undesired removals.
+      call :class:`~torchaug.transforms.ClampBoundingBoxes` first to avoid undesired removals.
 
     It is recommended to call it at the end of a pipeline, before passing the
     input to the models. It is critical to call this transform if
-    :class:`torchvision.transforms.v2.RandomIoUCrop` was called.
+    :class:`~torchaug.transforms.RandomIoUCrop` was called.
     If you want to be extra careful, you may call it after all transforms that
     may modify bounding boxes but once at the end should be enough in most
     cases.
