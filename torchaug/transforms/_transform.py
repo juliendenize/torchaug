@@ -320,7 +320,6 @@ class RandomApplyTransform(nn.Module):
                         if self._reshape_transform:
                             output.append(chunk_output)
                         else:
-                            print(self, type(chunk_output))
                             transform_inpt.update_chunk_(chunk_output, chunk_indices=chunk_indices)
                             output = transform_inpt
                     else:
