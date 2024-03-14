@@ -123,7 +123,7 @@ def make_batch_bounding_boxes(
             ).as_subclass(torch.Tensor)
         )
     bboxes = torch.cat(bboxes)
-    idx_sample = torch.tensor([0] + [num_boxes] * batch_dims[0]).cumsum(0).tolist()
+    idx_sample = [(num_boxes * idx, num_boxes * (idx + 1)) for idx in range(batch_dims[0])]
     return ta_tensors.BatchBoundingBoxes(bboxes, format=format, canvas_size=canvas_size, idx_sample=idx_sample)
 
 
@@ -163,7 +163,7 @@ def make_batch_detection_masks(
             )
         )
     masks = torch.cat(masks)
-    idx_sample = torch.tensor([0] + [num_masks] * batch_dims[0]).cumsum(0).tolist()
+    idx_sample = [(num_masks * idx, num_masks * (idx + 1)) for idx in range(batch_dims[0])]
     return ta_tensors.BatchMasks(masks, idx_sample=idx_sample)
 
 
@@ -193,7 +193,7 @@ def make_batch_segmentation_masks(
     for _ in range(batch_dims[0]):
         masks.append(
             torch.testing.make_tensor(
-                (*batch_dims[0:], *size),
+                (*batch_dims, *size),
                 low=0,
                 high=2,
                 dtype=dtype or torch.uint8,
@@ -201,7 +201,7 @@ def make_batch_segmentation_masks(
             )
         )
     masks = torch.cat(masks)
-    idx_sample = torch.tensor([0] + [batch_dims[0]] * batch_dims[0]).cumsum(0).tolist()
+    idx_sample = [(batch_dims[0] * idx, batch_dims[0] * (idx + 1)) for idx in range(batch_dims[0])]
     return ta_tensors.BatchMasks(masks, idx_sample=idx_sample)
 
 

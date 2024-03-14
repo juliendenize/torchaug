@@ -125,8 +125,8 @@ class TestDefaultCollate:
 
         assert_equal(actual, expected_output_data)
         assert actual.device.type == device
-        assert actual.idx_sample == masks[0].idx_sample[:-1] + [
-            idx + masks[0].idx_sample[-1] for idx in masks[1].idx_sample
+        assert actual.idx_sample == masks[0].idx_sample + [
+            (idx_start + masks[0].num_data, idx_end + masks[0].num_data) for idx_start, idx_end in masks[1].idx_sample
         ]
         assert isinstance(actual, BatchMasks)
 
@@ -145,8 +145,9 @@ class TestDefaultCollate:
         assert actual.device.type == device
         assert actual.canvas_size == bounding_boxes_batches[0].canvas_size
         assert actual.format == bounding_boxes_batches[0].format
-        assert actual.idx_sample == bounding_boxes_batches[0].idx_sample[:-1] + [
-            idx + bounding_boxes_batches[0].idx_sample[-1] for idx in bounding_boxes_batches[1].idx_sample
+        assert actual.idx_sample == bounding_boxes_batches[0].idx_sample + [
+            (idx_start + bounding_boxes_batches[0].num_data, idx_end + bounding_boxes_batches[0].num_data)
+            for idx_start, idx_end in bounding_boxes_batches[1].idx_sample
         ]
         assert isinstance(actual, BatchBoundingBoxes)
 

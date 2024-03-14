@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import Any, List, Mapping, Optional, Sequence, Union
+from typing import Any, List, Mapping, Optional, Sequence, Tuple, Union
 
 import torch
 from torch.utils._pytree import tree_flatten
@@ -33,8 +33,13 @@ def convert_labels_to_batch_labels(
             if getattr(label, attr) != getattr(labels[0], attr):
                 raise ValueError(f"All labels must have the same {attr} attribute.")
 
-    labels_data = torch.cat(list(labels))
-    idx_sample = torch.tensor([0] + [label.shape[0] for label in labels], dtype=torch.long).cumsum(0).tolist()
+    labels_data = torch.cat(labels)
+
+    idx_sample = []
+    sum_labels = 0
+    for label in labels:
+        idx_sample.append((sum_labels, sum_labels + label.shape[0]))
+        sum_labels += label.shape[0]
 
     batch_labels = BatchLabels(
         labels_data,
@@ -44,7 +49,7 @@ def convert_labels_to_batch_labels(
     return batch_labels
 
 
-def convert_batch_labels_to_tensors(
+def convert_batch_labels_to_labels(
     batch_labels: BatchLabels,
 ) -> List[Labels]:
     """Convert :class:`~torchaug.ta_tensors.BatchLabels` object to a list of
@@ -52,13 +57,7 @@ def convert_batch_labels_to_tensors(
     """
     idx_sample = batch_labels.idx_sample
 
-    list_labels = [
-        torch.as_tensor(
-            batch_labels[idx_sample[i] : idx_sample[i + 1]],
-        )
-        for i in range(len(idx_sample) - 1)
-    ]
-
+    list_labels = [Labels(batch_labels[idx_start:idx_stop]) for idx_start, idx_stop in idx_sample]
     return list_labels
 
 
@@ -71,8 +70,8 @@ class BatchLabels(_BatchConcatenatedTATensor):
         data: Any data that can be turned into a tensor with :func:`torch.as_tensor`.
         dtype: Desired data type. If omitted, will be inferred from
             ``data``.
-        idx_sample: Each element is the index of the first tensor of the corresponding sample in the batch of
-         N samples. Contains N+1 elements whose last value is the number of tensors.
+        idx_sample: Each element is a tuple of the index of the first tensor and the last label of the corresponding
+            sample in the batch of N samples. If None, the corresponding sample has no label.
         device: Desired device. If omitted and ``data`` is a :class:`torch.Tensor`, the device is taken from
             it. Otherwise, the batch of tensor is constructed on the CPU.
         requires_grad: Whether autograd should record operations. If omitted and
@@ -93,24 +92,18 @@ class BatchLabels(_BatchConcatenatedTATensor):
         for batch_label in labels_batches:
             if not isinstance(batch_label, BatchLabels):
                 raise ValueError("All batches must be of type BatchLabels.")
-            if not batch_label.shape == labels_batches[0].shape:
+            if batch_label.ndim > 1 and not batch_label.shape[1:] == labels_batches[0].shape[1:]:
                 raise ValueError("All batches of tensors must have the same size.")
             for attr in _CHECK_ATTRS:
                 if getattr(batch_label, attr) != getattr(labels_batches[0], attr):
                     raise ValueError(f"All batches of tensors must have the same {attr} attribute.")
 
-        idx_sample = (
-            torch.tensor(
-                [0]
-                + [
-                    batch_label.get_num_tensors_sample(i)
-                    for batch_label in labels_batches
-                    for i in range(batch_label.batch_size)
-                ]
-            )
-            .cumsum(0)
-            .tolist()
-        )
+        idx_sample = []
+        sum_labels = 0
+        for batch_labels in labels_batches:
+            for idx_start, idx_stop in batch_labels.idx_sample:
+                idx_sample.append((idx_start + sum_labels, idx_stop + sum_labels))
+            sum_labels += batch_labels.num_data
 
         data = torch.cat([batch_label.data for batch_label in labels_batches], 0)
 
@@ -124,7 +117,7 @@ class BatchLabels(_BatchConcatenatedTATensor):
         cls,
         tensor: torch.Tensor,
         *,
-        idx_sample: List[int],
+        idx_sample: List[Tuple[int, int]],
     ) -> BatchLabels:
         batch_labels = tensor.as_subclass(cls)
         batch_labels.idx_sample = idx_sample
@@ -134,18 +127,21 @@ class BatchLabels(_BatchConcatenatedTATensor):
         cls,
         data: Any,
         *,
-        idx_sample: List[int],
+        idx_sample: List[Tuple[int, int]],
         dtype: Optional[torch.dtype] = None,
         device: Optional[Union[torch.device, str, int]] = None,
         requires_grad: Optional[bool] = None,
     ) -> BatchLabels:
         tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
+
+        cls._check_idx_sample(idx_sample, tensor)
+
         return cls._wrap(tensor, idx_sample=idx_sample)
 
     @classmethod
     def _wrap_output(
         cls,
-        output: Labels,
+        output: torch.Tensor,
         args: Sequence[Any] = (),
         kwargs: Optional[Mapping[str, Any]] = None,
     ) -> BatchLabels:
@@ -159,7 +155,7 @@ class BatchLabels(_BatchConcatenatedTATensor):
 
         idx_sample = first_batch_labels_from_args.idx_sample.copy()  # clone the list.
 
-        if isinstance(output, Labels) and not isinstance(output, BatchLabels):
+        if isinstance(output, torch.Tensor) and not isinstance(output, BatchLabels):
             output = BatchLabels._wrap(
                 output,
                 idx_sample=idx_sample,
@@ -183,10 +179,10 @@ class BatchLabels(_BatchConcatenatedTATensor):
         Returns:
             The tensors for the sample.
         """
-        label_data = self[self.idx_sample[idx] : self.idx_sample[idx + 1]]
-        return Labels(label_data)
+        labels = self[self.idx_sample[idx][0] : self.idx_sample[idx][1]]
+        return Labels(labels)
 
-    def get_chunk(self, chunk_indices: Labels) -> BatchLabels:
+    def get_chunk(self, chunk_indices: torch.Tensor) -> BatchLabels:
         """Get a chunk of the batch of tensors.
 
         Args:
@@ -204,7 +200,7 @@ class BatchLabels(_BatchConcatenatedTATensor):
             requires_grad=self.requires_grad,
         )
 
-    def update_chunk_(self, chunk: BatchLabels, chunk_indices: Labels) -> BatchLabels:
+    def update_chunk_(self, chunk: BatchLabels, chunk_indices: torch.Tensor) -> BatchLabels:
         """Update a chunk of the batch of labels.
 
         Args:
@@ -221,26 +217,30 @@ class BatchLabels(_BatchConcatenatedTATensor):
         return [self.get_sample(i).clone() for i in range(self.batch_size)]
 
     @classmethod
-    def masked_remove(cls, labels: BatchLabels, mask: Labels) -> BatchLabels:
+    def masked_select(cls, labels: BatchLabels, mask: torch.Tensor) -> BatchLabels:
         """Remove labels from the batch of labels.
 
         Args:
-            labels: The batch of labels to remove tensors from.
-            mask: A boolean mask to keep tensors.
+            labels: The batch of labels to remove labels from.
+            mask: A boolean mask to keep labels.
 
         Returns:
-            The updated batch of tensors.
+            The updated batch of labels.
         """
         old_idx_sample = labels.idx_sample
-        data = labels.data[~mask]
+        data = labels.data[mask]
 
-        cpu_mask = mask.cpu()
+        neg_mask = (~mask).cpu()
 
-        num_delete_per_sample = [
-            cpu_mask[old_idx_sample[i] : old_idx_sample[i + 1]].sum().item() for i in range(len(old_idx_sample) - 1)
+        num_delete_per_sample = [neg_mask[idx_start:idx_stop].sum().item() for idx_start, idx_stop in old_idx_sample]
+
+        new_idx_sample = [
+            (
+                old_idx_sample[i][0] - sum(num_delete_per_sample[:i]),
+                old_idx_sample[i][1] - sum(num_delete_per_sample[: i + 1]),
+            )
+            for i in range(len(old_idx_sample))
         ]
-
-        new_idx_sample = [old_idx_sample[i] - sum(num_delete_per_sample[: i + 1]) for i in range(len(old_idx_sample))]
 
         return cls._wrap(
             data,

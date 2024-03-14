@@ -519,7 +519,7 @@ class SanitizeBoundingBoxes(Transform):
             return inpt
 
         if is_bounding_boxes or isinstance(inpt, _BatchConcatenatedTATensor):  # type: ignore[arg-type]
-            output = inpt.masked_remove(inpt, mask=~params["valid"])
+            output = inpt.masked_select(inpt, mask=params["valid"])
             return output
         else:
             output = inpt[params["valid"]]

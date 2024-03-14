@@ -31,21 +31,22 @@ def convert_bboxes_to_batch_bboxes(
 
     Assumes all bboxes are valid.
     """
-    if not all(getattr(bbox, attr) == getattr(bboxes[0], attr) for bbox in bboxes for attr in _CHECK_ATTRS):
+    if not all(
+        getattr(bbox, attr) == getattr(bboxes[0], attr) for bbox in bboxes if bbox is not None for attr in _CHECK_ATTRS
+    ):
         raise ValueError("All bounding boxes must have the same attributes.")
 
-    canvas_size, format = (
-        bboxes[0].canvas_size,
-        bboxes[0].format,
-    )
-
-    bboxes_data = torch.cat(list(bboxes))
-    idx_sample = torch.tensor([0] + [bbox.shape[0] for bbox in bboxes], dtype=torch.long).cumsum(0).tolist()
+    bboxes_data = torch.cat(bboxes)
+    idx_sample = []
+    sum_bboxes = 0
+    for bbox in bboxes:
+        idx_sample.append((sum_bboxes, sum_bboxes + bbox.shape[0]))
+        sum_bboxes += bbox.shape[0]
 
     batch_bboxes = BatchBoundingBoxes(
         bboxes_data,
-        canvas_size=canvas_size,
-        format=format,
+        canvas_size=bboxes[0].canvas_size,
+        format=bboxes[0].format,
         idx_sample=idx_sample,
     )
 
@@ -66,11 +67,11 @@ def convert_batch_bboxes_to_bboxes(
 
     list_bboxes = [
         BoundingBoxes(
-            bboxes[idx_sample[i] : idx_sample[i + 1]],
+            bboxes[idx_start:idx_stop],
             canvas_size=canvas_size,
             format=format,
         )
-        for i in range(len(idx_sample) - 1)
+        for idx_start, idx_stop in idx_sample
     ]
 
     return list_bboxes
@@ -87,8 +88,9 @@ class BatchBoundingBoxes(_BatchConcatenatedTATensor):
         data: Any data that can be turned into a tensor with :func:`torch.as_tensor`.
         format: Format of the bounding box.
         canvas_size: Height and width of the corresponding batch of images or videos.
-        idx_sample: Each element is the index of the first bounding box of the corresponding sample in
-         the batch of N samples. Contains N+1 elements whose last value is the number of bounding boxes.
+        idx_sample: Each element is a tuple of the index of the first tensor and the last bounding box
+            of the corresponding sample in the batch of N samples. If None, the corresponding sample has
+            no bounding box.
         dtype: Desired data type of the bounding box. If omitted, will be inferred from
             ``data``.
         device: Desired device of the bounding box. If omitted and ``data`` is a
@@ -99,10 +101,6 @@ class BatchBoundingBoxes(_BatchConcatenatedTATensor):
 
     format: BoundingBoxFormat
     canvas_size: Tuple[int, int]
-
-    @property
-    def batch_size(self) -> int:
-        return len(self.idx_sample) - 1
 
     @classmethod
     def cat(cls, bounding_boxes_batches: Sequence[BatchBoundingBoxes]) -> BatchBoundingBoxes:
@@ -123,20 +121,19 @@ class BatchBoundingBoxes(_BatchConcatenatedTATensor):
                 if getattr(batch_bounding_boxes, attr) != getattr(bounding_boxes_batches[0], attr):
                     raise ValueError(f"All batches of masks must have the same {attr} attribute.")
 
-        idx_sample = (
-            torch.tensor(
-                [0]
-                + [
-                    batch_bounding_boxes.get_num_boxes_sample(i)
-                    for batch_bounding_boxes in bounding_boxes_batches
-                    for i in range(batch_bounding_boxes.batch_size)
-                ]
-            )
-            .cumsum(0)
-            .tolist()
-        )
+        idx_sample = []
+        sum_boxes = 0
+        for batch_bounding_boxes in bounding_boxes_batches:
+            for idx_start, idx_stop in batch_bounding_boxes.idx_sample:
+                idx_sample.append(
+                    (
+                        idx_start + sum_boxes,
+                        idx_stop + sum_boxes,
+                    )
+                )
+            sum_boxes += batch_bounding_boxes.num_data
 
-        data = torch.cat([mask.data for mask in bounding_boxes_batches], 0)
+        data = torch.cat([bounding_box.data for bounding_box in bounding_boxes_batches], 0)
 
         return cls(
             data,
@@ -152,7 +149,7 @@ class BatchBoundingBoxes(_BatchConcatenatedTATensor):
         *,
         format: Union[BoundingBoxFormat, str],
         canvas_size: Tuple[int, int],
-        idx_sample: List[int],
+        idx_sample: List[Tuple[int, int]],
         check_dims: bool = True,
     ) -> BatchBoundingBoxes:
         if check_dims and tensor.ndim != 2:
@@ -171,12 +168,13 @@ class BatchBoundingBoxes(_BatchConcatenatedTATensor):
         *,
         format: Union[BoundingBoxFormat, str],
         canvas_size: Tensor,
-        idx_sample: List[int],
+        idx_sample: List[Tuple[int, int]],
         dtype: Optional[torch.dtype] = None,
         device: Optional[Union[torch.device, str, int]] = None,
         requires_grad: Optional[bool] = None,
     ) -> BatchBoundingBoxes:
         tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
+        cls._check_idx_sample(idx_sample, tensor)
         return cls._wrap(tensor, format=format, canvas_size=canvas_size, idx_sample=idx_sample)
 
     @classmethod
@@ -230,7 +228,7 @@ class BatchBoundingBoxes(_BatchConcatenatedTATensor):
         Returns:
             The bounding boxes for the sample.
         """
-        boxes = self[self.idx_sample[idx] : self.idx_sample[idx + 1]]
+        boxes = self[self.idx_sample[idx][0] : self.idx_sample[idx][1]]
         return BoundingBoxes(
             boxes,
             format=self.format,
@@ -285,7 +283,7 @@ class BatchBoundingBoxes(_BatchConcatenatedTATensor):
         return [self.get_sample(i).clone() for i in range(self.batch_size)]
 
     @classmethod
-    def masked_remove(cls, bboxes: BatchBoundingBoxes, mask: torch.Tensor) -> BatchBoundingBoxes:
+    def masked_select(cls, bboxes: BatchBoundingBoxes, mask: torch.Tensor) -> BatchBoundingBoxes:
         """Remove boxes from the batch of bounding boxes.
 
         Args:
@@ -297,15 +295,19 @@ class BatchBoundingBoxes(_BatchConcatenatedTATensor):
         """
         # Remove boxes
         old_idx_sample = bboxes.idx_sample
-        data = bboxes.data[~mask]
+        data = bboxes.data[mask]
 
-        cpu_mask = mask.cpu()
+        neg_mask = (~mask).cpu()
 
-        num_delete_per_sample = [
-            cpu_mask[old_idx_sample[i] : old_idx_sample[i + 1]].sum().item() for i in range((len(old_idx_sample) - 1))
+        num_delete_per_sample = [neg_mask[idx_start:idx_stop].sum().item() for idx_start, idx_stop in old_idx_sample]
+
+        new_idx_sample = [
+            (
+                old_idx_sample[i][0] - sum(num_delete_per_sample[:i]),
+                old_idx_sample[i][1] - sum(num_delete_per_sample[: i + 1]),
+            )
+            for i in range(len(old_idx_sample))
         ]
-
-        new_idx_sample = [old_idx_sample[i] - sum(num_delete_per_sample[: i + 1]) for i in range(len(old_idx_sample))]
 
         return cls._wrap(
             data,

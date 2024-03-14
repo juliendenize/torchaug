@@ -48,7 +48,7 @@ def test_mask_instance(data):
 
 
 @pytest.mark.parametrize("data", [torch.randint(0, 10, size=(2, 1, 32, 32))])
-@pytest.mark.parametrize("idx_sample", [[0, 1, 2]])
+@pytest.mark.parametrize("idx_sample", [[(0, 1), (1, 2)]])
 def test_batch_masks_instance(data, idx_sample):
     masks = ta_tensors.BatchMasks(data, idx_sample=idx_sample)
     assert isinstance(masks, torch.Tensor)
@@ -81,10 +81,10 @@ def test_bbox_instance(data, format):
 @pytest.mark.parametrize(
     "data, idx_sample",
     [
-        (torch.randint(0, 32, size=(5, 4)), [0, 1, 2]),
+        (torch.randint(0, 32, size=(5, 4)), [(0, 1), (1, 2), (2, 5)]),
         (
             [[0, 0, 5, 5], [2, 2, 7, 7], [0, 0, 5, 5], [2, 2, 7, 7]],
-            [0, 1, 2],
+            [(0, 1), (1, 2), (2, 4)],
         ),
     ],
 )
@@ -109,7 +109,7 @@ def test_batch_bboxes_instance(data, idx_sample, format):
 def test_batch_bboxes_dim_error():
     data_2d = [[[1, 2, 3, 4]]]
     with pytest.raises(ValueError, match="Expected a 2D tensor, got 3D"):
-        ta_tensors.BatchBoundingBoxes(data_2d, format="XYXY", canvas_size=(32, 32), idx_sample=[0])
+        ta_tensors.BatchBoundingBoxes(data_2d, format="XYXY", canvas_size=(32, 32), idx_sample=[(0, 1)])
 
 
 @pytest.mark.parametrize(
@@ -278,15 +278,14 @@ def test_detach_wrapping(make_input, return_type):
 
 
 @pytest.mark.parametrize("return_type", ["Tensor", "TATensor"])
-def test_force_subclass_with_metadata(return_type):
+def test_force_subclass_with_metadata_bounding_boxes(return_type):
     # Sanity checks for the ops in _FORCE_TORCHFUNCTION_SUBCLASS and ta_tensors with metadata
     # Largely the same as above, we additionally check that the metadata is preserved
     format, canvas_size = "XYXY", (32, 32)
-    bbox = ta_tensors.BatchBoundingBoxes(
+    bbox = ta_tensors.BoundingBoxes(
         [[0, 0, 5, 5], [2, 2, 7, 7], [0, 0, 5, 5], [2, 2, 7, 7]],
         format=format,
         canvas_size=canvas_size,
-        idx_sample=[0, 1, 2],
     )
 
     ta_tensors.set_return_type(return_type)
@@ -307,6 +306,74 @@ def test_force_subclass_with_metadata(return_type):
     if return_type == "TATensor":
         assert bbox.format, bbox.canvas_size == (format, canvas_size)
         assert bbox.requires_grad
+    ta_tensors.set_return_type("tensor")
+
+
+@pytest.mark.parametrize("return_type", ["Tensor", "TATensor"])
+def test_force_subclass_with_metadata_batch_bounding_boxes(return_type):
+    # Sanity checks for the ops in _FORCE_TORCHFUNCTION_SUBCLASS and ta_tensors with metadata
+    # Largely the same as above, we additionally check that the metadata is preserved
+    format, canvas_size = "XYXY", (32, 32)
+    bbox = ta_tensors.BatchBoundingBoxes(
+        [[0, 0, 5, 5], [2, 2, 7, 7], [0, 0, 5, 5], [2, 2, 7, 7]],
+        format=format,
+        canvas_size=canvas_size,
+        idx_sample=[(0, 1), (1, 2), (2, 4)],
+    )
+
+    ta_tensors.set_return_type(return_type)
+    bbox = bbox.clone()
+    if return_type == "TATensor":
+        assert bbox.format, bbox.canvas_size == (format, canvas_size)
+        assert bbox.idx_sample == [(0, 1), (1, 2), (2, 4)]
+
+    bbox = bbox.to(torch.float64)
+    if return_type == "TATensor":
+        assert bbox.format, bbox.canvas_size == (format, canvas_size)
+        assert bbox.idx_sample == [(0, 1), (1, 2), (2, 4)]
+
+    bbox = bbox.detach()
+    if return_type == "TATensor":
+        assert bbox.format, bbox.canvas_size == (format, canvas_size)
+        assert bbox.idx_sample == [(0, 1), (1, 2), (2, 4)]
+
+    assert not bbox.requires_grad
+    bbox.requires_grad_(True)
+    if return_type == "TATensor":
+        assert bbox.format, bbox.canvas_size == (format, canvas_size)
+        assert bbox.idx_sample == [(0, 1), (1, 2), (2, 4)]
+        assert bbox.requires_grad
+    ta_tensors.set_return_type("tensor")
+
+
+@pytest.mark.parametrize("class_", [ta_tensors.BatchLabels, ta_tensors.BatchMasks])
+@pytest.mark.parametrize("return_type", ["Tensor", "TATensor"])
+def test_force_subclass_with_metadata_type_with_idx_sample(class_, return_type):
+    # Sanity checks for the ops in _FORCE_TORCHFUNCTION_SUBCLASS and ta_tensors with metadata
+    # Largely the same as above, we additionally check that the metadata is preserved
+    ta_tensor = class_(
+        [[[0, 0, 5, 5], [2, 2, 7, 7]], [[0, 0, 5, 5], [2, 2, 7, 7]]],
+        idx_sample=[(0, 1), (1, 2)],
+    )
+
+    ta_tensors.set_return_type(return_type)
+    ta_tensor = ta_tensor.clone()
+    if return_type == "TATensor":
+        assert ta_tensor.idx_sample == [(0, 1), (1, 2)]
+
+    ta_tensor = ta_tensor.to(torch.float64)
+    if return_type == "TATensor":
+        assert ta_tensor.idx_sample == [(0, 1), (1, 2)]
+
+    ta_tensor = ta_tensor.detach()
+    if return_type == "TATensor":
+        assert ta_tensor.idx_sample == [(0, 1), (1, 2)]
+
+    assert not ta_tensor.requires_grad
+    ta_tensor.requires_grad_(True)
+    if return_type == "TATensor":
+        assert ta_tensor.idx_sample == [(0, 1), (1, 2)]
+        assert ta_tensor.requires_grad
     ta_tensors.set_return_type("tensor")
 
 
@@ -529,33 +596,3 @@ def test_return_type_input():
         ta_tensors.set_return_type("typo")
 
     ta_tensors.set_return_type("tensor")
-
-
-def test_convert_batch_bboxes_to_bboxes():
-    bboxes = make_batch_bounding_boxes(num_boxes=2)
-
-    list_bboxes = ta_tensors.convert_batch_bboxes_to_bboxes(bboxes)
-
-    for i, bbox in enumerate(list_bboxes):
-        assert isinstance(bbox, ta_tensors.BoundingBoxes)
-        assert bbox.canvas_size == bboxes.canvas_size
-        assert bbox.format == bboxes.format
-        assert_equal(bbox, bboxes[bboxes.idx_sample[i] : bboxes.idx_sample[i + 1]])
-
-
-def test_convert_bboxes_to_batch_bboxes():
-    boxes_nums = [1, 2, 4]
-    bboxes = [make_bounding_boxes(num_boxes=num_boxes) for num_boxes in boxes_nums]
-
-    batch_bboxes = ta_tensors.convert_bboxes_to_batch_bboxes(bboxes)
-
-    assert batch_bboxes.canvas_size == bboxes[0].canvas_size
-    assert batch_bboxes.format == bboxes[0].format
-    assert batch_bboxes.shape[0] == sum(boxes_nums)
-
-    sum_num_boxes = 0
-    for i, num_boxes in enumerate(boxes_nums):
-        assert_equal(batch_bboxes[sum_num_boxes : sum_num_boxes + num_boxes], bboxes[i])
-        batch_bboxes.idx_sample[i] == sum_num_boxes
-        sum_num_boxes += num_boxes
-    batch_bboxes.idx_sample[-1] == sum_num_boxes

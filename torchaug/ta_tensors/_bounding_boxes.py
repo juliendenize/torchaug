@@ -130,7 +130,7 @@ class BoundingBoxes(TATensor):
         return output
 
     @classmethod
-    def masked_remove(cls, bboxes: BoundingBoxes, mask: torch.Tensor) -> BoundingBoxes:
+    def masked_select(cls, bboxes: BoundingBoxes, mask: torch.Tensor) -> BoundingBoxes:
         """Remove boxes from the bounding boxes.
 
         Args:
@@ -140,7 +140,7 @@ class BoundingBoxes(TATensor):
         Returns:
             The updated bounding boxes.
         """
-        data = bboxes.data[~mask]
+        data = bboxes.data[mask]
         return cls._wrap(data, format=bboxes.format, canvas_size=bboxes.canvas_size)
 
     def __repr__(self, *, tensor_contents: Any = None) -> str:  # type: ignore[override]

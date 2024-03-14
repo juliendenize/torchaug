@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import Any, List, Mapping, Optional, Sequence, Union
+from typing import Any, List, Mapping, Optional, Sequence, Tuple, Union
 
 import torch
 from torch import Tensor
@@ -36,8 +36,13 @@ def convert_masks_to_batch_masks(
             if getattr(mask, attr) != getattr(masks[0], attr):
                 raise ValueError(f"All masks must have the same {attr} attribute.")
 
-    masks_data = torch.cat([mask.data for mask in masks])
-    idx_sample = torch.tensor([0] + [mask.shape[0] for mask in masks], dtype=torch.long).cumsum(0).tolist()
+    masks = [mask if mask.ndim > 2 else mask.unsqueeze(0) for mask in masks]
+    masks_data = torch.cat(masks)
+    idx_sample = []
+    sum_masks = 0
+    for mask in masks:
+        idx_sample.append((sum_masks, sum_masks + mask.shape[0]))
+        sum_masks += mask.shape[0]
 
     batch_masks = BatchMasks(
         masks_data,
@@ -57,11 +62,10 @@ def convert_batch_masks_to_masks(
 
     list_masks = [
         Mask(
-            batch_masks[idx_sample[i] : idx_sample[i + 1]],
+            batch_masks[idx_start:idx_stop],
         )
-        for i in range(len(idx_sample) - 1)
+        for (idx_start, idx_stop) in idx_sample
     ]
-
     return list_masks
 
 
@@ -72,8 +76,7 @@ class BatchMasks(_BatchConcatenatedTATensor):
         data: Any data that can be turned into a tensor with :func:`torch.as_tensor`.
         dtype: Desired data type. If omitted, will be inferred from
             ``data``.
-        idx_sample: Each element is the index of the first mask of the corresponding sample in the batch of
-         N samples. Contains N+1 elements whose last value is the number of masks.
+        idx_sample: Each element is the range of the indexes of the masks for each sample.
         device: Desired device. If omitted and ``data`` is a
             :class:`torch.Tensor`, the device is taken from it. Otherwise, the mask is constructed on the CPU.
         requires_grad: Whether autograd should record operations. If omitted and
@@ -100,20 +103,14 @@ class BatchMasks(_BatchConcatenatedTATensor):
                 if getattr(batch_mask, attr) != getattr(masks_batches[0], attr):
                     raise ValueError(f"All batches of masks must have the same {attr} attribute.")
 
-        idx_sample = (
-            torch.tensor(
-                [0]
-                + [
-                    batch_mask.get_num_masks_sample(i)
-                    for batch_mask in masks_batches
-                    for i in range(batch_mask.batch_size)
-                ]
-            )
-            .cumsum(0)
-            .tolist()
-        )
+        idx_sample = []
+        sum_masks = 0
+        for batch_masks in masks_batches:
+            for idx_start, idx_stop in batch_masks.idx_sample:
+                idx_sample.append((idx_start + sum_masks, idx_stop + sum_masks))
+            sum_masks += batch_masks.num_data
 
-        data = torch.cat([mask.data for mask in masks_batches], 0)
+        data = torch.cat([batch_masks.data for batch_masks in masks_batches], 0)
 
         return cls(
             data,
@@ -125,7 +122,7 @@ class BatchMasks(_BatchConcatenatedTATensor):
         cls,
         tensor: Tensor,
         *,
-        idx_sample: List[int],
+        idx_sample: List[Tuple[int, int]],
         check_dims: bool = True,
     ) -> BatchMasks:  # type: ignore[override]
         if check_dims and tensor.ndim < 2:
@@ -138,15 +135,17 @@ class BatchMasks(_BatchConcatenatedTATensor):
         cls,
         data: Any,
         *,
-        idx_sample: List[int],
+        idx_sample: List[Tuple[int, int]],
         dtype: Optional[torch.dtype] = None,
         device: Optional[Union[torch.device, str, int]] = None,
         requires_grad: Optional[bool] = None,
     ) -> BatchMasks:
         tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
 
-        if tensor.ndim < 2:
+        if tensor.ndim < 3:
             raise ValueError
+
+        cls._check_idx_sample(idx_sample, tensor)
 
         return cls._wrap(tensor, idx_sample=idx_sample)
 
@@ -193,7 +192,7 @@ class BatchMasks(_BatchConcatenatedTATensor):
         Returns:
             The masks for the sample.
         """
-        masks = self[self.idx_sample[idx] : self.idx_sample[idx + 1]]
+        masks = self[self.idx_sample[idx][0] : self.idx_sample[idx][1]]
         return Mask(
             masks,
             device=self.device,
@@ -235,7 +234,7 @@ class BatchMasks(_BatchConcatenatedTATensor):
         return [self.get_sample(i).clone() for i in range(self.batch_size)]
 
     @classmethod
-    def masked_remove(cls, masks: BatchMasks, mask: torch.Tensor) -> BatchMasks:
+    def masked_select(cls, masks: BatchMasks, mask: torch.Tensor) -> BatchMasks:
         """Remove masks from the batch of masks.
 
         Args:
@@ -246,15 +245,21 @@ class BatchMasks(_BatchConcatenatedTATensor):
             The updated batch of masks.
         """
         old_idx_sample = masks.idx_sample
-        data = masks.data[~mask]
+        data = masks.data[mask]
 
-        cpu_mask = mask.cpu()
+        neg_mask = (~mask).cpu()
 
         num_delete_per_sample = [
-            cpu_mask[old_idx_sample[i] : old_idx_sample[i + 1]].sum().item() for i in range(len(old_idx_sample) - 1)
+            neg_mask[old_idx_sample[i][0] : old_idx_sample[i][1]].sum().item() for i in range(len(old_idx_sample))
         ]
 
-        new_idx_sample = [old_idx_sample[i] - sum(num_delete_per_sample[: i + 1]) for i in range(len(old_idx_sample))]
+        new_idx_sample = [
+            (
+                old_idx_sample[i][0] - sum(num_delete_per_sample[:i]),
+                old_idx_sample[i][1] - sum(num_delete_per_sample[: i + 1]),
+            )
+            for i in range(len(old_idx_sample))
+        ]
 
         return cls._wrap(
             data,

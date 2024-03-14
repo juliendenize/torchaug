@@ -18,7 +18,7 @@ from ._batch_concatenated_ta_tensor import _BatchConcatenatedTATensor
 from ._batch_images import BatchImages
 from ._batch_labels import (
     BatchLabels,
-    convert_batch_labels_to_tensors,
+    convert_batch_labels_to_labels,
     convert_labels_to_batch_labels,
 )
 from ._batch_masks import (

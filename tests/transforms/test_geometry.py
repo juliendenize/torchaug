@@ -856,7 +856,6 @@ class TestAffine:
     @pytest.mark.parametrize("permute_chunks", [True, False])
     def test_batch_transform(self, make_input, device, batch_size, batch_inplace, num_chunks, permute_chunks):
         input = make_input(device=device, batch_dims=(batch_size,))
-
         check_batch_transform(
             transforms.RandomAffine(
                 **self._CORRECTNESS_TRANSFORM_AFFINE_RANGES,
@@ -3051,7 +3050,7 @@ class TestElastic:
         mask = make_mask()
         displacement = self._make_batch_displacement(mask)
         displacement = displacement.repeat_interleave(
-            torch.tensor([mask.get_num_masks_sample(i) for i in range(mask.batch_size)]),
+            torch.tensor([mask.get_num_data_sample(i) for i in range(mask.batch_size)]),
             dim=0,
         )
 
@@ -3323,7 +3322,7 @@ class TestRandomIoUCrop:
                 format="XYXY",
                 canvas_size=size,
                 device=device,
-                idx_sample=[0, 1, 2],
+                idx_sample=[(0, 2), (2, 4)],
             )
         )
         sample = [image, bboxes]

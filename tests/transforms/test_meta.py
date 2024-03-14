@@ -99,7 +99,7 @@ class TestConvertBoundingBoxFormat:
                     torch.tensor([[10, 10, 20, 20], [10, 10, 20, 20]]),
                     format=old_format,
                     canvas_size=(50, 50),
-                    idx_sample=[0, 1, 2],
+                    idx_sample=[(0, 1), (1, 2)],
                 )
             )
         )

@@ -8,6 +8,7 @@
 import torch
 
 from ._batch_bounding_boxes import BatchBoundingBoxes
+from ._batch_labels import BatchLabels
 from ._batch_masks import BatchMasks
 from ._bounding_boxes import BoundingBoxes
 from ._ta_tensor import TATensor
@@ -43,6 +44,11 @@ def wrap(wrappee, *, like, **kwargs) -> TATensor:
         )
     elif isinstance(like, BatchMasks):
         return BatchMasks._wrap(
+            wrappee,
+            idx_sample=kwargs.get("idx_sample", like.idx_sample),
+        )
+    elif isinstance(like, BatchLabels):
+        return BatchLabels._wrap(
             wrappee,
             idx_sample=kwargs.get("idx_sample", like.idx_sample),
         )

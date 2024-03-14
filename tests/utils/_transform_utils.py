@@ -396,7 +396,7 @@ def _make_transform_sample(transform, *, image_or_video, adapter, batch=False):
                 ],
                 format=ta_tensors.BoundingBoxFormat.XYXY,
                 canvas_size=size,
-                idx_sample=[0, 3, 6],
+                idx_sample=[(0, 3), (3, 6)],
                 device=device,
             ),
             batch_bounding_boxes_degenerate_xywh=ta_tensors.BatchBoundingBoxes(
@@ -410,7 +410,7 @@ def _make_transform_sample(transform, *, image_or_video, adapter, batch=False):
                 ],
                 format=ta_tensors.BoundingBoxFormat.XYWH,
                 canvas_size=size,
-                idx_sample=[0, 3, 6],
+                idx_sample=[(0, 3), (3, 6)],
                 device=device,
             ),
             batch_bounding_boxes_degenerate_cxcywh=ta_tensors.BatchBoundingBoxes(
@@ -424,7 +424,7 @@ def _make_transform_sample(transform, *, image_or_video, adapter, batch=False):
                 ],
                 format=ta_tensors.BoundingBoxFormat.CXCYWH,
                 canvas_size=size,
-                idx_sample=[0, 3, 6],
+                idx_sample=[(0, 3), (3, 6)],
                 device=device,
             ),
             batch_detection_masks=make_batch_detection_masks(size, device=device),
@@ -447,6 +447,7 @@ def _make_transform_sample(transform, *, image_or_video, adapter, batch=False):
 
 def _make_transform_batch_sample(transform, *, image_or_video, adapter, batch_size):
     device = image_or_video.device if isinstance(image_or_video, torch.Tensor) else "cpu"
+    idx_sample = [(0, 6)] if batch_size == 1 else [(0, 3), (3, 6), *[(6, 6) for _ in range(batch_size - 2)]]
     size = F.get_size(image_or_video)
     input = dict(
         image_or_video=image_or_video,
@@ -478,11 +479,10 @@ def _make_transform_batch_sample(transform, *, image_or_video, adapter, batch_si
                 [2, 0, 1, 1],  # x1 > x2, y1 < y2
                 [0, 2, 1, 1],  # x1 < x2, y1 > y2
                 [2, 2, 1, 1],  # x1 > x2, y1 > y2
-            ]
-            * batch_size,
+            ],
             format=ta_tensors.BoundingBoxFormat.XYXY,
             canvas_size=size,
-            idx_sample=torch.tensor([0] + [6] * batch_size, dtype=torch.long).cumsum(0).tolist(),
+            idx_sample=idx_sample,
             device=device,
         ),
         batch_bounding_boxes_degenerate_xywh=ta_tensors.BatchBoundingBoxes(
@@ -493,11 +493,10 @@ def _make_transform_batch_sample(transform, *, image_or_video, adapter, batch_si
                 [0, 0, 1, -1],  # negative height
                 [0, 0, -1, 1],  # negative width
                 [0, 0, -1, -1],  # negative height and width
-            ]
-            * batch_size,
+            ],
             format=ta_tensors.BoundingBoxFormat.XYWH,
             canvas_size=size,
-            idx_sample=torch.tensor([0] + [6] * batch_size, dtype=torch.long).cumsum(0).tolist(),
+            idx_sample=idx_sample,
             device=device,
         ),
         batch_bounding_boxes_degenerate_cxcywh=ta_tensors.BatchBoundingBoxes(
@@ -508,11 +507,10 @@ def _make_transform_batch_sample(transform, *, image_or_video, adapter, batch_si
                 [0, 0, 1, -1],  # negative height
                 [0, 0, -1, 1],  # negative width
                 [0, 0, -1, -1],  # negative height and width
-            ]
-            * batch_size,
+            ],
             format=ta_tensors.BoundingBoxFormat.CXCYWH,
             canvas_size=size,
-            idx_sample=torch.tensor([0] + [6] * batch_size, dtype=torch.long).cumsum(0).tolist(),
+            idx_sample=idx_sample,
             device=device,
         ),
         batch_detection_masks=make_batch_detection_masks(size=size, device=device, batch_dims=(batch_size,)),

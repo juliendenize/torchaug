@@ -97,7 +97,7 @@ class RandomApplyTransform(nn.Module):
             batch_size = inpt.shape[0]
         else:
             raise ValueError(
-                f"Expected input to be of type `BatchBoundingBoxes`, `BatchMasks` or `Tensor`, but got {type(inpt)}."
+                f"Expected input to be of type `_BatchConcatenatedTATensor` or `Tensor`, but got {type(inpt)}."
             )
 
         return batch_size
