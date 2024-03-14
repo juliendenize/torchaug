@@ -221,6 +221,17 @@ def make_batch_videos_tensor(*args, **kwargs):
     return make_batch_videos(*args, **kwargs).as_subclass(torch.Tensor)
 
 
+def make_labels(size=DEFAULT_SIZE, *, batch_dims=(), **kwargs):
+    return ta_tensors.Labels(torch.randint(0, 10, (*batch_dims, *size), **kwargs))
+
+
+def make_batch_labels(size=DEFAULT_SIZE, *, batch_dims=BATCH_DEFAULT_SIZE, **kwargs):
+    idx_sample = [(idx * size[0], (idx + 1) * size[0]) for idx in range(batch_dims[0])]
+    return ta_tensors.BatchLabels(
+        torch.randint(0, 10, (batch_dims[0] * size[0], *size[1:]), **kwargs), idx_sample=idx_sample
+    )
+
+
 SAMPLE_MAKERS = [
     make_image,
     make_bounding_boxes,
