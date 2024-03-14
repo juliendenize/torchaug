@@ -9,8 +9,8 @@ from typing import Any, List, Mapping, Optional, Sequence, Union
 import torch
 from torch.utils._pytree import tree_flatten
 
+from ._batch_concatenated_ta_tensor import _BatchConcatenatedTATensor
 from ._labels import Labels
-from ._ta_tensor import TATensor
 
 
 _CHECK_ATTRS = [
@@ -62,7 +62,7 @@ def convert_batch_labels_to_tensors(
     return list_labels
 
 
-class BatchLabels(TATensor):
+class BatchLabels(_BatchConcatenatedTATensor):
     """:class:`BatchLabels` subclass for concatenated labels.
 
     Useful for labels of bounding boxes or masks, where each sample can have a different number of labels.
@@ -79,19 +79,6 @@ class BatchLabels(TATensor):
             ``data`` is a :class:`Labels`, the value is taken from it. Otherwise, defaults to ``False``.
 
     """
-
-    idx_sample: List[int]
-
-    @property
-    def batch_size(self) -> int:
-        return len(self.idx_sample) - 1
-
-    @property
-    def num_tensors(self) -> int:
-        return self.data.shape[0]
-
-    def get_num_tensors_sample(self, idx: int) -> int:
-        return self.idx_sample[idx + 1] - self.idx_sample[idx]
 
     @classmethod
     def cat(cls, labels_batches: Sequence[BatchLabels]):
@@ -133,12 +120,12 @@ class BatchLabels(TATensor):
         )
 
     @classmethod
-    def _wrap(
+    def _wrap(  # type: ignore[override]
         cls,
         tensor: torch.Tensor,
         *,
         idx_sample: List[int],
-    ) -> BatchLabels:  # type: ignore[override]
+    ) -> BatchLabels:
         batch_labels = tensor.as_subclass(cls)
         batch_labels.idx_sample = idx_sample
         return batch_labels
@@ -208,32 +195,26 @@ class BatchLabels(TATensor):
         Returns:
             The chunk of the batch of tensors.
         """
-        chunk_idx_sample = torch.tensor(
-            [0] + [self.idx_sample[chunk_indice + 1] - self.idx_sample[chunk_indice] for chunk_indice in chunk_indices]
-        )
-
-        chunk_idx_sample = chunk_idx_sample.cumsum(0).tolist()
-
+        chunk_idx_sample = self._get_chunk_idx_sample_from_chunk_indices(chunk_indices)
+        data_indices = self._get_data_indices_from_chunk_indices(chunk_indices)
         return BatchLabels(
-            self[chunk_indices],
+            self[data_indices],
             idx_sample=chunk_idx_sample,
             device=self.device,
             requires_grad=self.requires_grad,
         )
 
     def update_chunk_(self, chunk: BatchLabels, chunk_indices: Labels) -> BatchLabels:
-        """Update a chunk of the batch of tensors.
+        """Update a chunk of the batch of labels.
 
         Args:
             chunk: The chunk update.
             chunk_indices: The indices of the chunk to update.
 
         Returns:
-            The updated batch of tensors.
+            The updated batch of labels.
         """
-        self[chunk_indices] = chunk
-
-        return self
+        return super().update_chunk_(chunk, chunk_indices)
 
     def to_samples(self) -> list[Labels]:
         """Get the tensors."""

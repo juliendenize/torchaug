@@ -10,8 +10,8 @@ import torch
 from torch import Tensor
 from torch.utils._pytree import tree_flatten
 
+from ._batch_concatenated_ta_tensor import _BatchConcatenatedTATensor
 from ._mask import Mask
-from ._ta_tensor import TATensor
 
 
 _CHECK_ATTRS = [
@@ -65,7 +65,7 @@ def convert_batch_masks_to_masks(
     return list_masks
 
 
-class BatchMasks(TATensor):
+class BatchMasks(_BatchConcatenatedTATensor):
     """:class:`torch.Tensor` subclass for batch of segmentation and detection masks.
 
     Args:
@@ -80,19 +80,6 @@ class BatchMasks(TATensor):
             ``data`` is a :class:`torch.Tensor`, the value is taken from it. Otherwise, defaults to ``False``.
 
     """
-
-    idx_sample: List[int]
-
-    @property
-    def batch_size(self) -> int:
-        return len(self.idx_sample) - 1
-
-    @property
-    def num_masks(self) -> int:
-        return self.data.shape[0]
-
-    def get_num_masks_sample(self, idx: int) -> int:
-        return self.idx_sample[idx + 1] - self.idx_sample[idx]
 
     @classmethod
     def cat(cls, masks_batches: Sequence[BatchMasks]):
@@ -222,14 +209,10 @@ class BatchMasks(TATensor):
         Returns:
             The chunk of the batch of masks.
         """
-        chunk_idx_sample = torch.tensor(
-            [0] + [self.idx_sample[chunk_indice + 1] - self.idx_sample[chunk_indice] for chunk_indice in chunk_indices]
-        )
-
-        chunk_idx_sample = chunk_idx_sample.cumsum(0).tolist()
-
+        chunk_idx_sample = self._get_chunk_idx_sample_from_chunk_indices(chunk_indices)
+        data_indices = self._get_data_indices_from_chunk_indices(chunk_indices)
         return BatchMasks(
-            self[chunk_indices],
+            self[data_indices],
             idx_sample=chunk_idx_sample,
             device=self.device,
             requires_grad=self.requires_grad,
@@ -245,9 +228,7 @@ class BatchMasks(TATensor):
         Returns:
             The updated batch of masks.
         """
-        self[chunk_indices] = chunk
-
-        return self
+        return super().update_chunk_(chunk, chunk_indices)
 
     def to_samples(self) -> list[Mask]:
         """Get the tensors."""

@@ -10,8 +10,8 @@ import torch
 from torch import Tensor
 from torch.utils._pytree import tree_flatten
 
+from ._batch_concatenated_ta_tensor import _BatchConcatenatedTATensor
 from ._bounding_boxes import BoundingBoxes, BoundingBoxFormat
-from ._ta_tensor import TATensor
 
 
 _CHECK_ATTRS = [
@@ -76,7 +76,7 @@ def convert_batch_bboxes_to_bboxes(
     return list_bboxes
 
 
-class BatchBoundingBoxes(TATensor):
+class BatchBoundingBoxes(_BatchConcatenatedTATensor):
     """:class:`torch.Tensor` subclass for batch of bounding boxes.
 
     .. note::
@@ -99,18 +99,10 @@ class BatchBoundingBoxes(TATensor):
 
     format: BoundingBoxFormat
     canvas_size: Tuple[int, int]
-    idx_sample: List[int]
 
     @property
     def batch_size(self) -> int:
         return len(self.idx_sample) - 1
-
-    @property
-    def num_boxes(self) -> int:
-        return self.data.shape[0]
-
-    def get_num_boxes_sample(self, idx: int) -> int:
-        return self.idx_sample[idx + 1] - self.idx_sample[idx]
 
     @classmethod
     def cat(cls, bounding_boxes_batches: Sequence[BatchBoundingBoxes]) -> BatchBoundingBoxes:
@@ -154,7 +146,7 @@ class BatchBoundingBoxes(TATensor):
         )
 
     @classmethod
-    def _wrap(
+    def _wrap(  # type: ignore[override]
         cls,
         tensor: Tensor,
         *,
@@ -162,7 +154,7 @@ class BatchBoundingBoxes(TATensor):
         canvas_size: Tuple[int, int],
         idx_sample: List[int],
         check_dims: bool = True,
-    ) -> BatchBoundingBoxes:  # type: ignore[override]
+    ) -> BatchBoundingBoxes:
         if check_dims and tensor.ndim != 2:
             raise ValueError(f"Expected a 2D tensor, got {tensor.ndim}D.")
         if isinstance(format, str):
@@ -256,14 +248,11 @@ class BatchBoundingBoxes(TATensor):
         Returns:
             BatchBoundingBoxes: The chunk of the batch bounding boxes.
         """
-        chunk_idx_sample = torch.tensor(
-            [0] + [self.idx_sample[chunk_indice + 1] - self.idx_sample[chunk_indice] for chunk_indice in chunk_indices]
-        )
-
-        chunk_idx_sample = chunk_idx_sample.cumsum(0).tolist()
+        chunk_idx_sample = self._get_chunk_idx_sample_from_chunk_indices(chunk_indices)
+        data_indices = self._get_data_indices_from_chunk_indices(chunk_indices)
 
         return BatchBoundingBoxes(
-            self[chunk_indices],
+            self[data_indices],
             format=self.format,
             canvas_size=self.canvas_size,
             idx_sample=chunk_idx_sample,
@@ -288,9 +277,7 @@ class BatchBoundingBoxes(TATensor):
             raise ValueError(
                 "The canvas size of the chunk must be the same as the canvas size of the batch of bounding boxes."
             )
-
-        self[chunk_indices] = chunk
-
+        self = super().update_chunk_(chunk, chunk_indices)
         return self
 
     def to_samples(self) -> list[BoundingBoxes]:

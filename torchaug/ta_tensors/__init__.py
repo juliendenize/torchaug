@@ -14,6 +14,7 @@ from ._batch_bounding_boxes import (
     convert_batch_bboxes_to_bboxes,
     convert_bboxes_to_batch_bboxes,
 )
+from ._batch_concatenated_ta_tensor import _BatchConcatenatedTATensor
 from ._batch_images import BatchImages
 from ._batch_labels import (
     BatchLabels,
@@ -34,10 +35,3 @@ from ._ta_tensor import TATensor
 from ._torch_function_helpers import set_return_type
 from ._video import Video
 from ._wrap import wrap
-
-
-_CONCATENATED_BATCH_TA_TENSORS: Tuple[Type[TATensor], ...] = (
-    BatchBoundingBoxes,
-    BatchMasks,
-    BatchLabels,
-)
