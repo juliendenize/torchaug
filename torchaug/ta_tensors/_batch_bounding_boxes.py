@@ -14,6 +14,15 @@ from ._bounding_boxes import BoundingBoxes, BoundingBoxFormat
 from ._ta_tensor import TATensor
 
 
+_CHECK_ATTRS = [
+    "canvas_size",
+    "format",
+    "requires_grad",
+    "device",
+    "dtype",
+]
+
+
 def convert_bboxes_to_batch_bboxes(
     bboxes: List[BoundingBoxes],
 ) -> BatchBoundingBoxes:
@@ -22,15 +31,7 @@ def convert_bboxes_to_batch_bboxes(
 
     Assumes all bboxes are valid.
     """
-    attrs = [
-        "canvas_size",
-        "format",
-        "requires_grad",
-        "device",
-        "dtype",
-    ]
-
-    if not all(getattr(bbox, attr) == getattr(bboxes[0], attr) for bbox in bboxes for attr in attrs):
+    if not all(getattr(bbox, attr) == getattr(bboxes[0], attr) for bbox in bboxes for attr in _CHECK_ATTRS):
         raise ValueError("All bounding boxes must have the same attributes.")
 
     canvas_size, format = (
@@ -38,7 +39,7 @@ def convert_bboxes_to_batch_bboxes(
         bboxes[0].format,
     )
 
-    bboxes_data = torch.cat([bbox.data for bbox in bboxes])
+    bboxes_data = torch.cat(list(bboxes))
     idx_sample = torch.tensor([0] + [bbox.shape[0] for bbox in bboxes], dtype=torch.long).cumsum(0).tolist()
 
     batch_bboxes = BatchBoundingBoxes(
@@ -123,18 +124,10 @@ class BatchBoundingBoxes(TATensor):
         Returns:
             BatchBoundingBoxes: The concatenated batch of bounding boxes.
         """
-        attrs = [
-            "canvas_size",
-            "format",
-            "requires_grad",
-            "device",
-            "dtype",
-        ]
-
         for batch_bounding_boxes in bounding_boxes_batches:
             if not isinstance(batch_bounding_boxes, BatchBoundingBoxes):
                 raise ValueError("All elements in the sequence must be instances of BatchBoundingBoxes.")
-            for attr in attrs:
+            for attr in _CHECK_ATTRS:
                 if getattr(batch_bounding_boxes, attr) != getattr(bounding_boxes_batches[0], attr):
                     raise ValueError(f"All batches of masks must have the same {attr} attribute.")
 
@@ -299,6 +292,10 @@ class BatchBoundingBoxes(TATensor):
         self[chunk_indices] = chunk
 
         return self
+
+    def to_samples(self) -> list[BoundingBoxes]:
+        """Get the tensors."""
+        return [self.get_sample(i).clone() for i in range(self.batch_size)]
 
     @classmethod
     def masked_remove(cls, bboxes: BatchBoundingBoxes, mask: torch.Tensor) -> BatchBoundingBoxes:

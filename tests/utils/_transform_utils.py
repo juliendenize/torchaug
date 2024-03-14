@@ -14,6 +14,7 @@ from torchvision.transforms.v2._utils import check_type
 
 import torchaug.transforms as transforms
 from torchaug import ta_tensors
+from torchaug.ta_tensors import _CONCATENATED_BATCH_TA_TENSORS
 from torchaug.transforms import functional as F
 from torchaug.transforms.functional._utils._tensor import (
     _max_value as get_max_value,
@@ -679,7 +680,7 @@ def _check_transform_batch_sample_input_smoke(transform, input, *, adapter, batc
                     needs_transform_list,
                     sample.keys(),
                 ):
-                    if isinstance(inpt, (ta_tensors.BatchBoundingBoxes, ta_tensors.BatchMasks)):
+                    if isinstance(inpt, (_CONCATENATED_BATCH_TA_TENSORS)):
                         continue
                     if not need_transform:
                         if isinstance(opt, torch.Tensor):

@@ -18,7 +18,7 @@ from torchvision.transforms.v2._utils import check_type, has_any
 
 from torchaug import ta_tensors
 from torchaug._utils import _log_api_usage_once
-from torchaug.ta_tensors import set_return_type
+from torchaug.ta_tensors import _CONCATENATED_BATCH_TA_TENSORS, set_return_type
 
 from ._utils import is_pure_tensor
 from .functional._utils._kernel import _get_kernel
@@ -91,7 +91,7 @@ class RandomApplyTransform(nn.Module):
 
     @staticmethod
     def _get_input_batch_size(inpt: Any):
-        if isinstance(inpt, (ta_tensors.BatchBoundingBoxes, ta_tensors.BatchMasks)):
+        if isinstance(inpt, _CONCATENATED_BATCH_TA_TENSORS):  # type: ignore[arg-type]
             batch_size = inpt.batch_size
         elif isinstance(inpt, torch.Tensor):
             batch_size = inpt.shape[0]
@@ -266,17 +266,15 @@ class RandomApplyTransform(nn.Module):
                     continue
 
                 is_ta_inpt = isinstance(inpt, ta_tensors.TATensor)
-                is_batch_bboxes_or_masks_inpt = isinstance(
-                    inpt, (ta_tensors.BatchBoundingBoxes, ta_tensors.BatchMasks)
-                )
+                is_contatenated_batch_ta_tensors = isinstance(inpt, _CONCATENATED_BATCH_TA_TENSORS)  # type: ignore[arg-type]
                 pre_output = (
                     inpt
-                    if self.batch_inplace or (self._reshape_transform and not is_batch_bboxes_or_masks_inpt)
+                    if self.batch_inplace or (self._reshape_transform and not is_contatenated_batch_ta_tensors)
                     else inpt.clone()
                 )
                 flat_pre_outputs.append(pre_output)
 
-                if is_batch_bboxes_or_masks_inpt:
+                if is_contatenated_batch_ta_tensors:
                     transform_inpt = pre_output.get_chunk(chunk_indices=indices_transform)
                 else:
                     with set_return_type("TATensor" if is_ta_inpt else "Tensor"):
@@ -308,9 +306,7 @@ class RandomApplyTransform(nn.Module):
                 transform_outputs.append(transform_inpt)
                 continue
             is_ta_inpt = isinstance(transform_inpt, ta_tensors.TATensor)
-            is_batch_bboxes_or_masks_inpt = isinstance(
-                transform_inpt, (ta_tensors.BatchBoundingBoxes, ta_tensors.BatchMasks)
-            )
+            is_contatenated_batch_ta_tensors = isinstance(transform_inpt, _CONCATENATED_BATCH_TA_TENSORS)  # type: ignore[arg-type]
 
             if num_chunks == 1:
                 output = self._transform(transform_inpt, params[0])
@@ -318,7 +314,7 @@ class RandomApplyTransform(nn.Module):
                 if self._reshape_transform:
                     output = []
                 for i, chunk_indices in enumerate(chunks_indices):
-                    if is_batch_bboxes_or_masks_inpt:
+                    if is_contatenated_batch_ta_tensors:
                         chunk_inpt = transform_inpt.get_chunk(chunk_indices=chunk_indices)
                         chunk_output = self._transform(chunk_inpt, params[i])
                         if self._reshape_transform:
@@ -354,12 +350,12 @@ class RandomApplyTransform(nn.Module):
                     continue
 
                 is_ta_output = isinstance(flat_pre_output, ta_tensors.TATensor)
-                is_batch_bboxes_or_masks_inpt = isinstance(
+                is_contatenated_batch_ta_tensors = isinstance(
                     flat_pre_output,
-                    (ta_tensors.BatchBoundingBoxes, ta_tensors.BatchMasks),
+                    _CONCATENATED_BATCH_TA_TENSORS,  # type: ignore[arg-type]
                 )
 
-                if is_batch_bboxes_or_masks_inpt:
+                if is_contatenated_batch_ta_tensors:
                     flat_pre_output.update_chunk_(transform_output, chunk_indices=indices_transform)
                 else:
                     with set_return_type("TATensor" if is_ta_output else "Tensor"):

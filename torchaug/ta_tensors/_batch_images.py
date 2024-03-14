@@ -9,6 +9,7 @@ from typing import Any, Optional, Sequence, Union
 import torch
 from torch._C import device, dtype
 
+from ._image import Image
 from ._ta_tensor import TATensor
 
 
@@ -57,6 +58,10 @@ class BatchImages(TATensor):
                     raise ValueError(f"All batches of images must have the same {attr} attribute.")
 
         return cls(torch.cat([images.data for images in images_batches], 0))
+
+    def to_samples(self) -> list[Image]:
+        """Get the tensors."""
+        return [Image(image.clone()) for image in self]
 
     def __repr__(self, *, tensor_contents: Any = None) -> str:  # type: ignore[override]
         return self._make_repr()
