@@ -25,10 +25,12 @@ from torch.utils.data._utils.collate import (
 
 from ...ta_tensors._batch_bounding_boxes import BatchBoundingBoxes, convert_bboxes_to_batch_bboxes
 from ...ta_tensors._batch_images import BatchImages
+from ...ta_tensors._batch_labels import BatchLabels, convert_labels_to_batch_labels
 from ...ta_tensors._batch_masks import BatchMasks, convert_masks_to_batch_masks
 from ...ta_tensors._batch_videos import BatchVideos
 from ...ta_tensors._bounding_boxes import BoundingBoxes
 from ...ta_tensors._image import Image
+from ...ta_tensors._labels import Labels
 from ...ta_tensors._mask import Mask
 from ...ta_tensors._video import Video
 
@@ -55,6 +57,10 @@ def collate_ta_tensor_fn(
         return BatchBoundingBoxes.cat(batch)
     elif isinstance(elem, BatchMasks):
         return BatchMasks.cat(batch)
+    elif isinstance(elem, BatchLabels):
+        return BatchLabels.cat(batch)
+    elif isinstance(elem, Labels):
+        return convert_labels_to_batch_labels(batch)
     else:
         raise TypeError(default_collate_err_msg_format.format(type(batch)))
 
@@ -82,6 +88,8 @@ for ta_type in [
     BatchImages,
     BatchVideos,
     BatchMasks,
+    BatchLabels,
+    Labels,
 ]:
     default_collate_fn_map[ta_type] = collate_ta_tensor_fn
 

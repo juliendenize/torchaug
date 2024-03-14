@@ -408,7 +408,7 @@ def coco_dectection_wrapper_factory(dataset, target_keys):
             )
 
         if "labels" in target_keys:
-            target["labels"] = torch.tensor(batched_target["category_id"])
+            target["labels"] = ta_tensors.Labels(torch.tensor(batched_target["category_id"]))
 
         for target_key in target_keys - {"image_id", "boxes", "masks", "labels"}:
             target[target_key] = batched_target[target_key]

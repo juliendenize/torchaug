@@ -14,6 +14,13 @@ from ._mask import Mask
 from ._ta_tensor import TATensor
 
 
+_CHECK_ATTRS = [
+    "requires_grad",
+    "device",
+    "dtype",
+]
+
+
 def convert_masks_to_batch_masks(
     masks: Sequence[Mask],
 ) -> BatchMasks:
@@ -22,16 +29,10 @@ def convert_masks_to_batch_masks(
 
     Assumes all masks are valid.
     """
-    attrs = [
-        "requires_grad",
-        "device",
-        "dtype",
-    ]
-
     for mask in masks:
         if not mask.shape[-2:] == masks[0].shape[-2:]:
             raise ValueError("All masks must have the same size.")
-        for attr in attrs:
+        for attr in _CHECK_ATTRS:
             if getattr(mask, attr) != getattr(masks[0], attr):
                 raise ValueError(f"All masks must have the same {attr} attribute.")
 
@@ -103,18 +104,12 @@ class BatchMasks(TATensor):
         Returns:
             The concatenated :class:`~torchaug.ta_tensors.BatchMasks`.
         """
-        attrs = [
-            "requires_grad",
-            "device",
-            "dtype",
-        ]
-
         for batch_mask in masks_batches:
             if not isinstance(batch_mask, BatchMasks):
                 raise ValueError("All batches must be of type BatchMasks.")
             if not batch_mask.shape[-2:] == masks_batches[0].shape[-2:]:
                 raise ValueError("All batches of masks must have the same size.")
-            for attr in attrs:
+            for attr in _CHECK_ATTRS:
                 if getattr(batch_mask, attr) != getattr(masks_batches[0], attr):
                     raise ValueError(f"All batches of masks must have the same {attr} attribute.")
 
@@ -253,6 +248,10 @@ class BatchMasks(TATensor):
         self[chunk_indices] = chunk
 
         return self
+
+    def to_samples(self) -> list[Mask]:
+        """Get the tensors."""
+        return [self.get_sample(i).clone() for i in range(self.batch_size)]
 
     @classmethod
     def masked_remove(cls, masks: BatchMasks, mask: torch.Tensor) -> BatchMasks:

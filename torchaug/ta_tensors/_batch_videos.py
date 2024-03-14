@@ -10,6 +10,7 @@ import torch
 from torch._C import device, dtype
 
 from ._ta_tensor import TATensor
+from ._video import Video
 
 
 class BatchVideos(TATensor):
@@ -55,6 +56,10 @@ class BatchVideos(TATensor):
                     raise ValueError(f"All batches of images must have the same {attr} attribute.")
 
         return cls(torch.cat([images.data for images in video_batches], 0))
+
+    def to_samples(self) -> list[Video]:
+        """Get the tensors."""
+        return [Video(video.clone()) for video in self]
 
     def __repr__(self, *, tensor_contents: Any = None) -> str:  # type: ignore[override]
         return self._make_repr()
