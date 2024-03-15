@@ -25,8 +25,6 @@ def convert_labels_to_batch_labels(
 ) -> BatchLabels:
     """Convert a sequence of :class:`~torchaug.ta_tensors.Labels` to a
     :class:`~torchaug.ta_tensors.BatchLabels` object.
-
-    Assumes all tensors are valid.
     """
     for attr in _CHECK_ATTRS:
         for label in labels:
@@ -231,7 +229,9 @@ class BatchLabels(_BatchConcatenatedTATensor):
 
         neg_mask = (~mask).cpu()
 
-        num_delete_per_sample = [neg_mask[idx_start:idx_stop].sum().item() for idx_start, idx_stop in old_samples_ranges]
+        num_delete_per_sample = [
+            neg_mask[idx_start:idx_stop].sum().item() for idx_start, idx_stop in old_samples_ranges
+        ]
 
         new_samples_ranges = [
             (

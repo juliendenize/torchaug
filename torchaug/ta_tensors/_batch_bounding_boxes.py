@@ -28,8 +28,6 @@ def convert_bboxes_to_batch_bboxes(
 ) -> BatchBoundingBoxes:
     """Convert a list of :class:`~torchaug.ta_tensors.BoundingBoxes` objects to a
     :class:`~torchaug.ta_tensors.BatchBoundingBoxes` object.
-
-    Assumes all bboxes are valid.
     """
     if not all(
         getattr(bbox, attr) == getattr(bboxes[0], attr) for bbox in bboxes if bbox is not None for attr in _CHECK_ATTRS
@@ -297,7 +295,9 @@ class BatchBoundingBoxes(_BatchConcatenatedTATensor):
 
         neg_mask = (~mask).cpu()
 
-        num_delete_per_sample = [neg_mask[idx_start:idx_stop].sum().item() for idx_start, idx_stop in old_samples_ranges]
+        num_delete_per_sample = [
+            neg_mask[idx_start:idx_stop].sum().item() for idx_start, idx_stop in old_samples_ranges
+        ]
 
         new_samples_ranges = [
             (

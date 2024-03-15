@@ -5,11 +5,14 @@ from torchaug.data.dataloader._collate import default_collate
 from torchaug.ta_tensors import (
     BatchBoundingBoxes,
     BatchImages,
+    BatchLabels,
     BatchMasks,
     BatchVideos,
     Image,
+    Labels,
     Video,
     convert_bboxes_to_batch_bboxes,
+    convert_labels_to_batch_labels,
     convert_masks_to_batch_masks,
 )
 
@@ -19,11 +22,13 @@ from ..utils import (
     make_batch_bounding_boxes,
     make_batch_detection_masks,
     make_batch_images,
+    make_batch_labels,
     make_batch_segmentation_masks,
     make_batch_videos,
     make_bounding_boxes,
     make_detection_masks,
     make_image,
+    make_labels,
     make_segmentation_mask,
     make_video,
 )
@@ -93,7 +98,9 @@ class TestDefaultCollate:
         assert actual.device.type == device
         assert actual.canvas_size == expected_output.canvas_size
         assert actual.format == expected_output.format
-        assert all(actual.samples_ranges[i] == expected_output.samples_ranges[i] for i in range(len(actual.samples_ranges)))
+        assert all(
+            actual.samples_ranges[i] == expected_output.samples_ranges[i] for i in range(len(actual.samples_ranges))
+        )
         assert isinstance(actual, BatchBoundingBoxes)
 
     @pytest.mark.parametrize("device", cpu_and_cuda())
@@ -109,8 +116,27 @@ class TestDefaultCollate:
 
         assert_equal(actual, expected_output)
         assert actual.device.type == device
-        assert all(actual.samples_ranges[i] == expected_output.samples_ranges[i] for i in range(len(actual.samples_ranges)))
+        assert all(
+            actual.samples_ranges[i] == expected_output.samples_ranges[i] for i in range(len(actual.samples_ranges))
+        )
         assert isinstance(actual, BatchMasks)
+
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_labels(self, device):
+        labels = [
+            make_labels(device=device),
+            make_labels(device=device),
+        ]
+
+        actual = default_collate(labels)
+        expected_output = convert_labels_to_batch_labels(labels)
+
+        assert_equal(actual, expected_output)
+        assert actual.device.type == device
+        assert all(
+            actual.samples_ranges[i] == expected_output.samples_ranges[i] for i in range(len(actual.samples_ranges))
+        )
+        assert isinstance(actual, BatchLabels)
 
     @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("make_batch_masks", [make_batch_detection_masks, make_batch_segmentation_masks])
@@ -126,9 +152,28 @@ class TestDefaultCollate:
         assert_equal(actual, expected_output_data)
         assert actual.device.type == device
         assert actual.samples_ranges == masks[0].samples_ranges + [
-            (idx_start + masks[0].num_data, idx_end + masks[0].num_data) for idx_start, idx_end in masks[1].samples_ranges
+            (idx_start + masks[0].num_data, idx_end + masks[0].num_data)
+            for idx_start, idx_end in masks[1].samples_ranges
         ]
         assert isinstance(actual, BatchMasks)
+
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_batch_labels(self, device):
+        labels = [
+            make_batch_labels(device=device),
+            make_batch_labels(device=device),
+        ]
+
+        actual = default_collate(labels)
+        expected_output_data = BatchLabels.cat(labels).data
+
+        assert_equal(actual, expected_output_data)
+        assert actual.device.type == device
+        assert actual.samples_ranges == labels[0].samples_ranges + [
+            (idx_start + labels[0].num_data, idx_end + labels[0].num_data)
+            for idx_start, idx_end in labels[1].samples_ranges
+        ]
+        assert isinstance(actual, BatchLabels)
 
     @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("make_batch_bounding_boxes", [make_batch_bounding_boxes])

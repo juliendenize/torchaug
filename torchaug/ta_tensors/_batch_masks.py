@@ -26,8 +26,6 @@ def convert_masks_to_batch_masks(
 ) -> BatchMasks:
     """Convert a sequence of :class:`~torchaug.ta_tensors.Mask` objects to a
     :class:`~torchaug.ta_tensors.BatchMasks` object.
-
-    Assumes all masks are valid.
     """
     for mask in masks:
         if not mask.shape[-2:] == masks[0].shape[-2:]:
@@ -250,7 +248,8 @@ class BatchMasks(_BatchConcatenatedTATensor):
         neg_mask = (~mask).cpu()
 
         num_delete_per_sample = [
-            neg_mask[old_samples_ranges[i][0] : old_samples_ranges[i][1]].sum().item() for i in range(len(old_samples_ranges))
+            neg_mask[old_samples_ranges[i][0] : old_samples_ranges[i][1]].sum().item()
+            for i in range(len(old_samples_ranges))
         ]
 
         new_samples_ranges = [

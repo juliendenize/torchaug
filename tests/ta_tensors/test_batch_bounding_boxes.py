@@ -33,7 +33,10 @@ class TestBatchBoundingBoxes:
 
     def test_cat(self):
         bbox1 = BatchBoundingBoxes(
-            torch.tensor([[0, 0, 10, 10]]), format=BoundingBoxFormat.XYWH, canvas_size=(100, 100), samples_ranges=[(0, 1)]
+            torch.tensor([[0, 0, 10, 10]]),
+            format=BoundingBoxFormat.XYWH,
+            canvas_size=(100, 100),
+            samples_ranges=[(0, 1)],
         )
         bbox2 = BatchBoundingBoxes(
             torch.tensor([[20, 20, 30, 30]]),
