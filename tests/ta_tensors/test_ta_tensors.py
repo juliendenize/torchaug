@@ -48,12 +48,12 @@ def test_mask_instance(data):
 
 
 @pytest.mark.parametrize("data", [torch.randint(0, 10, size=(2, 1, 32, 32))])
-@pytest.mark.parametrize("idx_sample", [[(0, 1), (1, 2)]])
-def test_batch_masks_instance(data, idx_sample):
-    masks = ta_tensors.BatchMasks(data, idx_sample=idx_sample)
+@pytest.mark.parametrize("range_samples", [[(0, 1), (1, 2)]])
+def test_batch_masks_instance(data, range_samples):
+    masks = ta_tensors.BatchMasks(data, range_samples=range_samples)
     assert isinstance(masks, torch.Tensor)
     assert masks.ndim == 4 and masks.shape[0] == 2
-    assert masks.idx_sample == idx_sample
+    assert masks.range_samples == range_samples
 
 
 @pytest.mark.parametrize(
@@ -79,7 +79,7 @@ def test_bbox_instance(data, format):
 
 
 @pytest.mark.parametrize(
-    "data, idx_sample",
+    "data, range_samples",
     [
         (torch.randint(0, 32, size=(5, 4)), [(0, 1), (1, 2), (2, 5)]),
         (
@@ -97,8 +97,8 @@ def test_bbox_instance(data, format):
         ta_tensors.BoundingBoxFormat.XYWH,
     ],
 )
-def test_batch_bboxes_instance(data, idx_sample, format):
-    bboxes = ta_tensors.BatchBoundingBoxes(data, format=format, canvas_size=(32, 32), idx_sample=idx_sample)
+def test_batch_bboxes_instance(data, range_samples, format):
+    bboxes = ta_tensors.BatchBoundingBoxes(data, format=format, canvas_size=(32, 32), range_samples=range_samples)
     assert isinstance(bboxes, torch.Tensor)
     assert bboxes.ndim == 2 and bboxes.shape[1] == 4
     if isinstance(format, str):
@@ -109,7 +109,7 @@ def test_batch_bboxes_instance(data, idx_sample, format):
 def test_batch_bboxes_dim_error():
     data_2d = [[[1, 2, 3, 4]]]
     with pytest.raises(ValueError, match="Expected a 2D tensor, got 3D"):
-        ta_tensors.BatchBoundingBoxes(data_2d, format="XYXY", canvas_size=(32, 32), idx_sample=[(0, 1)])
+        ta_tensors.BatchBoundingBoxes(data_2d, format="XYXY", canvas_size=(32, 32), range_samples=[(0, 1)])
 
 
 @pytest.mark.parametrize(
@@ -318,61 +318,61 @@ def test_force_subclass_with_metadata_batch_bounding_boxes(return_type):
         [[0, 0, 5, 5], [2, 2, 7, 7], [0, 0, 5, 5], [2, 2, 7, 7]],
         format=format,
         canvas_size=canvas_size,
-        idx_sample=[(0, 1), (1, 2), (2, 4)],
+        range_samples=[(0, 1), (1, 2), (2, 4)],
     )
 
     ta_tensors.set_return_type(return_type)
     bbox = bbox.clone()
     if return_type == "TATensor":
         assert bbox.format, bbox.canvas_size == (format, canvas_size)
-        assert bbox.idx_sample == [(0, 1), (1, 2), (2, 4)]
+        assert bbox.range_samples == [(0, 1), (1, 2), (2, 4)]
 
     bbox = bbox.to(torch.float64)
     if return_type == "TATensor":
         assert bbox.format, bbox.canvas_size == (format, canvas_size)
-        assert bbox.idx_sample == [(0, 1), (1, 2), (2, 4)]
+        assert bbox.range_samples == [(0, 1), (1, 2), (2, 4)]
 
     bbox = bbox.detach()
     if return_type == "TATensor":
         assert bbox.format, bbox.canvas_size == (format, canvas_size)
-        assert bbox.idx_sample == [(0, 1), (1, 2), (2, 4)]
+        assert bbox.range_samples == [(0, 1), (1, 2), (2, 4)]
 
     assert not bbox.requires_grad
     bbox.requires_grad_(True)
     if return_type == "TATensor":
         assert bbox.format, bbox.canvas_size == (format, canvas_size)
-        assert bbox.idx_sample == [(0, 1), (1, 2), (2, 4)]
+        assert bbox.range_samples == [(0, 1), (1, 2), (2, 4)]
         assert bbox.requires_grad
     ta_tensors.set_return_type("tensor")
 
 
 @pytest.mark.parametrize("class_", [ta_tensors.BatchLabels, ta_tensors.BatchMasks])
 @pytest.mark.parametrize("return_type", ["Tensor", "TATensor"])
-def test_force_subclass_with_metadata_type_with_idx_sample(class_, return_type):
+def test_force_subclass_with_metadata_type_with_range_samples(class_, return_type):
     # Sanity checks for the ops in _FORCE_TORCHFUNCTION_SUBCLASS and ta_tensors with metadata
     # Largely the same as above, we additionally check that the metadata is preserved
     ta_tensor = class_(
         [[[0, 0, 5, 5], [2, 2, 7, 7]], [[0, 0, 5, 5], [2, 2, 7, 7]]],
-        idx_sample=[(0, 1), (1, 2)],
+        range_samples=[(0, 1), (1, 2)],
     )
 
     ta_tensors.set_return_type(return_type)
     ta_tensor = ta_tensor.clone()
     if return_type == "TATensor":
-        assert ta_tensor.idx_sample == [(0, 1), (1, 2)]
+        assert ta_tensor.range_samples == [(0, 1), (1, 2)]
 
     ta_tensor = ta_tensor.to(torch.float64)
     if return_type == "TATensor":
-        assert ta_tensor.idx_sample == [(0, 1), (1, 2)]
+        assert ta_tensor.range_samples == [(0, 1), (1, 2)]
 
     ta_tensor = ta_tensor.detach()
     if return_type == "TATensor":
-        assert ta_tensor.idx_sample == [(0, 1), (1, 2)]
+        assert ta_tensor.range_samples == [(0, 1), (1, 2)]
 
     assert not ta_tensor.requires_grad
     ta_tensor.requires_grad_(True)
     if return_type == "TATensor":
-        assert ta_tensor.idx_sample == [(0, 1), (1, 2)]
+        assert ta_tensor.range_samples == [(0, 1), (1, 2)]
         assert ta_tensor.requires_grad
     ta_tensors.set_return_type("tensor")
 

@@ -16,7 +16,7 @@ class TestBatchBoundingBoxes:
             torch.tensor([[0, 0, 10, 10], [20, 20, 30, 30], [40, 40, 50, 50]]),
             format=BoundingBoxFormat.XYWH,
             canvas_size=(100, 100),
-            idx_sample=[(0, 1), (1, 2), (2, 3)],
+            range_samples=[(0, 1), (1, 2), (2, 3)],
         )
 
         assert bbox.batch_size == 3
@@ -26,26 +26,26 @@ class TestBatchBoundingBoxes:
             torch.tensor([[0, 0, 10, 10], [20, 20, 30, 30], [40, 40, 50, 50]]),
             format=BoundingBoxFormat.XYWH,
             canvas_size=(100, 100),
-            idx_sample=[(0, 1), (1, 2), (2, 3)],
+            range_samples=[(0, 1), (1, 2), (2, 3)],
         )
 
         assert bbox.num_data == 3
 
     def test_cat(self):
         bbox1 = BatchBoundingBoxes(
-            torch.tensor([[0, 0, 10, 10]]), format=BoundingBoxFormat.XYWH, canvas_size=(100, 100), idx_sample=[(0, 1)]
+            torch.tensor([[0, 0, 10, 10]]), format=BoundingBoxFormat.XYWH, canvas_size=(100, 100), range_samples=[(0, 1)]
         )
         bbox2 = BatchBoundingBoxes(
             torch.tensor([[20, 20, 30, 30]]),
             format=BoundingBoxFormat.XYWH,
             canvas_size=(100, 100),
-            idx_sample=[(0, 1)],
+            range_samples=[(0, 1)],
         )
         bbox3 = BatchBoundingBoxes(
             torch.tensor([[40, 40, 50, 50]]),
             format=BoundingBoxFormat.XYWH,
             canvas_size=(100, 100),
-            idx_sample=[(0, 1)],
+            range_samples=[(0, 1)],
         )
 
         cat_bbox = BatchBoundingBoxes.cat([bbox1, bbox2, bbox3])
@@ -54,14 +54,14 @@ class TestBatchBoundingBoxes:
         assert torch.all(torch.eq(cat_bbox.data, torch.tensor([[0, 0, 10, 10], [20, 20, 30, 30], [40, 40, 50, 50]])))
         assert cat_bbox.format == BoundingBoxFormat.XYWH
         assert cat_bbox.canvas_size == (100, 100)
-        assert cat_bbox.idx_sample == [(0, 1), (1, 2), (2, 3)]
+        assert cat_bbox.range_samples == [(0, 1), (1, 2), (2, 3)]
 
     def test_get_sample(self):
         bbox = BatchBoundingBoxes(
             torch.tensor([[0, 0, 10, 10], [20, 20, 30, 30], [40, 40, 50, 50]]),
             format=BoundingBoxFormat.XYWH,
             canvas_size=(100, 100),
-            idx_sample=[(0, 1), (1, 2), (2, 3)],
+            range_samples=[(0, 1), (1, 2), (2, 3)],
         )
 
         sample_bbox = bbox.get_sample(1)
@@ -76,7 +76,7 @@ class TestBatchBoundingBoxes:
             torch.tensor([[0, 0, 10, 10], [20, 20, 30, 30], [40, 40, 50, 50]]),
             format=BoundingBoxFormat.XYWH,
             canvas_size=(100, 100),
-            idx_sample=[(0, 1), (1, 2), (2, 3)],
+            range_samples=[(0, 1), (1, 2), (2, 3)],
         )
 
         chunk_indices = torch.tensor([0, 2])
@@ -86,7 +86,7 @@ class TestBatchBoundingBoxes:
         assert torch.all(torch.eq(chunk_bbox.data, torch.tensor([[0, 0, 10, 10], [40, 40, 50, 50]])))
         assert chunk_bbox.format == BoundingBoxFormat.XYWH
         assert chunk_bbox.canvas_size == (100, 100)
-        assert chunk_bbox.idx_sample == [(0, 1), (1, 2)]
+        assert chunk_bbox.range_samples == [(0, 1), (1, 2)]
 
     def test_update_chunk(self):
         # Create a batch of bounding boxes
@@ -94,11 +94,11 @@ class TestBatchBoundingBoxes:
             torch.tensor([[10, 10, 20, 20], [30, 30, 40, 40]]),
             format="xywh",
             canvas_size=(100, 100),
-            idx_sample=[(0, 1), (1, 2)],
+            range_samples=[(0, 1), (1, 2)],
         )
 
         # Create a chunk of bounding boxes to update
-        chunk = BatchBoundingBoxes([[50, 50, 60, 60]], format="xywh", canvas_size=(100, 100), idx_sample=[(0, 1)])
+        chunk = BatchBoundingBoxes([[50, 50, 60, 60]], format="xywh", canvas_size=(100, 100), range_samples=[(0, 1)])
 
         # Get the indices of the chunk to update
         chunk_indices = torch.tensor([0])
@@ -113,7 +113,7 @@ class TestBatchBoundingBoxes:
         # Verify that the chunk was updated correctly
         expected_boxes = torch.tensor([[50, 50, 60, 60], [30, 30, 40, 40]])
         assert torch.all(torch.eq(updated_batch, expected_boxes))
-        assert updated_batch.idx_sample == [(0, 1), (1, 2)]
+        assert updated_batch.range_samples == [(0, 1), (1, 2)]
         assert batch is updated_batch
 
     def test_masked_select(self):
@@ -121,7 +121,7 @@ class TestBatchBoundingBoxes:
             torch.tensor([[0, 0, 10, 10], [20, 20, 30, 30], [40, 40, 50, 50]]),
             format=BoundingBoxFormat.XYWH,
             canvas_size=(100, 100),
-            idx_sample=[(0, 1), (1, 2), (2, 3)],
+            range_samples=[(0, 1), (1, 2), (2, 3)],
         )
         mask = torch.tensor([True, False, True])
 
@@ -130,7 +130,7 @@ class TestBatchBoundingBoxes:
         assert torch.all(torch.eq(new_bbox.data, torch.tensor([[0, 0, 10, 10], [40, 40, 50, 50]])))
         assert new_bbox.format == BoundingBoxFormat.XYWH
         assert new_bbox.canvas_size == (100, 100)
-        assert new_bbox.idx_sample == [(0, 1), (1, 1), (1, 2)]
+        assert new_bbox.range_samples == [(0, 1), (1, 1), (1, 2)]
 
 
 def test_convert_batch_bboxes_to_bboxes():
@@ -139,7 +139,7 @@ def test_convert_batch_bboxes_to_bboxes():
         torch.tensor([[0.1, 0.2, 0.3, 0.4], [0.5, 0.6, 0.7, 0.8]]),
         canvas_size=(100, 100),
         format="xywh",
-        idx_sample=[(0, 2), (2, 2)],
+        range_samples=[(0, 2), (2, 2)],
     )
 
     # Call the function to convert BatchBoundingBoxes to a list of BoundingBoxes
@@ -181,7 +181,7 @@ def test_convert_bboxes_to_batch_bboxes():
     )
     assert batch_bboxes.canvas_size == (100, 100)
     assert batch_bboxes.format == BoundingBoxFormat.XYWH
-    assert batch_bboxes.idx_sample == [(0, 2), (2, 4), (4, 4)]
+    assert batch_bboxes.range_samples == [(0, 2), (2, 4), (4, 4)]
     assert batch_bboxes.batch_size == 3
     assert batch_bboxes.num_data == 4
     assert batch_bboxes.get_num_data_sample(0) == 2

@@ -66,7 +66,7 @@ def reference_affine_bounding_boxes_helper(
     format = bounding_boxes.format
     canvas_size = new_canvas_size or bounding_boxes.canvas_size
     if is_batch:
-        idx_sample = bounding_boxes.idx_sample
+        range_samples = bounding_boxes.range_samples
 
     def affine_bounding_boxes(bounding_boxes):
         dtype = bounding_boxes.dtype
@@ -126,7 +126,7 @@ def reference_affine_bounding_boxes_helper(
             ).reshape(bounding_boxes.shape),
             format=format,
             canvas_size=canvas_size,
-            idx_sample=idx_sample,
+            range_samples=range_samples,
         )
     else:
         return ta_tensors.BoundingBoxes(
@@ -3232,7 +3232,7 @@ class TestRandomIoUCrop:
                 format="XYXY",
                 canvas_size=size,
                 device=device,
-                idx_sample=[(0, 2), (2, 4)],
+                range_samples=[(0, 2), (2, 4)],
             )
         )
         sample = [image, bboxes]

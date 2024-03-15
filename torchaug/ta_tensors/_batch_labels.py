@@ -35,15 +35,15 @@ def convert_labels_to_batch_labels(
 
     labels_data = torch.cat(labels)
 
-    idx_sample = []
+    range_samples = []
     sum_labels = 0
     for label in labels:
-        idx_sample.append((sum_labels, sum_labels + label.shape[0]))
+        range_samples.append((sum_labels, sum_labels + label.shape[0]))
         sum_labels += label.shape[0]
 
     batch_labels = BatchLabels(
         labels_data,
-        idx_sample=idx_sample,
+        range_samples=range_samples,
     )
 
     return batch_labels
@@ -55,9 +55,9 @@ def convert_batch_labels_to_labels(
     """Convert :class:`~torchaug.ta_tensors.BatchLabels` object to a list of
     :class:`~torchaug.ta_tensors.Labels`.
     """
-    idx_sample = batch_labels.idx_sample
+    range_samples = batch_labels.range_samples
 
-    list_labels = [Labels(batch_labels[idx_start:idx_stop]) for idx_start, idx_stop in idx_sample]
+    list_labels = [Labels(batch_labels[idx_start:idx_stop]) for idx_start, idx_stop in range_samples]
     return list_labels
 
 
@@ -70,8 +70,7 @@ class BatchLabels(_BatchConcatenatedTATensor):
         data: Any data that can be turned into a tensor with :func:`torch.as_tensor`.
         dtype: Desired data type. If omitted, will be inferred from
             ``data``.
-        idx_sample: Each element is a tuple of the index of the first tensor and the last label of the corresponding
-            sample in the batch of N samples. If None, the corresponding sample has no label.
+        range_samples: Each element is the range of the indices of the labels for each sample.
         device: Desired device. If omitted and ``data`` is a :class:`torch.Tensor`, the device is taken from
             it. Otherwise, the batch of tensor is constructed on the CPU.
         requires_grad: Whether autograd should record operations. If omitted and
@@ -98,18 +97,18 @@ class BatchLabels(_BatchConcatenatedTATensor):
                 if getattr(batch_label, attr) != getattr(labels_batches[0], attr):
                     raise ValueError(f"All batches of tensors must have the same {attr} attribute.")
 
-        idx_sample = []
+        range_samples = []
         sum_labels = 0
         for batch_labels in labels_batches:
-            for idx_start, idx_stop in batch_labels.idx_sample:
-                idx_sample.append((idx_start + sum_labels, idx_stop + sum_labels))
+            for idx_start, idx_stop in batch_labels.range_samples:
+                range_samples.append((idx_start + sum_labels, idx_stop + sum_labels))
             sum_labels += batch_labels.num_data
 
         data = torch.cat([batch_label.data for batch_label in labels_batches], 0)
 
         return cls(
             data,
-            idx_sample=idx_sample,
+            range_samples=range_samples,
         )
 
     @classmethod
@@ -117,26 +116,26 @@ class BatchLabels(_BatchConcatenatedTATensor):
         cls,
         tensor: torch.Tensor,
         *,
-        idx_sample: List[Tuple[int, int]],
+        range_samples: List[Tuple[int, int]],
     ) -> BatchLabels:
         batch_labels = tensor.as_subclass(cls)
-        batch_labels.idx_sample = idx_sample
+        batch_labels.range_samples = range_samples
         return batch_labels
 
     def __new__(
         cls,
         data: Any,
         *,
-        idx_sample: List[Tuple[int, int]],
+        range_samples: List[Tuple[int, int]],
         dtype: Optional[torch.dtype] = None,
         device: Optional[Union[torch.device, str, int]] = None,
         requires_grad: Optional[bool] = None,
     ) -> BatchLabels:
         tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
 
-        cls._check_idx_sample(idx_sample, tensor)
+        cls._check_range_samples(range_samples, tensor)
 
-        return cls._wrap(tensor, idx_sample=idx_sample)
+        return cls._wrap(tensor, range_samples=range_samples)
 
     @classmethod
     def _wrap_output(
@@ -153,18 +152,18 @@ class BatchLabels(_BatchConcatenatedTATensor):
         flat_params, _ = tree_flatten(args + (tuple(kwargs.values()) if kwargs else ()))  # type: ignore[operator]
         first_batch_labels_from_args = next(x for x in flat_params if isinstance(x, BatchLabels))
 
-        idx_sample = first_batch_labels_from_args.idx_sample.copy()  # clone the list.
+        range_samples = first_batch_labels_from_args.range_samples.copy()  # clone the list.
 
         if isinstance(output, torch.Tensor) and not isinstance(output, BatchLabels):
             output = BatchLabels._wrap(
                 output,
-                idx_sample=idx_sample,
+                range_samples=range_samples,
             )
         elif isinstance(output, (tuple, list)):
             output = type(output)(
                 BatchLabels._wrap(
                     part,
-                    idx_sample=idx_sample,
+                    range_samples=range_samples,
                 )
                 for part in output
             )
@@ -179,7 +178,7 @@ class BatchLabels(_BatchConcatenatedTATensor):
         Returns:
             The tensors for the sample.
         """
-        labels = self[self.idx_sample[idx][0] : self.idx_sample[idx][1]]
+        labels = self[self.range_samples[idx][0] : self.range_samples[idx][1]]
         return Labels(labels)
 
     def get_chunk(self, chunk_indices: torch.Tensor) -> BatchLabels:
@@ -191,11 +190,11 @@ class BatchLabels(_BatchConcatenatedTATensor):
         Returns:
             The chunk of the batch of tensors.
         """
-        chunk_idx_sample = self._get_chunk_idx_sample_from_chunk_indices(chunk_indices)
+        chunk_range_samples = self._get_chunk_range_samples_from_chunk_indices(chunk_indices)
         data_indices = self._get_data_indices_from_chunk_indices(chunk_indices)
         return BatchLabels(
             self[data_indices],
-            idx_sample=chunk_idx_sample,
+            range_samples=chunk_range_samples,
             device=self.device,
             requires_grad=self.requires_grad,
         )
@@ -227,22 +226,22 @@ class BatchLabels(_BatchConcatenatedTATensor):
         Returns:
             The updated batch of labels.
         """
-        old_idx_sample = labels.idx_sample
+        old_range_samples = labels.range_samples
         data = labels.data[mask]
 
         neg_mask = (~mask).cpu()
 
-        num_delete_per_sample = [neg_mask[idx_start:idx_stop].sum().item() for idx_start, idx_stop in old_idx_sample]
+        num_delete_per_sample = [neg_mask[idx_start:idx_stop].sum().item() for idx_start, idx_stop in old_range_samples]
 
-        new_idx_sample = [
+        new_range_samples = [
             (
-                old_idx_sample[i][0] - sum(num_delete_per_sample[:i]),
-                old_idx_sample[i][1] - sum(num_delete_per_sample[: i + 1]),
+                old_range_samples[i][0] - sum(num_delete_per_sample[:i]),
+                old_range_samples[i][1] - sum(num_delete_per_sample[: i + 1]),
             )
-            for i in range(len(old_idx_sample))
+            for i in range(len(old_range_samples))
         ]
 
         return cls._wrap(
             data,
-            idx_sample=new_idx_sample,
+            range_samples=new_range_samples,
         )

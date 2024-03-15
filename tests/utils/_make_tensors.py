@@ -123,8 +123,8 @@ def make_batch_bounding_boxes(
             ).as_subclass(torch.Tensor)
         )
     bboxes = torch.cat(bboxes)
-    idx_sample = [(num_boxes * idx, num_boxes * (idx + 1)) for idx in range(batch_dims[0])]
-    return ta_tensors.BatchBoundingBoxes(bboxes, format=format, canvas_size=canvas_size, idx_sample=idx_sample)
+    range_samples = [(num_boxes * idx, num_boxes * (idx + 1)) for idx in range(batch_dims[0])]
+    return ta_tensors.BatchBoundingBoxes(bboxes, format=format, canvas_size=canvas_size, range_samples=range_samples)
 
 
 def make_detection_masks(size=DEFAULT_SIZE, *, num_masks=1, dtype=None, device="cpu"):
@@ -163,8 +163,8 @@ def make_batch_detection_masks(
             )
         )
     masks = torch.cat(masks)
-    idx_sample = [(num_masks * idx, num_masks * (idx + 1)) for idx in range(batch_dims[0])]
-    return ta_tensors.BatchMasks(masks, idx_sample=idx_sample)
+    range_samples = [(num_masks * idx, num_masks * (idx + 1)) for idx in range(batch_dims[0])]
+    return ta_tensors.BatchMasks(masks, range_samples=range_samples)
 
 
 def make_segmentation_mask(size=DEFAULT_SIZE, *, num_categories=10, batch_dims=(), dtype=None, device="cpu"):
@@ -201,8 +201,8 @@ def make_batch_segmentation_masks(
             )
         )
     masks = torch.cat(masks)
-    idx_sample = [(batch_dims[0] * idx, batch_dims[0] * (idx + 1)) for idx in range(batch_dims[0])]
-    return ta_tensors.BatchMasks(masks, idx_sample=idx_sample)
+    range_samples = [(batch_dims[0] * idx, batch_dims[0] * (idx + 1)) for idx in range(batch_dims[0])]
+    return ta_tensors.BatchMasks(masks, range_samples=range_samples)
 
 
 def make_video(size=DEFAULT_SIZE, *, num_frames=3, batch_dims=(), **kwargs):
@@ -226,9 +226,9 @@ def make_labels(size=DEFAULT_SIZE, *, batch_dims=(), **kwargs):
 
 
 def make_batch_labels(size=DEFAULT_SIZE, *, batch_dims=BATCH_DEFAULT_SIZE, **kwargs):
-    idx_sample = [(idx * size[0], (idx + 1) * size[0]) for idx in range(batch_dims[0])]
+    range_samples = [(idx * size[0], (idx + 1) * size[0]) for idx in range(batch_dims[0])]
     return ta_tensors.BatchLabels(
-        torch.randint(0, 10, (batch_dims[0] * size[0], *size[1:]), **kwargs), idx_sample=idx_sample
+        torch.randint(0, 10, (batch_dims[0] * size[0], *size[1:]), **kwargs), range_samples=range_samples
     )
 
 
