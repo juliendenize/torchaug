@@ -40,17 +40,17 @@ def wrap(wrappee, *, like, **kwargs) -> TATensor:
             wrappee,
             format=kwargs.get("format", like.format),
             canvas_size=kwargs.get("canvas_size", like.canvas_size),
-            range_samples=kwargs.get("range_samples", like.range_samples),
+            samples_ranges=kwargs.get("samples_ranges", like.samples_ranges),
         )
     elif isinstance(like, BatchMasks):
         return BatchMasks._wrap(
             wrappee,
-            range_samples=kwargs.get("range_samples", like.range_samples),
+            samples_ranges=kwargs.get("samples_ranges", like.samples_ranges),
         )
     elif isinstance(like, BatchLabels):
         return BatchLabels._wrap(
             wrappee,
-            range_samples=kwargs.get("range_samples", like.range_samples),
+            samples_ranges=kwargs.get("samples_ranges", like.samples_ranges),
         )
     else:
         return wrappee.as_subclass(type(like))

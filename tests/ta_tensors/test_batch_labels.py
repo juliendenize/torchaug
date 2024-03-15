@@ -8,8 +8,8 @@ class TestBatchLabels:
     @pytest.fixture
     def batch_labels(self):
         data = torch.tensor([[[1, 1, 0], [0, 1, 1]], [[2, 2, 0], [0, 2, 2]]])
-        range_samples = [(0, 1), (1, 2)]
-        return BatchLabels(data, range_samples=range_samples)
+        samples_ranges = [(0, 1), (1, 2)]
+        return BatchLabels(data, samples_ranges=samples_ranges)
 
     def test_batch_size(self, batch_labels):
         assert batch_labels.batch_size == 2
@@ -19,9 +19,9 @@ class TestBatchLabels:
 
     def test_cat(self, batch_labels):
         batch_labels_1 = BatchLabels(
-            torch.tensor([[[3, 3, 0], [0, 3, 3]], [[4, 4, 0], [0, 4, 4]]]), range_samples=[(0, 2), (2, 2)]
+            torch.tensor([[[3, 3, 0], [0, 3, 3]], [[4, 4, 0], [0, 4, 4]]]), samples_ranges=[(0, 2), (2, 2)]
         )
-        batch_labels_2 = BatchLabels(torch.tensor([[[5, 5, 0], [0, 5, 5]]]), range_samples=[(0, 1)])
+        batch_labels_2 = BatchLabels(torch.tensor([[[5, 5, 0], [0, 5, 5]]]), samples_ranges=[(0, 1)])
 
         result = BatchLabels.cat([batch_labels, batch_labels_1, batch_labels_2])
 
@@ -34,10 +34,10 @@ class TestBatchLabels:
                 [[5, 5, 0], [0, 5, 5]],
             ]
         )
-        expected_range_samples = [(0, 1), (1, 2), (2, 4), (4, 4), (4, 5)]
+        expected_samples_ranges = [(0, 1), (1, 2), (2, 4), (4, 4), (4, 5)]
 
         assert torch.all(torch.eq(result.data, expected_data))
-        assert result.range_samples == expected_range_samples
+        assert result.samples_ranges == expected_samples_ranges
 
     def test_get_sample(self, batch_labels):
         sample_0 = batch_labels.get_sample(0)
@@ -55,22 +55,22 @@ class TestBatchLabels:
         result = batch_labels.get_chunk(chunk_indices)
 
         expected_data = torch.tensor([[[2, 2, 0], [0, 2, 2]], [[1, 1, 0], [0, 1, 1]]])
-        expected_range_samples = [(0, 1), (1, 2)]
+        expected_samples_ranges = [(0, 1), (1, 2)]
 
         assert torch.equal(result.data, expected_data)
-        assert result.range_samples == expected_range_samples
+        assert result.samples_ranges == expected_samples_ranges
 
     def test_update_chunk_(self, batch_labels):
         chunk_indices = torch.tensor([0])
-        chunk = BatchLabels(torch.tensor([[[6, 6, 0], [0, 6, 6]]]), range_samples=[(0, 1)])
+        chunk = BatchLabels(torch.tensor([[[6, 6, 0], [0, 6, 6]]]), samples_ranges=[(0, 1)])
 
         result = batch_labels.update_chunk_(chunk, chunk_indices)
 
         expected_data = torch.tensor([[[6, 6, 0], [0, 6, 6]], [[2, 2, 0], [0, 2, 2]]])
-        expected_range_samples = [(0, 1), (1, 2)]
+        expected_samples_ranges = [(0, 1), (1, 2)]
 
         assert torch.equal(result.data, expected_data)
-        assert result.range_samples == expected_range_samples
+        assert result.samples_ranges == expected_samples_ranges
 
     def test_masked_select(self, batch_labels):
         mask = torch.tensor([True, False])
@@ -78,10 +78,10 @@ class TestBatchLabels:
         result = BatchLabels.masked_select(batch_labels, mask)
 
         expected_data = torch.tensor([[[1, 1, 0], [0, 1, 1]]])
-        expected_range_samples = [(0, 1), (1, 1)]
+        expected_samples_ranges = [(0, 1), (1, 1)]
 
         assert torch.equal(result.data, expected_data)
-        assert result.range_samples == expected_range_samples
+        assert result.samples_ranges == expected_samples_ranges
 
 
 def test_convert_labels_to_batch_labels():
@@ -92,12 +92,12 @@ def test_convert_labels_to_batch_labels():
         Labels(torch.tensor([[[0, 1], [1, 1]], [[0, 1], [1, 1]]])),
     ]
     expected_labels_data = torch.tensor([[[1, 1], [1, 1]], [[0, 0], [0, 0]], [[0, 1], [1, 1]], [[0, 1], [1, 1]]])
-    expected_range_samples = [(0, 1), (1, 2), (2, 2), (2, 4)]
+    expected_samples_ranges = [(0, 1), (1, 2), (2, 2), (2, 4)]
 
     batch_labels = convert_labels_to_batch_labels(labels)
 
     assert torch.allclose(batch_labels.data, expected_labels_data)
-    assert batch_labels.range_samples == expected_range_samples
+    assert batch_labels.samples_ranges == expected_samples_ranges
     assert isinstance(batch_labels, BatchLabels)
     assert batch_labels.batch_size == 4
     assert batch_labels.num_data == 4
@@ -113,7 +113,7 @@ def test_convert_batch_labels_to_labels():
                 [[1, 1, 1, 1], [0, 0, 0, 0]],
             ]
         ),
-        range_samples=[(0, 2), (2, 2), (2, 4)],
+        samples_ranges=[(0, 2), (2, 2), (2, 4)],
     )
 
     list_labels = convert_batch_labels_to_labels(batch_labels)

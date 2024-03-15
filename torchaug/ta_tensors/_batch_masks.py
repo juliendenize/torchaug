@@ -38,15 +38,15 @@ def convert_masks_to_batch_masks(
 
     masks = [mask if mask.ndim > 2 else mask.unsqueeze(0) for mask in masks]
     masks_data = torch.cat(masks)
-    range_samples = []
+    samples_ranges = []
     sum_masks = 0
     for mask in masks:
-        range_samples.append((sum_masks, sum_masks + mask.shape[0]))
+        samples_ranges.append((sum_masks, sum_masks + mask.shape[0]))
         sum_masks += mask.shape[0]
 
     batch_masks = BatchMasks(
         masks_data,
-        range_samples=range_samples,
+        samples_ranges=samples_ranges,
     )
 
     return batch_masks
@@ -58,13 +58,13 @@ def convert_batch_masks_to_masks(
     """Convert :class:`~torchaug.ta_tensors.BatchMasks` object to a list of
     :class:`~torchaug.ta_tensors.Mask` objects.
     """
-    range_samples = batch_masks.range_samples
+    samples_ranges = batch_masks.samples_ranges
 
     list_masks = [
         Mask(
             batch_masks[idx_start:idx_stop],
         )
-        for (idx_start, idx_stop) in range_samples
+        for (idx_start, idx_stop) in samples_ranges
     ]
     return list_masks
 
@@ -76,7 +76,7 @@ class BatchMasks(_BatchConcatenatedTATensor):
         data: Any data that can be turned into a tensor with :func:`torch.as_tensor`.
         dtype: Desired data type. If omitted, will be inferred from
             ``data``.
-        range_samples: Each element is the range of the indices of the masks for each sample.
+        samples_ranges: Each element is the range of the indices of the masks for each sample.
         device: Desired device. If omitted and ``data`` is a
             :class:`torch.Tensor`, the device is taken from it. Otherwise, the mask is constructed on the CPU.
         requires_grad: Whether autograd should record operations. If omitted and
@@ -103,18 +103,18 @@ class BatchMasks(_BatchConcatenatedTATensor):
                 if getattr(batch_mask, attr) != getattr(masks_batches[0], attr):
                     raise ValueError(f"All batches of masks must have the same {attr} attribute.")
 
-        range_samples = []
+        samples_ranges = []
         sum_masks = 0
         for batch_masks in masks_batches:
-            for idx_start, idx_stop in batch_masks.range_samples:
-                range_samples.append((idx_start + sum_masks, idx_stop + sum_masks))
+            for idx_start, idx_stop in batch_masks.samples_ranges:
+                samples_ranges.append((idx_start + sum_masks, idx_stop + sum_masks))
             sum_masks += batch_masks.num_data
 
         data = torch.cat([batch_masks.data for batch_masks in masks_batches], 0)
 
         return cls(
             data,
-            range_samples=range_samples,
+            samples_ranges=samples_ranges,
         )
 
     @classmethod
@@ -122,20 +122,20 @@ class BatchMasks(_BatchConcatenatedTATensor):
         cls,
         tensor: Tensor,
         *,
-        range_samples: List[Tuple[int, int]],
+        samples_ranges: List[Tuple[int, int]],
         check_dims: bool = True,
     ) -> BatchMasks:  # type: ignore[override]
         if check_dims and tensor.ndim < 2:
             raise ValueError(f"Expected at least a 2D tensor, got {tensor.ndim}D tensor")
         batch_masks = tensor.as_subclass(cls)
-        batch_masks.range_samples = range_samples
+        batch_masks.samples_ranges = samples_ranges
         return batch_masks
 
     def __new__(
         cls,
         data: Any,
         *,
-        range_samples: List[Tuple[int, int]],
+        samples_ranges: List[Tuple[int, int]],
         dtype: Optional[torch.dtype] = None,
         device: Optional[Union[torch.device, str, int]] = None,
         requires_grad: Optional[bool] = None,
@@ -145,9 +145,9 @@ class BatchMasks(_BatchConcatenatedTATensor):
         if tensor.ndim < 3:
             raise ValueError
 
-        cls._check_range_samples(range_samples, tensor)
+        cls._check_samples_ranges(samples_ranges, tensor)
 
-        return cls._wrap(tensor, range_samples=range_samples)
+        return cls._wrap(tensor, samples_ranges=samples_ranges)
 
     @classmethod
     def _wrap_output(
@@ -164,19 +164,19 @@ class BatchMasks(_BatchConcatenatedTATensor):
         flat_params, _ = tree_flatten(args + (tuple(kwargs.values()) if kwargs else ()))  # type: ignore[operator]
         first_batch_masks_from_args = next(x for x in flat_params if isinstance(x, BatchMasks))
 
-        range_samples = first_batch_masks_from_args.range_samples.copy()  # clone the list.
+        samples_ranges = first_batch_masks_from_args.samples_ranges.copy()  # clone the list.
 
         if isinstance(output, torch.Tensor) and not isinstance(output, BatchMasks):
             output = BatchMasks._wrap(
                 output,
-                range_samples=range_samples,
+                samples_ranges=samples_ranges,
                 check_dims=False,
             )
         elif isinstance(output, (tuple, list)):
             output = type(output)(
                 BatchMasks._wrap(
                     part,
-                    range_samples=range_samples,
+                    samples_ranges=samples_ranges,
                     check_dims=False,
                 )
                 for part in output
@@ -192,7 +192,7 @@ class BatchMasks(_BatchConcatenatedTATensor):
         Returns:
             The masks for the sample.
         """
-        masks = self[self.range_samples[idx][0] : self.range_samples[idx][1]]
+        masks = self[self.samples_ranges[idx][0] : self.samples_ranges[idx][1]]
         return Mask(
             masks,
             device=self.device,
@@ -208,11 +208,11 @@ class BatchMasks(_BatchConcatenatedTATensor):
         Returns:
             The chunk of the batch of masks.
         """
-        chunk_range_samples = self._get_chunk_range_samples_from_chunk_indices(chunk_indices)
+        chunk_samples_ranges = self._get_chunk_samples_ranges_from_chunk_indices(chunk_indices)
         data_indices = self._get_data_indices_from_chunk_indices(chunk_indices)
         return BatchMasks(
             self[data_indices],
-            range_samples=chunk_range_samples,
+            samples_ranges=chunk_samples_ranges,
             device=self.device,
             requires_grad=self.requires_grad,
         )
@@ -244,24 +244,24 @@ class BatchMasks(_BatchConcatenatedTATensor):
         Returns:
             The updated batch of masks.
         """
-        old_range_samples = masks.range_samples
+        old_samples_ranges = masks.samples_ranges
         data = masks.data[mask]
 
         neg_mask = (~mask).cpu()
 
         num_delete_per_sample = [
-            neg_mask[old_range_samples[i][0] : old_range_samples[i][1]].sum().item() for i in range(len(old_range_samples))
+            neg_mask[old_samples_ranges[i][0] : old_samples_ranges[i][1]].sum().item() for i in range(len(old_samples_ranges))
         ]
 
-        new_range_samples = [
+        new_samples_ranges = [
             (
-                old_range_samples[i][0] - sum(num_delete_per_sample[:i]),
-                old_range_samples[i][1] - sum(num_delete_per_sample[: i + 1]),
+                old_samples_ranges[i][0] - sum(num_delete_per_sample[:i]),
+                old_samples_ranges[i][1] - sum(num_delete_per_sample[: i + 1]),
             )
-            for i in range(len(old_range_samples))
+            for i in range(len(old_samples_ranges))
         ]
 
         return cls._wrap(
             data,
-            range_samples=new_range_samples,
+            samples_ranges=new_samples_ranges,
         )

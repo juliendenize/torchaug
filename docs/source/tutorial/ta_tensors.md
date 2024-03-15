@@ -53,7 +53,7 @@ A [BatchBoundingBoxes](#torchaug.ta_tensors.BatchBoundingBoxes) is a tensor used
 It has the following added attributes:
 - `canvas_size` the size of the associated batch of images or videos.
 - `format` a [BoundingBoxFormat](#torchaug.ta_tensors.BoundingBoxFormat)
-- `range_samples` a list of the index of the first bounding box for each sample in the associated batch of images or videos. This is because each sample can define different number of bounding boxes.
+- `samples_ranges` a list of the index of the first bounding box for each sample in the associated batch of images or videos. This is because each sample can define different number of bounding boxes.
 
 It also have specific behavior and defined class methods to handle some cases that are [documented](#torchaug.ta_tensors.BatchBoundingBoxes).
 
@@ -62,7 +62,7 @@ It also have specific behavior and defined class methods to handle some cases th
 A [BatchMasks](#torchaug.ta_tensors.BatchMasks) is a tensor to represent a batch of makss.
 
 It has the following added attributes:
-- `range_samples` a list of the index of the first mask for each sample in the associated batch of masks. This is because each sample can define different number of masks.
+- `samples_ranges` a list of the index of the first mask for each sample in the associated batch of masks. This is because each sample can define different number of masks.
 
 It also have specific behavior and defined class methods to handle some cases that are [documented](#torchaug.ta_tensors.BatchMasks).
 

@@ -93,7 +93,7 @@ class TestDefaultCollate:
         assert actual.device.type == device
         assert actual.canvas_size == expected_output.canvas_size
         assert actual.format == expected_output.format
-        assert all(actual.range_samples[i] == expected_output.range_samples[i] for i in range(len(actual.range_samples)))
+        assert all(actual.samples_ranges[i] == expected_output.samples_ranges[i] for i in range(len(actual.samples_ranges)))
         assert isinstance(actual, BatchBoundingBoxes)
 
     @pytest.mark.parametrize("device", cpu_and_cuda())
@@ -109,7 +109,7 @@ class TestDefaultCollate:
 
         assert_equal(actual, expected_output)
         assert actual.device.type == device
-        assert all(actual.range_samples[i] == expected_output.range_samples[i] for i in range(len(actual.range_samples)))
+        assert all(actual.samples_ranges[i] == expected_output.samples_ranges[i] for i in range(len(actual.samples_ranges)))
         assert isinstance(actual, BatchMasks)
 
     @pytest.mark.parametrize("device", cpu_and_cuda())
@@ -125,8 +125,8 @@ class TestDefaultCollate:
 
         assert_equal(actual, expected_output_data)
         assert actual.device.type == device
-        assert actual.range_samples == masks[0].range_samples + [
-            (idx_start + masks[0].num_data, idx_end + masks[0].num_data) for idx_start, idx_end in masks[1].range_samples
+        assert actual.samples_ranges == masks[0].samples_ranges + [
+            (idx_start + masks[0].num_data, idx_end + masks[0].num_data) for idx_start, idx_end in masks[1].samples_ranges
         ]
         assert isinstance(actual, BatchMasks)
 
@@ -145,9 +145,9 @@ class TestDefaultCollate:
         assert actual.device.type == device
         assert actual.canvas_size == bounding_boxes_batches[0].canvas_size
         assert actual.format == bounding_boxes_batches[0].format
-        assert actual.range_samples == bounding_boxes_batches[0].range_samples + [
+        assert actual.samples_ranges == bounding_boxes_batches[0].samples_ranges + [
             (idx_start + bounding_boxes_batches[0].num_data, idx_end + bounding_boxes_batches[0].num_data)
-            for idx_start, idx_end in bounding_boxes_batches[1].range_samples
+            for idx_start, idx_end in bounding_boxes_batches[1].samples_ranges
         ]
         assert isinstance(actual, BatchBoundingBoxes)
 
