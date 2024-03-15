@@ -34,6 +34,10 @@ A [Mask](#torchaug.ta_tensors.Mask) is a tensor used to represent bounding boxes
 
 Its dimension is at least `2`.
 
+### Labels
+
+A [Labels](#torchaug.ta_tensors.Labels) is a tensor used to represent labels.
+
 ### BatchImages
 
 A [BatchImages](#torchaug.ta_tensors.BatchImages) is a tensor used to represent a batch of images.
@@ -53,18 +57,27 @@ A [BatchBoundingBoxes](#torchaug.ta_tensors.BatchBoundingBoxes) is a tensor used
 It has the following added attributes:
 - `canvas_size` the size of the associated batch of images or videos.
 - `format` a [BoundingBoxFormat](#torchaug.ta_tensors.BoundingBoxFormat)
-- `idx_sample` a list of the index of the first bounding box for each sample in the associated batch of images or videos. This is because each sample can define different number of bounding boxes.
+- `samples_ranges` a list of the range of the indices of the bounding boxes for each sample.
 
 It also have specific behavior and defined class methods to handle some cases that are [documented](#torchaug.ta_tensors.BatchBoundingBoxes).
 
 ### BatchMasks
 
-A [BatchMasks](#torchaug.ta_tensors.BatchMasks) is a tensor to represent a batch of makss.
+A [BatchMasks](#torchaug.ta_tensors.BatchMasks) is a tensor to represent a batch of masks.
 
 It has the following added attributes:
-- `idx_sample` a list of the index of the first mask for each sample in the associated batch of masks. This is because each sample can define different number of masks.
+- `samples_ranges` a list of the range of the indices of the masks for each sample.
 
 It also have specific behavior and defined class methods to handle some cases that are [documented](#torchaug.ta_tensors.BatchMasks).
+
+### BatchLabels
+
+A [BatchLabels](#torchaug.ta_tensors.BatchLabels) is a tensor to represent a batch of labels.
+
+It has the following added attributes:
+- `samples_ranges` a list of the range of the indices of the labels for each sample.
+
+It also have specific behavior and defined class methods to handle some cases that are [documented](#torchaug.ta_tensors.BatchLabels).
 
 ## How TATensors are used
 

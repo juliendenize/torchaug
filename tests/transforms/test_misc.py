@@ -906,7 +906,7 @@ class TestSanitizeBoundingBoxes:
                 torch.cat([boxes, boxes], 0),
                 format=ta_tensors.BoundingBoxFormat.XYXY,
                 canvas_size=(H, W),
-                idx_sample=[0, boxes.shape[0], boxes.shape[0] * 2],
+                samples_ranges=[(0, boxes.shape[0]), (boxes.shape[0], boxes.shape[0] * 2)],
             )
         )
 
@@ -915,7 +915,7 @@ class TestSanitizeBoundingBoxes:
             if not batch
             else ta_tensors.BatchMasks(
                 torch.randint(0, 2, size=(boxes.shape[0], 2, H, W)),
-                idx_sample=[0, boxes.shape[0] // 2, boxes.shape[0]],
+                samples_ranges=[(0, boxes.shape[0] // 2), (boxes.shape[0] // 2, boxes.shape[0])],
             )
         )
         whatever = torch.rand(10)

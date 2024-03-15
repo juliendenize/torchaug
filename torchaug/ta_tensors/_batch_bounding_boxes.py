@@ -10,8 +10,8 @@ import torch
 from torch import Tensor
 from torch.utils._pytree import tree_flatten
 
+from ._batch_concatenated_ta_tensor import _BatchConcatenatedTATensor
 from ._bounding_boxes import BoundingBoxes, BoundingBoxFormat
-from ._ta_tensor import TATensor
 
 
 _CHECK_ATTRS = [
@@ -28,25 +28,24 @@ def convert_bboxes_to_batch_bboxes(
 ) -> BatchBoundingBoxes:
     """Convert a list of :class:`~torchaug.ta_tensors.BoundingBoxes` objects to a
     :class:`~torchaug.ta_tensors.BatchBoundingBoxes` object.
-
-    Assumes all bboxes are valid.
     """
-    if not all(getattr(bbox, attr) == getattr(bboxes[0], attr) for bbox in bboxes for attr in _CHECK_ATTRS):
+    if not all(
+        getattr(bbox, attr) == getattr(bboxes[0], attr) for bbox in bboxes if bbox is not None for attr in _CHECK_ATTRS
+    ):
         raise ValueError("All bounding boxes must have the same attributes.")
 
-    canvas_size, format = (
-        bboxes[0].canvas_size,
-        bboxes[0].format,
-    )
-
-    bboxes_data = torch.cat(list(bboxes))
-    idx_sample = torch.tensor([0] + [bbox.shape[0] for bbox in bboxes], dtype=torch.long).cumsum(0).tolist()
+    bboxes_data = torch.cat(bboxes)
+    samples_ranges = []
+    sum_bboxes = 0
+    for bbox in bboxes:
+        samples_ranges.append((sum_bboxes, sum_bboxes + bbox.shape[0]))
+        sum_bboxes += bbox.shape[0]
 
     batch_bboxes = BatchBoundingBoxes(
         bboxes_data,
-        canvas_size=canvas_size,
-        format=format,
-        idx_sample=idx_sample,
+        canvas_size=bboxes[0].canvas_size,
+        format=bboxes[0].format,
+        samples_ranges=samples_ranges,
     )
 
     return batch_bboxes
@@ -58,25 +57,25 @@ def convert_batch_bboxes_to_bboxes(
     """Convert :class:`~torchaug.ta_tensors.BatchBoundingBoxes` object to a list of
     :class:`~torchaug.ta_tensors.BoundingBoxes` objects.
     """
-    canvas_size, format, idx_sample = (
+    canvas_size, format, samples_ranges = (
         bboxes.canvas_size,
         bboxes.format,
-        bboxes.idx_sample,
+        bboxes.samples_ranges,
     )
 
     list_bboxes = [
         BoundingBoxes(
-            bboxes[idx_sample[i] : idx_sample[i + 1]],
+            bboxes[idx_start:idx_stop],
             canvas_size=canvas_size,
             format=format,
         )
-        for i in range(len(idx_sample) - 1)
+        for idx_start, idx_stop in samples_ranges
     ]
 
     return list_bboxes
 
 
-class BatchBoundingBoxes(TATensor):
+class BatchBoundingBoxes(_BatchConcatenatedTATensor):
     """:class:`torch.Tensor` subclass for batch of bounding boxes.
 
     .. note::
@@ -87,8 +86,7 @@ class BatchBoundingBoxes(TATensor):
         data: Any data that can be turned into a tensor with :func:`torch.as_tensor`.
         format: Format of the bounding box.
         canvas_size: Height and width of the corresponding batch of images or videos.
-        idx_sample: Each element is the index of the first bounding box of the corresponding sample in
-         the batch of N samples. Contains N+1 elements whose last value is the number of bounding boxes.
+        samples_ranges: Each element is the range of the indices of the bounding boxes for each sample.
         dtype: Desired data type of the bounding box. If omitted, will be inferred from
             ``data``.
         device: Desired device of the bounding box. If omitted and ``data`` is a
@@ -99,18 +97,6 @@ class BatchBoundingBoxes(TATensor):
 
     format: BoundingBoxFormat
     canvas_size: Tuple[int, int]
-    idx_sample: List[int]
-
-    @property
-    def batch_size(self) -> int:
-        return len(self.idx_sample) - 1
-
-    @property
-    def num_boxes(self) -> int:
-        return self.data.shape[0]
-
-    def get_num_boxes_sample(self, idx: int) -> int:
-        return self.idx_sample[idx + 1] - self.idx_sample[idx]
 
     @classmethod
     def cat(cls, bounding_boxes_batches: Sequence[BatchBoundingBoxes]) -> BatchBoundingBoxes:
@@ -131,38 +117,37 @@ class BatchBoundingBoxes(TATensor):
                 if getattr(batch_bounding_boxes, attr) != getattr(bounding_boxes_batches[0], attr):
                     raise ValueError(f"All batches of masks must have the same {attr} attribute.")
 
-        idx_sample = (
-            torch.tensor(
-                [0]
-                + [
-                    batch_bounding_boxes.get_num_boxes_sample(i)
-                    for batch_bounding_boxes in bounding_boxes_batches
-                    for i in range(batch_bounding_boxes.batch_size)
-                ]
-            )
-            .cumsum(0)
-            .tolist()
-        )
+        samples_ranges = []
+        sum_boxes = 0
+        for batch_bounding_boxes in bounding_boxes_batches:
+            for idx_start, idx_stop in batch_bounding_boxes.samples_ranges:
+                samples_ranges.append(
+                    (
+                        idx_start + sum_boxes,
+                        idx_stop + sum_boxes,
+                    )
+                )
+            sum_boxes += batch_bounding_boxes.num_data
 
-        data = torch.cat([mask.data for mask in bounding_boxes_batches], 0)
+        data = torch.cat([bounding_box.data for bounding_box in bounding_boxes_batches], 0)
 
         return cls(
             data,
-            idx_sample=idx_sample,
+            samples_ranges=samples_ranges,
             format=bounding_boxes_batches[0].format,
             canvas_size=bounding_boxes_batches[0].canvas_size,
         )
 
     @classmethod
-    def _wrap(
+    def _wrap(  # type: ignore[override]
         cls,
         tensor: Tensor,
         *,
         format: Union[BoundingBoxFormat, str],
         canvas_size: Tuple[int, int],
-        idx_sample: List[int],
+        samples_ranges: List[Tuple[int, int]],
         check_dims: bool = True,
-    ) -> BatchBoundingBoxes:  # type: ignore[override]
+    ) -> BatchBoundingBoxes:
         if check_dims and tensor.ndim != 2:
             raise ValueError(f"Expected a 2D tensor, got {tensor.ndim}D.")
         if isinstance(format, str):
@@ -170,7 +155,7 @@ class BatchBoundingBoxes(TATensor):
         batch_bounding_boxes = tensor.as_subclass(cls)
         batch_bounding_boxes.format = format
         batch_bounding_boxes.canvas_size = canvas_size
-        batch_bounding_boxes.idx_sample = idx_sample
+        batch_bounding_boxes.samples_ranges = samples_ranges
         return batch_bounding_boxes
 
     def __new__(
@@ -179,13 +164,14 @@ class BatchBoundingBoxes(TATensor):
         *,
         format: Union[BoundingBoxFormat, str],
         canvas_size: Tensor,
-        idx_sample: List[int],
+        samples_ranges: List[Tuple[int, int]],
         dtype: Optional[torch.dtype] = None,
         device: Optional[Union[torch.device, str, int]] = None,
         requires_grad: Optional[bool] = None,
     ) -> BatchBoundingBoxes:
         tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
-        return cls._wrap(tensor, format=format, canvas_size=canvas_size, idx_sample=idx_sample)
+        cls._check_samples_ranges(samples_ranges, tensor)
+        return cls._wrap(tensor, format=format, canvas_size=canvas_size, samples_ranges=samples_ranges)
 
     @classmethod
     def _wrap_output(
@@ -201,19 +187,19 @@ class BatchBoundingBoxes(TATensor):
         # something like some_xyxy_bbox + some_xywh_bbox; we don't guard against those cases.
         flat_params, _ = tree_flatten(args + (tuple(kwargs.values()) if kwargs else ()))  # type: ignore[operator]
         first_batch_bboxes_from_args = next(x for x in flat_params if isinstance(x, BatchBoundingBoxes))
-        format, canvas_size, idx_sample = (
+        format, canvas_size, samples_ranges = (
             first_batch_bboxes_from_args.format,
             first_batch_bboxes_from_args.canvas_size,
-            first_batch_bboxes_from_args.idx_sample,
+            first_batch_bboxes_from_args.samples_ranges,
         )
-        idx_sample = idx_sample.copy()  # clone the list.
+        samples_ranges = samples_ranges.copy()  # clone the list.
 
         if isinstance(output, torch.Tensor) and not isinstance(output, BatchBoundingBoxes):
             output = BatchBoundingBoxes._wrap(
                 output,
                 format=format,
                 canvas_size=canvas_size,
-                idx_sample=idx_sample,
+                samples_ranges=samples_ranges,
                 check_dims=False,
             )
         elif isinstance(output, (tuple, list)):
@@ -222,7 +208,7 @@ class BatchBoundingBoxes(TATensor):
                     part,
                     format=format,
                     canvas_size=canvas_size,
-                    idx_sample=idx_sample,
+                    samples_ranges=samples_ranges,
                     check_dims=False,
                 )
                 for part in output
@@ -238,7 +224,7 @@ class BatchBoundingBoxes(TATensor):
         Returns:
             The bounding boxes for the sample.
         """
-        boxes = self[self.idx_sample[idx] : self.idx_sample[idx + 1]]
+        boxes = self[self.samples_ranges[idx][0] : self.samples_ranges[idx][1]]
         return BoundingBoxes(
             boxes,
             format=self.format,
@@ -256,17 +242,14 @@ class BatchBoundingBoxes(TATensor):
         Returns:
             BatchBoundingBoxes: The chunk of the batch bounding boxes.
         """
-        chunk_idx_sample = torch.tensor(
-            [0] + [self.idx_sample[chunk_indice + 1] - self.idx_sample[chunk_indice] for chunk_indice in chunk_indices]
-        )
-
-        chunk_idx_sample = chunk_idx_sample.cumsum(0).tolist()
+        chunk_samples_ranges = self._get_chunk_samples_ranges_from_chunk_indices(chunk_indices)
+        data_indices = self._get_data_indices_from_chunk_indices(chunk_indices)
 
         return BatchBoundingBoxes(
-            self[chunk_indices],
+            self[data_indices],
             format=self.format,
             canvas_size=self.canvas_size,
-            idx_sample=chunk_idx_sample,
+            samples_ranges=chunk_samples_ranges,
             device=self.device,
             requires_grad=self.requires_grad,
         )
@@ -288,9 +271,7 @@ class BatchBoundingBoxes(TATensor):
             raise ValueError(
                 "The canvas size of the chunk must be the same as the canvas size of the batch of bounding boxes."
             )
-
-        self[chunk_indices] = chunk
-
+        self = super().update_chunk_(chunk, chunk_indices)
         return self
 
     def to_samples(self) -> list[BoundingBoxes]:
@@ -298,7 +279,7 @@ class BatchBoundingBoxes(TATensor):
         return [self.get_sample(i).clone() for i in range(self.batch_size)]
 
     @classmethod
-    def masked_remove(cls, bboxes: BatchBoundingBoxes, mask: torch.Tensor) -> BatchBoundingBoxes:
+    def masked_select(cls, bboxes: BatchBoundingBoxes, mask: torch.Tensor) -> BatchBoundingBoxes:
         """Remove boxes from the batch of bounding boxes.
 
         Args:
@@ -309,27 +290,33 @@ class BatchBoundingBoxes(TATensor):
             BatchBoundingBoxes: The updated batch of bounding boxes.
         """
         # Remove boxes
-        old_idx_sample = bboxes.idx_sample
-        data = bboxes.data[~mask]
+        old_samples_ranges = bboxes.samples_ranges
+        data = bboxes.data[mask]
 
-        cpu_mask = mask.cpu()
+        neg_mask = (~mask).cpu()
 
         num_delete_per_sample = [
-            cpu_mask[old_idx_sample[i] : old_idx_sample[i + 1]].sum().item() for i in range((len(old_idx_sample) - 1))
+            neg_mask[idx_start:idx_stop].sum().item() for idx_start, idx_stop in old_samples_ranges
         ]
 
-        new_idx_sample = [old_idx_sample[i] - sum(num_delete_per_sample[: i + 1]) for i in range(len(old_idx_sample))]
+        new_samples_ranges = [
+            (
+                old_samples_ranges[i][0] - sum(num_delete_per_sample[:i]),
+                old_samples_ranges[i][1] - sum(num_delete_per_sample[: i + 1]),
+            )
+            for i in range(len(old_samples_ranges))
+        ]
 
         return cls._wrap(
             data,
             format=bboxes.format,
             canvas_size=bboxes.canvas_size,
-            idx_sample=new_idx_sample,
+            samples_ranges=new_samples_ranges,
         )
 
     def __repr__(self, *, tensor_contents: Any = None) -> str:  # type: ignore[override]
         return self._make_repr(
             format=self.format,
             canvas_size=self.canvas_size,
-            idx_sample=self.idx_sample,
+            samples_ranges=self.samples_ranges,
         )

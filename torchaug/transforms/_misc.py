@@ -15,7 +15,7 @@ from torch.utils._pytree import tree_flatten, tree_unflatten
 from torchvision.transforms.v2._utils import _setup_number_or_seq, _setup_size
 
 from torchaug import ta_tensors
-from torchaug.ta_tensors import _CONCATENATED_BATCH_TA_TENSORS
+from torchaug.ta_tensors import _BatchConcatenatedTATensor
 
 from . import functional as F
 from ._transform import RandomApplyTransform, Transform
@@ -518,8 +518,8 @@ class SanitizeBoundingBoxes(Transform):
         if not (is_label or is_bounding_boxes_or_mask):
             return inpt
 
-        if is_bounding_boxes or isinstance(inpt, _CONCATENATED_BATCH_TA_TENSORS):  # type: ignore[arg-type]
-            output = inpt.masked_remove(inpt, mask=~params["valid"])
+        if is_bounding_boxes or isinstance(inpt, _BatchConcatenatedTATensor):  # type: ignore[arg-type]
+            output = inpt.masked_select(inpt, mask=params["valid"])
             return output
         else:
             output = inpt[params["valid"]]

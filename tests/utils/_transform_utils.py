@@ -14,7 +14,7 @@ from torchvision.transforms.v2._utils import check_type
 
 import torchaug.transforms as transforms
 from torchaug import ta_tensors
-from torchaug.ta_tensors import _CONCATENATED_BATCH_TA_TENSORS
+from torchaug.ta_tensors import _BatchConcatenatedTATensor
 from torchaug.transforms import functional as F
 from torchaug.transforms.functional._utils._tensor import (
     _max_value as get_max_value,
@@ -34,11 +34,13 @@ from ._make_tensors import (
     make_batch_bounding_boxes,
     make_batch_detection_masks,
     make_batch_images,
+    make_batch_labels,
     make_batch_segmentation_masks,
     make_batch_videos,
     make_bounding_boxes,
     make_detection_masks,
     make_image,
+    make_labels,
     make_segmentation_mask,
     make_video,
 )
@@ -287,7 +289,7 @@ def check_functional_kernel_signature_match(functional, *, kernel, input_type):
         # explicitly passed to the kernel.
         explicit_metadata = {
             ta_tensors.BoundingBoxes: {"format", "canvas_size"},
-            ta_tensors.BatchBoundingBoxes: {"format", "canvas_size", "idx_sample"},
+            ta_tensors.BatchBoundingBoxes: {"format", "canvas_size", "samples_ranges"},
         }
         kernel_params = [
             param for param in kernel_params if param.name not in explicit_metadata.get(input_type, set())
@@ -361,6 +363,7 @@ def _make_transform_sample(transform, *, image_or_video, adapter, batch=False):
             ),
             detection_mask=make_detection_masks(size, device=device),
             segmentation_mask=make_segmentation_mask(size, device=device),
+            labels=make_labels(size, device=device),
             int=0,
             float=0.0,
             bool=True,
@@ -396,7 +399,7 @@ def _make_transform_sample(transform, *, image_or_video, adapter, batch=False):
                 ],
                 format=ta_tensors.BoundingBoxFormat.XYXY,
                 canvas_size=size,
-                idx_sample=[0, 3, 6],
+                samples_ranges=[(0, 3), (3, 6)],
                 device=device,
             ),
             batch_bounding_boxes_degenerate_xywh=ta_tensors.BatchBoundingBoxes(
@@ -410,7 +413,7 @@ def _make_transform_sample(transform, *, image_or_video, adapter, batch=False):
                 ],
                 format=ta_tensors.BoundingBoxFormat.XYWH,
                 canvas_size=size,
-                idx_sample=[0, 3, 6],
+                samples_ranges=[(0, 3), (3, 6)],
                 device=device,
             ),
             batch_bounding_boxes_degenerate_cxcywh=ta_tensors.BatchBoundingBoxes(
@@ -424,11 +427,12 @@ def _make_transform_sample(transform, *, image_or_video, adapter, batch=False):
                 ],
                 format=ta_tensors.BoundingBoxFormat.CXCYWH,
                 canvas_size=size,
-                idx_sample=[0, 3, 6],
+                samples_ranges=[(0, 3), (3, 6)],
                 device=device,
             ),
             batch_detection_masks=make_batch_detection_masks(size, device=device),
             batch_segmentation_masks=make_batch_segmentation_masks(size, device=device),
+            batch_labels=make_batch_labels(size, device=device),
             int=0,
             float=0.0,
             bool=True,
@@ -447,6 +451,7 @@ def _make_transform_sample(transform, *, image_or_video, adapter, batch=False):
 
 def _make_transform_batch_sample(transform, *, image_or_video, adapter, batch_size):
     device = image_or_video.device if isinstance(image_or_video, torch.Tensor) else "cpu"
+    samples_ranges = [(0, 6)] if batch_size == 1 else [(0, 3), (3, 6), *[(6, 6) for _ in range(batch_size - 2)]]
     size = F.get_size(image_or_video)
     input = dict(
         image_or_video=image_or_video,
@@ -478,11 +483,10 @@ def _make_transform_batch_sample(transform, *, image_or_video, adapter, batch_si
                 [2, 0, 1, 1],  # x1 > x2, y1 < y2
                 [0, 2, 1, 1],  # x1 < x2, y1 > y2
                 [2, 2, 1, 1],  # x1 > x2, y1 > y2
-            ]
-            * batch_size,
+            ],
             format=ta_tensors.BoundingBoxFormat.XYXY,
             canvas_size=size,
-            idx_sample=torch.tensor([0] + [6] * batch_size, dtype=torch.long).cumsum(0).tolist(),
+            samples_ranges=samples_ranges,
             device=device,
         ),
         batch_bounding_boxes_degenerate_xywh=ta_tensors.BatchBoundingBoxes(
@@ -493,11 +497,10 @@ def _make_transform_batch_sample(transform, *, image_or_video, adapter, batch_si
                 [0, 0, 1, -1],  # negative height
                 [0, 0, -1, 1],  # negative width
                 [0, 0, -1, -1],  # negative height and width
-            ]
-            * batch_size,
+            ],
             format=ta_tensors.BoundingBoxFormat.XYWH,
             canvas_size=size,
-            idx_sample=torch.tensor([0] + [6] * batch_size, dtype=torch.long).cumsum(0).tolist(),
+            samples_ranges=samples_ranges,
             device=device,
         ),
         batch_bounding_boxes_degenerate_cxcywh=ta_tensors.BatchBoundingBoxes(
@@ -508,15 +511,15 @@ def _make_transform_batch_sample(transform, *, image_or_video, adapter, batch_si
                 [0, 0, 1, -1],  # negative height
                 [0, 0, -1, 1],  # negative width
                 [0, 0, -1, -1],  # negative height and width
-            ]
-            * batch_size,
+            ],
             format=ta_tensors.BoundingBoxFormat.CXCYWH,
             canvas_size=size,
-            idx_sample=torch.tensor([0] + [6] * batch_size, dtype=torch.long).cumsum(0).tolist(),
+            samples_ranges=samples_ranges,
             device=device,
         ),
         batch_detection_masks=make_batch_detection_masks(size=size, device=device, batch_dims=(batch_size,)),
         batch_segmentation_masks=make_batch_segmentation_masks(size=size, device=device, batch_dims=(batch_size,)),
+        batch_labels=make_batch_labels(size, device=device, batch_dims=(batch_size,)),
         int=0,
         float=0.0,
         bool=True,
@@ -680,7 +683,7 @@ def _check_transform_batch_sample_input_smoke(transform, input, *, adapter, batc
                     needs_transform_list,
                     sample.keys(),
                 ):
-                    if isinstance(inpt, (_CONCATENATED_BATCH_TA_TENSORS)):
+                    if isinstance(inpt, (_BatchConcatenatedTATensor)):
                         continue
                     if not need_transform:
                         if isinstance(opt, torch.Tensor):

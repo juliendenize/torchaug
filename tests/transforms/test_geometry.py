@@ -66,7 +66,7 @@ def reference_affine_bounding_boxes_helper(
     format = bounding_boxes.format
     canvas_size = new_canvas_size or bounding_boxes.canvas_size
     if is_batch:
-        idx_sample = bounding_boxes.idx_sample
+        samples_ranges = bounding_boxes.samples_ranges
 
     def affine_bounding_boxes(bounding_boxes):
         dtype = bounding_boxes.dtype
@@ -126,7 +126,7 @@ def reference_affine_bounding_boxes_helper(
             ).reshape(bounding_boxes.shape),
             format=format,
             canvas_size=canvas_size,
-            idx_sample=idx_sample,
+            samples_ranges=samples_ranges,
         )
     else:
         return ta_tensors.BoundingBoxes(
@@ -856,7 +856,6 @@ class TestAffine:
     @pytest.mark.parametrize("permute_chunks", [True, False])
     def test_batch_transform(self, make_input, device, batch_size, batch_inplace, num_chunks, permute_chunks):
         input = make_input(device=device, batch_dims=(batch_size,))
-
         check_batch_transform(
             transforms.RandomAffine(
                 **self._CORRECTNESS_TRANSFORM_AFFINE_RANGES,
@@ -2803,95 +2802,6 @@ class TestPerspective:
         else:
             assert_equal(actual, expected)
 
-    def _reference_perspective_bounding_boxes(self, bounding_boxes, *, startpoints, endpoints, is_batch):
-        format = bounding_boxes.format
-        canvas_size = bounding_boxes.canvas_size
-        dtype = bounding_boxes.dtype
-        device = bounding_boxes.device
-        if is_batch:
-            idx_sample = bounding_boxes.idx_sample
-
-        coefficients = _get_perspective_coeffs(endpoints, startpoints)
-
-        def perspective_bounding_boxes(bounding_boxes):
-            m1 = np.array(
-                [
-                    [coefficients[0], coefficients[1], coefficients[2]],
-                    [coefficients[3], coefficients[4], coefficients[5]],
-                ]
-            )
-            m2 = np.array(
-                [
-                    [coefficients[6], coefficients[7], 1.0],
-                    [coefficients[6], coefficients[7], 1.0],
-                ]
-            )
-
-            # Go to float before converting to prevent precision loss in case of CXCYWH -> XYXY and W or H is 1
-            input_xyxy = F.convert_bounding_box_format(
-                bounding_boxes.to(dtype=torch.float64, device="cpu", copy=True),
-                old_format=format,
-                new_format=ta_tensors.BoundingBoxFormat.XYXY,
-                inplace=True,
-            )
-            x1, y1, x2, y2 = input_xyxy.squeeze(0).tolist()
-
-            points = np.array(
-                [
-                    [x1, y1, 1.0],
-                    [x2, y1, 1.0],
-                    [x1, y2, 1.0],
-                    [x2, y2, 1.0],
-                ]
-            )
-
-            numerator = points @ m1.T
-            denominator = points @ m2.T
-            transformed_points = numerator / denominator
-
-            output_xyxy = torch.Tensor(
-                [
-                    float(np.min(transformed_points[:, 0])),
-                    float(np.min(transformed_points[:, 1])),
-                    float(np.max(transformed_points[:, 0])),
-                    float(np.max(transformed_points[:, 1])),
-                ]
-            )
-
-            output = F.convert_bounding_box_format(
-                output_xyxy,
-                old_format=ta_tensors.BoundingBoxFormat.XYXY,
-                new_format=format,
-            )
-
-            # It is important to clamp before casting, especially for CXCYWH format, dtype=int64
-            return F.clamp_bounding_boxes(
-                output,
-                format=format,
-                canvas_size=canvas_size,
-            ).to(dtype=dtype, device=device)
-
-        return (
-            ta_tensors.BoundingBoxes(
-                torch.cat(
-                    [perspective_bounding_boxes(b) for b in bounding_boxes.reshape(-1, 4).unbind()],
-                    dim=0,
-                ).reshape(bounding_boxes.shape),
-                format=format,
-                canvas_size=canvas_size,
-            )
-            if not is_batch
-            else ta_tensors.BatchBoundingBoxes(
-                torch.cat(
-                    [perspective_bounding_boxes(b) for b in bounding_boxes.reshape(-1, 4).unbind()],
-                    dim=0,
-                ).reshape(bounding_boxes.shape),
-                format=format,
-                canvas_size=canvas_size,
-                idx_sample=idx_sample,
-            )
-        )
-
     @pytest.mark.parametrize(("startpoints", "endpoints"), START_END_POINTS)
     @pytest.mark.parametrize("format", list(ta_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("dtype", [torch.int64, torch.float32])
@@ -2900,18 +2810,17 @@ class TestPerspective:
     def test_correctness_perspective_bounding_boxes(
         self, startpoints, endpoints, format, dtype, device, make_bounding_boxes
     ):
-        is_batch = make_bounding_boxes == make_batch_bounding_boxes
         bounding_boxes = make_bounding_boxes(format=format, dtype=dtype, device=device)
 
         actual = F.perspective(bounding_boxes, startpoints=startpoints, endpoints=endpoints)
 
-        expected = self._reference_perspective_bounding_boxes(
-            bounding_boxes,
+        expected = TVF.perspective_bounding_boxes(
+            torch.as_tensor(bounding_boxes),
+            format=_convert_ta_format_to_tv_format(bounding_boxes.format),
+            canvas_size=bounding_boxes.canvas_size,
             startpoints=startpoints,
             endpoints=endpoints,
-            is_batch=is_batch,
         )
-
         torch.testing.assert_close(actual, expected, rtol=0, atol=1)
 
 
@@ -3051,7 +2960,7 @@ class TestElastic:
         mask = make_mask()
         displacement = self._make_batch_displacement(mask)
         displacement = displacement.repeat_interleave(
-            torch.tensor([mask.get_num_masks_sample(i) for i in range(mask.batch_size)]),
+            torch.tensor([mask.get_num_data_sample(i) for i in range(mask.batch_size)]),
             dim=0,
         )
 
@@ -3323,7 +3232,7 @@ class TestRandomIoUCrop:
                 format="XYXY",
                 canvas_size=size,
                 device=device,
-                idx_sample=[0, 1, 2],
+                samples_ranges=[(0, 2), (2, 4)],
             )
         )
         sample = [image, bboxes]
