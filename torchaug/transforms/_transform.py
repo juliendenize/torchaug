@@ -336,8 +336,11 @@ class RandomApplyTransform(nn.Module):
                                 transform_inpt[chunk_indices] = chunk_output
                             output = transform_inpt
                 if self._reshape_transform:
-                    with set_return_type("TATensor" if is_ta_inpt else "Tensor"):
-                        output = torch.cat(output, dim=0)
+                    if is_contatenated_batch_ta_tensors:
+                        output = type(transform_inpt).cat(output)
+                    else:
+                        with set_return_type("TATensor" if is_ta_inpt else "Tensor"):
+                            output = torch.cat(output, dim=0)
             transform_outputs.append(output)
 
         if not transform_all:

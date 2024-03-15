@@ -298,20 +298,20 @@ class RandomResizedCrop(Transform):
                     i = torch.randint(0, height - h + 1, size=(1,)).item()
                     j = torch.randint(0, width - w + 1, size=(1,)).item()
                     break
-            else:
-                # Fallback to central crop
-                in_ratio = float(width) / float(height)
-                if in_ratio < min(self.ratio):
-                    w = width
-                    h = int(round(w / min(self.ratio)))
-                elif in_ratio > max(self.ratio):
-                    h = height
-                    w = int(round(h * max(self.ratio)))
-                else:  # whole image
-                    w = width
-                    h = height
-                i = (height - h) // 2
-                j = (width - w) // 2
+                else:
+                    # Fallback to central crop
+                    in_ratio = float(width) / float(height)
+                    if in_ratio < min(self.ratio):
+                        w = width
+                        h = int(round(w / min(self.ratio)))
+                    elif in_ratio > max(self.ratio):
+                        h = height
+                        w = int(round(h * max(self.ratio)))
+                    else:  # whole image
+                        w = width
+                        h = height
+                    i = (height - h) // 2
+                    j = (width - w) // 2
 
             params.append({"top": i, "left": j, "height": h, "width": w})
 
