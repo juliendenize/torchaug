@@ -91,7 +91,7 @@ class RandomApplyTransform(nn.Module):
 
     @staticmethod
     def _get_input_batch_size(inpt: Any):
-        if isinstance(inpt, _BatchConcatenatedTATensor):  # type: ignore[arg-type]
+        if isinstance(inpt, _BatchConcatenatedTATensor):
             batch_size = inpt.batch_size
         elif isinstance(inpt, torch.Tensor):
             batch_size = inpt.shape[0]
@@ -266,7 +266,7 @@ class RandomApplyTransform(nn.Module):
                     continue
 
                 is_ta_inpt = isinstance(inpt, ta_tensors.TATensor)
-                is_contatenated_batch_ta_tensors = isinstance(inpt, _BatchConcatenatedTATensor)  # type: ignore[arg-type]
+                is_contatenated_batch_ta_tensors = isinstance(inpt, _BatchConcatenatedTATensor)
                 pre_output = (
                     inpt
                     if self.batch_inplace or (self._reshape_transform and not is_contatenated_batch_ta_tensors)
@@ -306,7 +306,7 @@ class RandomApplyTransform(nn.Module):
                 transform_outputs.append(transform_inpt)
                 continue
             is_ta_inpt = isinstance(transform_inpt, ta_tensors.TATensor)
-            is_contatenated_batch_ta_tensors = isinstance(transform_inpt, _BatchConcatenatedTATensor)  # type: ignore[arg-type]
+            is_contatenated_batch_ta_tensors = isinstance(transform_inpt, _BatchConcatenatedTATensor)
 
             if num_chunks == 1:
                 output = self._transform(transform_inpt, params[0])
@@ -352,7 +352,7 @@ class RandomApplyTransform(nn.Module):
                 is_ta_output = isinstance(flat_pre_output, ta_tensors.TATensor)
                 is_contatenated_batch_ta_tensors = isinstance(
                     flat_pre_output,
-                    _BatchConcatenatedTATensor,  # type: ignore[arg-type]
+                    _BatchConcatenatedTATensor,
                 )
 
                 if is_contatenated_batch_ta_tensors:
