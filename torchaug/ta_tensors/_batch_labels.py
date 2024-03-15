@@ -118,10 +118,7 @@ class BatchLabels(_BatchConcatenatedTATensor):
         tensor: torch.Tensor,
         *,
         idx_sample: List[Tuple[int, int]],
-        check_dims: bool = True,
     ) -> BatchLabels:
-        if check_dims and tensor.ndim < 2:
-            raise ValueError
         batch_labels = tensor.as_subclass(cls)
         batch_labels.idx_sample = idx_sample
         return batch_labels
@@ -136,9 +133,6 @@ class BatchLabels(_BatchConcatenatedTATensor):
         requires_grad: Optional[bool] = None,
     ) -> BatchLabels:
         tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
-
-        if tensor.ndim < 2:
-            raise ValueError
 
         cls._check_idx_sample(idx_sample, tensor)
 
@@ -164,14 +158,12 @@ class BatchLabels(_BatchConcatenatedTATensor):
         if isinstance(output, torch.Tensor) and not isinstance(output, BatchLabels):
             output = BatchLabels._wrap(
                 output,
-                check_dims=False,
                 idx_sample=idx_sample,
             )
         elif isinstance(output, (tuple, list)):
             output = type(output)(
                 BatchLabels._wrap(
                     part,
-                    check_dims=False,
                     idx_sample=idx_sample,
                 )
                 for part in output
