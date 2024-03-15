@@ -12,8 +12,16 @@ from ._ta_tensor import TATensor
 
 
 class Labels(TATensor):
-    """Labels is a subclass of TATensor for a tensor that is supposed to
-    be concatenated with other tensors to form :class:`torchaug.ta_tensors.BatchLabels`.
+    """:class:`torch.Tensor` subclass for images.
+
+    Args:
+        data: Any data that can be turned into a tensor with :func:`torch.as_tensor`.
+        dtype: Desired data type. If omitted, will be inferred from
+            ``data``.
+        device: Desired device. If omitted and ``data`` is a
+            :class:`torch.Tensor`, the device is taken from it. Otherwise, the image is constructed on the CPU.
+        requires_grad: Whether autograd should record operations. If omitted and
+            ``data`` is a :class:`torch.Tensor`, the value is taken from it. Otherwise, defaults to ``False``.
     """
 
     def __new__(
