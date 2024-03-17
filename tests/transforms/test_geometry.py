@@ -8,7 +8,6 @@ import torchvision.transforms.v2 as tv_transforms
 import torchvision.transforms.v2.functional as TVF
 from torch import nn
 from torchvision.ops.boxes import box_iou
-from torchvision.transforms.functional import _get_perspective_coeffs
 
 import torchaug.transforms as transforms
 import torchaug.transforms.functional as F

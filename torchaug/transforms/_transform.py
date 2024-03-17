@@ -102,7 +102,7 @@ class RandomApplyTransform(nn.Module):
 
         return batch_size
 
-    def _get_chunks_indices(self, batch_size: int, num_chunks: int, device: torch.device) -> Tuple[torch.Tensor, ...]:
+    def _get_chunks_indices(self, batch_size: int, num_chunks: int, device: torch.device) -> Tuple[torch.Tensor]:
         if num_chunks <= 0:
             raise ValueError("`num_chunks` should be greater than 0.")
         elif num_chunks > batch_size:
@@ -243,7 +243,7 @@ class RandomApplyTransform(nn.Module):
         else:
             indices_transform = self._get_indices_transform(
                 batch_size,
-                flat_inputs[0].device,
+                "cpu",
             )
 
             transform_all = indices_transform.shape[0] == batch_size
@@ -287,7 +287,9 @@ class RandomApplyTransform(nn.Module):
         else:
             num_chunks = min(transform_batch_size, self._num_chunks)
 
-        chunks_indices = self._get_chunks_indices(transform_batch_size, num_chunks, flat_inputs[0].device)
+        chunks_indices = self._get_chunks_indices(transform_batch_size, num_chunks, "cpu")
+        if self._reshape_transform and self.permute_chunks:
+            cat_chunks_indices = torch.cat(chunks_indices)
 
         params = self._get_params(
             [
@@ -330,14 +332,27 @@ class RandomApplyTransform(nn.Module):
 
                         if self._reshape_transform:
                             output.append(chunk_output)
-
                         else:
                             with set_return_type("TATensor" if is_ta_inpt else "Tensor"):
                                 transform_inpt[chunk_indices] = chunk_output
                             output = transform_inpt
                 if self._reshape_transform:
-                    with set_return_type("TATensor" if is_ta_inpt else "Tensor"):
-                        output = torch.cat(output, dim=0)
+                    if is_contatenated_batch_ta_tensors:
+                        output = type(transform_inpt).cat(output)
+                        if self.permute_chunks:
+                            data_indices = transform_inpt._get_data_indices_from_chunk_indices(cat_chunks_indices)
+                            order = torch.argsort(data_indices)  # reorder output to match the original order
+                            output = ta_tensors.wrap(
+                                output.data[order],
+                                like=output,
+                                samples_ranges=transform_inpt.samples_ranges,
+                            )
+                    else:
+                        with set_return_type("TATensor" if is_ta_inpt else "Tensor"):
+                            output = torch.cat(output, dim=0)
+                            if self.permute_chunks:
+                                order = torch.argsort(cat_chunks_indices)  # reorder output to match the original order
+                                output = output[order]
             transform_outputs.append(output)
 
         if not transform_all:
