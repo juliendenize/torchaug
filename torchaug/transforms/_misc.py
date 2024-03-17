@@ -266,7 +266,7 @@ class RandomGaussianBlur(RandomApplyTransform):
                 sigma = torch.empty(1).uniform_(self.sigma[0], self.sigma[1]).item()
                 params.append({"sigma": [sigma, sigma]})
             else:
-                device = chunks_indices[0].device
+                device = flat_inputs[0].device
                 batch_size = chunks_indices[0].shape[0]
                 sigma = (
                     torch.empty((batch_size, 1), device=device)

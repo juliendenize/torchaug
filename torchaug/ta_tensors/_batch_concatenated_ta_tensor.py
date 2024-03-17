@@ -87,7 +87,17 @@ class _BatchConcatenatedTATensor(TATensor):
 
     def _get_data_indices_from_chunk_indices(self, chunk_indices: torch.Tensor) -> torch.Tensor:
         """Get the data indices from the chunk indices."""
-        return [idx for indices in chunk_indices for idx in range(*self.samples_ranges[indices])]
+        return torch.tensor(
+            [
+                idx
+                for indice in chunk_indices
+                for idx in torch.arange(
+                    self.samples_ranges[indice][0], self.samples_ranges[indice][1], dtype=torch.long
+                )
+            ],
+            device=chunk_indices.device,
+            dtype=torch.long,
+        )
 
     def _get_chunk_samples_ranges_from_chunk_indices(self, chunk_indices: torch.Tensor) -> List[Tuple[int, int]]:
         """Get the chunk idx sample from the chunk indices."""
