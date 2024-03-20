@@ -37,19 +37,14 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     "sphinx.ext.autosectionlabel",
-    # "sphinx.ext.doctest",
     "sphinx.ext.intersphinx",
     "sphinx.ext.todo",
-    # "sphinx.ext.mathjax",
     "sphinx.ext.napoleon",
-    "myst_parser",
     "sphinx.ext.viewcode",
     "sphinx_autodoc_typehints",
     "sphinx_autodoc_defaultargs",
-    # "sphinx.ext.duration",
-    # "sphinx_gallery.gen_gallery",
-    # "sphinx_copybutton",
-    # "beta_status",
+    "sphinx_copybutton",
+    "myst_parser",
 ]
 autosectionlabel_prefix_document = True
 docstring_default_arg_substitution = "Default: "
