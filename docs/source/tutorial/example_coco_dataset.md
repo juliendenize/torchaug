@@ -234,4 +234,5 @@ plot(
     row_title=["torchaug sanitized", "torchvision sanitized"],
 )
 ```
-![](_static_example_coco/torchaug_vs_torchvision.png)
+![](_static_example_coco/torchaug_vs_torchvision_transformed.png)
+![](_static_example_coco/torchaug_vs_torchvision_sanitized.png)
