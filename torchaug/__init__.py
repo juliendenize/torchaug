@@ -8,4 +8,4 @@
 from torchaug import data, ta_tensors, transforms
 
 
-__version__ = "0.4.1"
+__version__ = "0.4.2"
