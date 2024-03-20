@@ -2,6 +2,7 @@
 **/_build/*
 **/build/
 **/*.ipynb
+!docs/**/*.ipynb
 *.egg-info
 .coverage
 .pytest_cache/*

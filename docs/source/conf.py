@@ -37,19 +37,14 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     "sphinx.ext.autosectionlabel",
-    # "sphinx.ext.doctest",
     "sphinx.ext.intersphinx",
     "sphinx.ext.todo",
-    # "sphinx.ext.mathjax",
     "sphinx.ext.napoleon",
-    "myst_parser",
     "sphinx.ext.viewcode",
     "sphinx_autodoc_typehints",
     "sphinx_autodoc_defaultargs",
-    # "sphinx.ext.duration",
-    # "sphinx_gallery.gen_gallery",
-    # "sphinx_copybutton",
-    # "beta_status",
+    "sphinx_copybutton",
+    "myst_nb",
 ]
 autosectionlabel_prefix_document = True
 docstring_default_arg_substitution = "Default: "
@@ -63,7 +58,8 @@ templates_path = ["_templates"]
 source_suffix = {
     ".rst": "restructuredtext",
     ".txt": "markdown",
-    ".md": "markdown",
+    ".md": "myst-nb",
+    ".ipynb": "myst-nb",
 }
 
 
@@ -89,6 +85,8 @@ html_theme_options = {
     "source_repository": "https://github.com/juliendenize/torchaug/",
     "source_branch": "main",
     "source_directory": "docs/source/",
+    "page_width": "auto",
+    "body_max_width": "auto",
 }
 
 intersphinx_mapping = {

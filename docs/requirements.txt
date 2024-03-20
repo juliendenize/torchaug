@@ -1,7 +1,8 @@
 furo
-myst-parser
+myst-nb
 sphinx
 sphinx
 sphinx-autodoc-defaultargs
+sphinx-copybutton
 sphinx_autodoc_typehints
 torchvision == 0.17.1
