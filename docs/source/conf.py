@@ -44,7 +44,7 @@ extensions = [
     "sphinx_autodoc_typehints",
     "sphinx_autodoc_defaultargs",
     "sphinx_copybutton",
-    "myst_nb",
+    "myst_parser",
 ]
 autosectionlabel_prefix_document = True
 docstring_default_arg_substitution = "Default: "
@@ -58,8 +58,7 @@ templates_path = ["_templates"]
 source_suffix = {
     ".rst": "restructuredtext",
     ".txt": "markdown",
-    ".md": "myst-nb",
-    ".ipynb": "myst-nb",
+    ".md": "markdown",
 }
 
 
