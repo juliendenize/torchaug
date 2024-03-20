@@ -84,8 +84,6 @@ html_theme_options = {
     "source_repository": "https://github.com/juliendenize/torchaug/",
     "source_branch": "main",
     "source_directory": "docs/source/",
-    "page_width": "auto",
-    "body_max_width": "auto",
 }
 
 intersphinx_mapping = {
