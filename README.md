@@ -25,7 +25,7 @@ Torchaug removes these issues and its transforms are meant to be used in place o
 More details can be found in the [documentation](https://torchaug.readthedocs.io/en/).
 
 
-To be sure to retrieve the same data augmentations as Torchvision, **the components are tested to match Torchvision outputs**. We made a speed comparison [here](./docs/source/include/comparison.md).
+To be sure to retrieve the same data augmentations as Torchvision, **the components are tested to match Torchvision outputs**. We made a speed comparison [here](./docs/source/include/speed_comparison.md).
 
 
 If you find any unexpected behavior or want to suggest a change please open an issue.
