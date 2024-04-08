@@ -1,7 +1,6 @@
 furo
 myst-parser
 sphinx
-sphinx
 sphinx-autodoc-defaultargs
 sphinx-copybutton
 sphinx_autodoc_typehints
