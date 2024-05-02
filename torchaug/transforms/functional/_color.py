@@ -65,6 +65,34 @@ def rgb_to_grayscale_video(video: torch.Tensor, num_output_channels: int = 1) ->
     return rgb_to_grayscale_image(image=video, num_output_channels=num_output_channels)
 
 
+def grayscale_to_rgb(inpt: torch.Tensor) -> torch.Tensor:
+    """See :class:`~torchvision.transforms.v2.GrayscaleToRgb` for details."""
+    if torch.jit.is_scripting():
+        return grayscale_to_rgb_image(inpt)
+
+    _log_api_usage_once(grayscale_to_rgb)
+
+    kernel = _get_kernel(grayscale_to_rgb, type(inpt))
+    return kernel(inpt)
+
+
+@_register_kernel_internal(grayscale_to_rgb, torch.Tensor)
+@_register_kernel_internal(grayscale_to_rgb, ta_tensors.Image)
+@_register_kernel_internal(grayscale_to_rgb, ta_tensors.BatchImages)
+def grayscale_to_rgb_image(image: torch.Tensor) -> torch.Tensor:
+    if image.shape[-3] >= 3:
+        # Image already has RGB channels. We don't need to do anything.
+        return image
+    # rgb_to_grayscale can be used to add channels so we reuse that function.
+    return _rgb_to_grayscale_image(image, num_output_channels=3, preserve_dtype=True)
+
+
+@_register_kernel_internal(grayscale_to_rgb, ta_tensors.Video)
+@_register_kernel_internal(grayscale_to_rgb, ta_tensors.BatchVideos)
+def grayscale_to_rgb_video(video: torch.Tensor) -> torch.Tensor:
+    return grayscale_to_rgb_image(video)
+
+
 def _batch_blend(images1: torch.Tensor, images2: torch.Tensor, ratio: torch.Tensor) -> torch.Tensor:
     ratio = ratio.float()
     fp = images1.is_floating_point()

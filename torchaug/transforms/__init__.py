@@ -11,6 +11,7 @@ from . import functional
 from ._augment import JPEG, CutMix, MixUp, RandomErasing
 from ._auto_augment import AugMix, AutoAugment, RandAugment, TrivialAugmentWide
 from ._color import (
+    RGB,
     ColorJitter,
     Grayscale,
     RandomAdjustSharpness,

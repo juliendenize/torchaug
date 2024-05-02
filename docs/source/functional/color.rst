@@ -18,6 +18,7 @@ Color
     adjust_sharpness
     autocontrast
     equalize
+    grayscale_to_rgb
     invert
     permute_channels
     posterize

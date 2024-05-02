@@ -19,3 +19,4 @@ Color
     RandomPhotometricDistort
     RandomPosterize
     RandomSolarize
+    RGB
