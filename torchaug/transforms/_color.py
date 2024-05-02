@@ -50,6 +50,20 @@ class Grayscale(Transform):
         return super().extra_repr(exclude_names=["num_chunks", "permute_chunks"])
 
 
+class RGB(Transform):
+    """Convert images or videos to RGB (if they are already not RGB).
+
+    If the input is a :class:`torch.Tensor`, it is expected
+    to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions
+    """
+
+    def __init__(self):
+        super().__init__()
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return self._call_kernel(F.grayscale_to_rgb, inpt)
+
+
 class RandomGrayscale(RandomApplyTransform):
     """Randomly convert image or videos to grayscale with a probability of p.
 

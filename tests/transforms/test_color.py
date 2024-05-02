@@ -123,6 +123,60 @@ class TestRgbToGrayscale:
         assert_equal(actual, expected, rtol=0, atol=1)
 
 
+class TestGrayscaleToRgb:
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel_image(self, dtype, device):
+        check_kernel(F.grayscale_to_rgb_image, make_image(dtype=dtype, device=device))
+
+    @pytest.mark.parametrize(
+        "make_input", [make_image_tensor, make_image, make_batch_images, make_video, make_batch_videos]
+    )
+    def test_functional(self, make_input):
+        check_functional(F.grayscale_to_rgb, make_input())
+
+    @pytest.mark.parametrize(
+        ("kernel", "input_type"),
+        [
+            (F.rgb_to_grayscale_image, torch.Tensor),
+            (F.rgb_to_grayscale_image, ta_tensors.Image),
+            (F.rgb_to_grayscale_image, ta_tensors.BatchImages),
+            (F.rgb_to_grayscale_video, ta_tensors.Video),
+            (F.rgb_to_grayscale_video, ta_tensors.BatchVideos),
+        ],
+    )
+    def test_functional_signature(self, kernel, input_type):
+        check_functional_kernel_signature_match(F.grayscale_to_rgb, kernel=kernel, input_type=input_type)
+
+    @pytest.mark.parametrize(
+        "make_input", [make_image_tensor, make_image, make_batch_images, make_video, make_batch_videos]
+    )
+    def test_transform(self, make_input):
+        check_transform(transforms.RGB(), make_input(color_space="GRAY"))
+
+    @pytest.mark.parametrize("fn", [F.grayscale_to_rgb, transform_cls_to_functional(transforms.RGB)])
+    def test_image_correctness(self, fn):
+        image = make_image(dtype=torch.uint8, device="cpu", color_space="GRAY")
+
+        actual = fn(image)
+        expected = TVF.grayscale_to_rgb(torch.as_tensor(image))
+
+        assert_equal(actual, expected, rtol=0, atol=1)
+
+    def test_expanded_channels_are_not_views_into_the_same_underlying_tensor(self):
+        image = make_image(dtype=torch.uint8, device="cpu", color_space="GRAY")
+
+        output_image = F.grayscale_to_rgb(image)
+        assert_equal(output_image[0][0][0], output_image[1][0][0])
+        output_image[0][0][0] = output_image[0][0][0] + 1
+        assert output_image[0][0][0] != output_image[1][0][0]
+
+    def test_rgb_image_is_unchanged(self):
+        image = make_image(dtype=torch.uint8, device="cpu", color_space="RGB")
+        assert_equal(image.shape[-3], 3)
+        assert_equal(F.grayscale_to_rgb(image), image)
+
+
 class TestColorJitter:
     @pytest.mark.parametrize(
         "make_input",
