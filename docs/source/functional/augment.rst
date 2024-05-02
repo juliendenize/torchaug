@@ -10,3 +10,6 @@ Augment
     erase
     erase_image
     erase_video
+    jpeg
+    jpeg_image
+    jpeg_video

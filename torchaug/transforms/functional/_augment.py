@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import torch
 import torchvision.transforms.v2.functional as TVF
+from torchvision.io import decode_jpeg, encode_jpeg
 
 from torchaug import ta_tensors
 from torchaug._utils import _log_api_usage_once
@@ -62,3 +63,35 @@ def erase_video(
     inplace: bool = False,
 ) -> torch.Tensor:
     return erase_image(image=video, i=i, j=j, h=h, w=w, v=v, inplace=inplace)
+
+
+def jpeg(image: torch.Tensor, quality: int) -> torch.Tensor:
+    """See :class:`~torchaug.transforms.JPEG` for details."""
+    if torch.jit.is_scripting():
+        return jpeg_image(image, quality=quality)
+
+    _log_api_usage_once(jpeg)
+
+    kernel = _get_kernel(jpeg, type(image))
+    return kernel(image, quality=quality)
+
+
+@_register_kernel_internal(jpeg, torch.Tensor)
+@_register_kernel_internal(jpeg, ta_tensors.Image)
+@_register_kernel_internal(jpeg, ta_tensors.BatchImages)
+def jpeg_image(image: torch.Tensor, quality: int) -> torch.Tensor:
+    original_shape = image.shape
+    image = image.view((-1,) + image.shape[-3:])
+
+    if image.shape[0] == 0:  # degenerate
+        return image.reshape(original_shape).clone()
+
+    image_list = [decode_jpeg(encode_jpeg(image[i], quality=quality)) for i in range(image.shape[0])]
+    image = torch.stack(image_list, dim=0).view(original_shape)
+    return image
+
+
+@_register_kernel_internal(jpeg, ta_tensors.Video)
+@_register_kernel_internal(jpeg, ta_tensors.BatchVideos)
+def jpeg_video(video: torch.Tensor, quality: int) -> torch.Tensor:
+    return jpeg_image(video, quality=quality)

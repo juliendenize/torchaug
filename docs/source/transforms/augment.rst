@@ -11,3 +11,4 @@ Augment
     CutMix
     MixUp
     RandomErasing
+    JPEG

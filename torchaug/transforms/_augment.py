@@ -8,12 +8,12 @@
 import math
 import numbers
 import warnings
-from typing import Any, Callable, Dict, List, Tuple
+from typing import Any, Callable, Dict, List, Sequence, Tuple, Union
 
 import torch
 from torch.nn.functional import one_hot
 from torch.utils._pytree import tree_flatten, tree_unflatten
-from torchvision.transforms.v2._utils import _parse_labels_getter, has_any, query_chw
+from torchvision.transforms.v2._utils import _check_sequence_input, _parse_labels_getter, has_any, query_chw
 
 from torchaug import ta_tensors
 
@@ -163,6 +163,48 @@ class RandomErasing(RandomApplyTransform):
             )
 
         return inpt
+
+
+class JPEG(Transform):
+    """Apply JPEG compression and decompression to the given images.
+    The input is expected to be of a tensor of dtype uint8, on CPU, and have [..., 3 or 1, H, W] shape,
+    where ... means an arbitrary number of leading dimensions.
+
+    Args:
+        quality (sequence or number): JPEG quality, from 1 to 100. Lower means more compression.
+            If quality is a sequence like (min, max), it specifies the range of JPEG quality to
+            randomly select from (inclusive of both ends).
+
+    Returns:
+        image with JPEG compression.
+    """
+
+    def __init__(self, quality: Union[int, Sequence[int]]):
+        super().__init__()
+        if isinstance(quality, int):
+            quality = [quality, quality]
+        else:
+            _check_sequence_input(quality, "quality", req_sizes=(2,))
+
+        if not (1 <= quality[0] <= quality[1] <= 100 and isinstance(quality[0], int) and isinstance(quality[1], int)):
+            raise ValueError(f"quality must be an integer from 1 to 100, got {quality =}")
+
+        self.quality = quality
+
+    def _get_params(
+        self,
+        flat_inputs: List[Any],
+        num_chunks: int,
+        chunks_indices: Tuple[torch.Tensor],
+    ) -> List[Dict[str, Any]]:
+        params: List[Dict[str, Any]] = []
+        for i in range(num_chunks):
+            quality = torch.randint(self.quality[0], self.quality[1] + 1, ()).item()
+            params.append({"quality": quality})
+        return params
+
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        return self._call_kernel(F.jpeg, inpt, quality=params["quality"])
 
 
 class _BaseMixUpCutMix(Transform):
