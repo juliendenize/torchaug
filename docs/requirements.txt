@@ -1,7 +1,9 @@
+--find-links https://download.pytorch.org/whl/torch_stable.html
+
 furo
 myst-parser
 sphinx
 sphinx-autodoc-defaultargs
 sphinx-copybutton
 sphinx_autodoc_typehints
-torchvision == 0.17.1
+torchvision == 0.18.0+cpu
