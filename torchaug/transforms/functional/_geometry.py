@@ -968,8 +968,7 @@ def _apply_grid_transform_batch(
         fill_list = fill if isinstance(fill, (tuple, list)) else [float(fill)]  # type: ignore[arg-type]
         fill_images = torch.tensor(fill_list, dtype=float_images.dtype, device=float_images.device).view(1, -1, 1, 1)
         if mode == "nearest":
-            bool_mask = mask < 0.5
-            float_images[bool_mask] = fill_images.expand_as(float_images)[bool_mask]
+            float_images = torch.where(mask < 0.5, fill_images.expand_as(float_images), float_images)
         else:  # 'bilinear'
             # The following is mathematically equivalent to:
             # images * mask + (1.0 - mask) * fill = images * mask - fill * mask + fill = mask * (images - fill) + fill
