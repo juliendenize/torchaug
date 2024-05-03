@@ -8,7 +8,7 @@
 from __future__ import annotations
 
 import math
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 import torch
 import torchvision.transforms.v2.functional as TVF
@@ -18,8 +18,9 @@ from torch.nn.functional import pad as torch_pad
 from torchaug import ta_tensors
 from torchaug._utils import _log_api_usage_once
 
+from ._meta import _convert_bounding_box_format
 from ._utils._kernel import _get_kernel, _register_kernel_internal
-from ._utils._tensor import _transfer_tensor_on_device
+from ._utils._tensor import _transfer_tensor_on_device, is_pure_tensor
 
 
 def normalize(
@@ -279,6 +280,93 @@ def gaussian_blur_batch_videos(
     value_check: bool = False,
 ) -> torch.Tensor:
     return gaussian_blur_batch_images(images=videos, kernel_size=kernel_size, sigma=sigma, value_check=value_check)
+
+
+def sanitize_bounding_boxes(
+    bounding_boxes: torch.Tensor,
+    format: Optional[ta_tensors.BoundingBoxFormat] = None,
+    canvas_size: Optional[Tuple[int, int]] = None,
+    min_size: float = 1.0,
+) -> Tuple[torch.Tensor, torch.Tensor]:
+    """Remove degenerate/invalid bounding boxes and return the corresponding indexing mask.
+
+    This removes bounding boxes that:
+    - are below a given ``min_size``: by default this also removes degenerate boxes that have e.g. X2 <= X1.
+    - have any coordinate outside of their corresponding image. You may want to
+      call :func:`~torchaug.transforms.functional.clamp_bounding_boxes` first to avoid undesired removals.
+    It is recommended to call it at the end of a pipeline, before passing the
+    input to the models. It is critical to call this transform if
+    :class:`~torchaug.transforms.RandomIoUCrop` was called.
+    If you want to be extra careful, you may call it after all transforms that
+    may modify bounding boxes but once at the end should be enough in most
+    cases.
+
+    Args:
+        bounding_boxes: The bounding boxes to be sanitized.
+        format: The format of the bounding boxes.
+            Must be left to none if ``bounding_boxes`` is a :class:`~torchaug.ta_tensors.BoundingBoxes` object.
+        canvas_size: The canvas_size of the bounding boxes
+            (size of the corresponding image/video).
+            Must be left to none if ``bounding_boxes`` is a :class:`~torchaug.ta_tensors.BoundingBoxes` object.
+        min_size: The size below which bounding boxes are removed.
+
+    Returns:
+        The subset of valid bounding boxes, and the corresponding indexing mask.
+        The mask can then be used to subset other tensors (e.g. labels) that are associated with the bounding boxes.
+    """
+    if torch.jit.is_scripting() or is_pure_tensor(bounding_boxes):
+        if format is None or canvas_size is None:
+            raise ValueError(
+                "format and canvas_size cannot be None if bounding_boxes is a pure tensor. "
+                f"Got format={format} and canvas_size={canvas_size}."
+                "Set those to appropriate values or pass bounding_boxes as a tv_tensors.BoundingBoxes object."
+            )
+        if isinstance(format, str):
+            format = ta_tensors.BoundingBoxFormat[format.upper()]
+        valid = _get_sanitize_bounding_boxes_mask(
+            bounding_boxes, format=format, canvas_size=canvas_size, min_size=min_size
+        )
+        bounding_boxes = bounding_boxes[valid]
+    else:
+        if not isinstance(bounding_boxes, (ta_tensors.BoundingBoxes, ta_tensors.BatchBoundingBoxes)):
+            raise ValueError(
+                "bouding_boxes must be a ta_tensors.BoundingBoxes or "
+                "ta_tensors.BatchBoundingBoxes instance or a pure tensor."
+            )
+        if format is not None or canvas_size is not None:
+            raise ValueError(
+                "format and canvas_size must be None when bounding_boxes is a "
+                "ta_tensors.BoundingBoxes or ta_tensors.BatchBoundingBoxes instance. "
+                f"Got format={format} and canvas_size={canvas_size}. "
+                "Leave those to None or pass bouding_boxes as a pure tensor."
+            )
+        valid = _get_sanitize_bounding_boxes_mask(
+            bounding_boxes, format=bounding_boxes.format, canvas_size=bounding_boxes.canvas_size, min_size=min_size
+        )
+        bounding_boxes = ta_tensors.wrap(bounding_boxes[valid], like=bounding_boxes)
+
+    return bounding_boxes, valid
+
+
+def _get_sanitize_bounding_boxes_mask(
+    bounding_boxes: torch.Tensor,
+    format: ta_tensors.BoundingBoxFormat,
+    canvas_size: Tuple[int, int],
+    min_size: float = 1.0,
+) -> torch.Tensor:
+    bounding_boxes = _convert_bounding_box_format(
+        bounding_boxes, new_format=ta_tensors.BoundingBoxFormat.XYXY, old_format=format
+    )
+
+    image_h, image_w = canvas_size
+    ws, hs = bounding_boxes[:, 2] - bounding_boxes[:, 0], bounding_boxes[:, 3] - bounding_boxes[:, 1]
+    valid = (ws >= min_size) & (hs >= min_size) & (bounding_boxes >= 0).all(dim=-1)
+    # TODO: Do we really need to check for out of bounds here? All
+    # transforms should be clamping anyway, so this should never happen?
+    image_h, image_w = canvas_size
+    valid &= (bounding_boxes[:, 0] <= image_w) & (bounding_boxes[:, 2] <= image_w)
+    valid &= (bounding_boxes[:, 1] <= image_h) & (bounding_boxes[:, 3] <= image_h)
+    return valid
 
 
 def to_dtype(inpt: torch.Tensor, dtype: torch.dtype = torch.float, scale: bool = False) -> torch.Tensor:

@@ -852,21 +852,7 @@ class TestToDtype:
 
 
 class TestSanitizeBoundingBoxes:
-    @pytest.mark.parametrize("min_size", (1, 10))
-    @pytest.mark.parametrize(
-        "labels_getter",
-        ("default", lambda inputs: inputs["labels"], None, lambda inputs: None),
-    )
-    @pytest.mark.parametrize("sample_type", (tuple, dict))
-    @pytest.mark.parametrize("batch", [False, True])
-    def test_transform(self, min_size, labels_getter, sample_type, batch):
-        if sample_type is tuple and not isinstance(labels_getter, str):
-            # The "lambda inputs: inputs["labels"]" labels_getter used in this test
-            # doesn't work if the input is a tuple.
-            return
-
-        H, W = 256, 128
-
+    def _get_boxes_and_valid_mask(self, H=256, W=128, min_size=10, batch=False):
         boxes_and_validity = [
             ([0, 1, 10, 1], False),  # Y1 == Y2
             ([0, 1, 0, 20], False),  # X1 == X2
@@ -886,29 +872,50 @@ class TestSanitizeBoundingBoxes:
         ]
 
         random.shuffle(boxes_and_validity)  # For test robustness: mix order of wrong and correct cases
-        boxes, is_valid_mask = zip(*boxes_and_validity)
-        valid_indices = [i for (i, is_valid) in enumerate(is_valid_mask) if is_valid]
-
-        if batch:
-            valid_indices = valid_indices + [v + len(boxes) for v in valid_indices]
-
-        boxes = torch.tensor(boxes)
-        labels = torch.arange(boxes.shape[0]) if not batch else torch.arange(boxes.shape[0] * 2)
-
-        boxes = (
-            ta_tensors.BoundingBoxes(
+        boxes, expected_valid_mask = zip(*boxes_and_validity)
+        if not batch:
+            boxes = ta_tensors.BoundingBoxes(
                 boxes,
                 format=ta_tensors.BoundingBoxFormat.XYXY,
                 canvas_size=(H, W),
             )
-            if not batch
-            else ta_tensors.BatchBoundingBoxes(
-                torch.cat([boxes, boxes], 0),
+        else:
+            boxes = ta_tensors.BatchBoundingBoxes(
+                boxes + boxes,
                 format=ta_tensors.BoundingBoxFormat.XYXY,
                 canvas_size=(H, W),
-                samples_ranges=[(0, boxes.shape[0]), (boxes.shape[0], boxes.shape[0] * 2)],
+                samples_ranges=[(0, len(boxes)), (len(boxes), len(boxes) * 2)],
             )
-        )
+            expected_valid_mask = expected_valid_mask + expected_valid_mask
+        return boxes, expected_valid_mask
+
+    @pytest.mark.parametrize("min_size", (1, 10))
+    @pytest.mark.parametrize(
+        "labels_getter",
+        (
+            "default",
+            lambda inputs: inputs["labels"],
+            lambda inputs: (inputs["labels"], inputs["other_labels"]),
+            lambda inputs: [inputs["labels"], inputs["other_labels"]],
+            None,
+            lambda inputs: None,
+        ),
+    )
+    @pytest.mark.parametrize("sample_type", (tuple, dict))
+    @pytest.mark.parametrize("batch", [False, True])
+    def test_transform(self, min_size, labels_getter, sample_type, batch):
+        if sample_type is tuple and not isinstance(labels_getter, str):
+            # The "lambda inputs: inputs["labels"]" labels_getter used in this test
+            # doesn't work if the input is a tuple.
+            return
+
+        H, W = 256, 128
+
+        boxes, expected_valid_mask = self._get_boxes_and_valid_mask(H=H, W=W, min_size=min_size, batch=batch)
+        valid_indices = [i for (i, is_valid) in enumerate(expected_valid_mask) if is_valid]
+
+        labels: torch.Tensor = torch.arange(boxes.shape[0])
+        other_labels = torch.arange(boxes.shape[0])
 
         masks = (
             ta_tensors.Mask(torch.randint(0, 2, size=(boxes.shape[0], H, W)))
@@ -928,6 +935,7 @@ class TestSanitizeBoundingBoxes:
         sample = {
             "image": input_img,
             "labels": labels,
+            "other_labels": other_labels,
             "boxes": boxes,
             "whatever": whatever,
             "None": None,
@@ -943,12 +951,14 @@ class TestSanitizeBoundingBoxes:
         if sample_type is tuple:
             out_image = out[0]
             out_labels = out[1]["labels"]
+            out_other_labels = out[1]["other_labels"]
             out_boxes = out[1]["boxes"]
             out_masks = out[1]["masks"]
             out_whatever = out[1]["whatever"]
         else:
             out_image = out["image"]
             out_labels = out["labels"]
+            out_other_labels = out["other_labels"]
             out_boxes = out["boxes"]
             out_masks = out["masks"]
             out_whatever = out["whatever"]
@@ -962,13 +972,19 @@ class TestSanitizeBoundingBoxes:
         )
         assert isinstance(out_masks, ta_tensors.Mask) if not batch else isinstance(out_masks, ta_tensors.BatchMasks)
 
-        if labels_getter is None or (callable(labels_getter) and labels_getter({"labels": "blah"}) is None):
+        if labels_getter is None or (callable(labels_getter) and labels_getter(sample) is None):
             assert out_labels is labels
+            assert out_other_labels is other_labels
         else:
             assert isinstance(out_labels, torch.Tensor)
             assert out_boxes.shape[0] == out_labels.shape[0] == out_masks.shape[0]
             # This works because we conveniently set labels to arange(num_boxes)
             assert out_labels.tolist() == valid_indices
+
+            if callable(labels_getter) and isinstance(labels_getter(sample), (tuple, list)):
+                assert_equal(out_other_labels, out_labels)
+            else:
+                assert_equal(out_other_labels, other_labels)
 
     @pytest.mark.parametrize("batch", [False, True])
     def test_no_label(self, batch):
