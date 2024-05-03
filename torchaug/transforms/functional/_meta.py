@@ -164,9 +164,9 @@ def convert_bounding_box_format(
         _log_api_usage_once(convert_bounding_box_format)
 
     if isinstance(old_format, str):
-        old_format = ta_tensors.BoundingBoxFormat[old_format.upper()]  # type: ignore[misc]
+        old_format = ta_tensors.BoundingBoxFormat[old_format.upper()]
     if isinstance(new_format, str):
-        new_format = ta_tensors.BoundingBoxFormat[new_format.upper()]  # type: ignore[misc]
+        new_format = ta_tensors.BoundingBoxFormat[new_format.upper()]
 
     if torch.jit.is_scripting() or is_pure_tensor(inpt):
         if old_format is None:
