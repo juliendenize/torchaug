@@ -986,6 +986,21 @@ class TestSanitizeBoundingBoxes:
             else:
                 assert_equal(out_other_labels, other_labels)
 
+    def test_kernel(self):
+        H, W, min_size = 256, 128, 10
+        boxes, _ = self._get_boxes_and_valid_mask(H=H, W=W, min_size=min_size)
+
+        format, canvas_size = boxes.format, boxes.canvas_size
+        boxes = boxes.as_subclass(torch.Tensor)
+
+        check_kernel(
+            F.sanitize_bounding_boxes,
+            input=boxes,
+            format=format,
+            canvas_size=canvas_size,
+            check_batched_vs_unbatched=False,
+        )
+
     @pytest.mark.parametrize("batch", [False, True])
     def test_no_label(self, batch):
         # Non-regression test for https://github.com/pytorch/vision/issues/7878
@@ -1004,7 +1019,7 @@ class TestSanitizeBoundingBoxes:
             else isinstance(out_boxes, ta_tensors.BatchBoundingBoxes)
         )
 
-    def test_errors(self):
+    def test_errors_transform(self):
         good_bbox = ta_tensors.BoundingBoxes(
             [[0, 0, 10, 10]],
             format=ta_tensors.BoundingBoxFormat.XYXY,
@@ -1017,22 +1032,35 @@ class TestSanitizeBoundingBoxes:
             transforms.SanitizeBoundingBoxes(labels_getter=12)
 
         with pytest.raises(ValueError, match="Could not infer where the labels are"):
-            bad_labels_key = {
-                "bbox": good_bbox,
-                "BAD_KEY": torch.arange(good_bbox.shape[0]),
-            }
+            bad_labels_key = {"bbox": good_bbox, "BAD_KEY": torch.arange(good_bbox.shape[0])}
             transforms.SanitizeBoundingBoxes()(bad_labels_key)
 
         with pytest.raises(ValueError, match="must be a tensor"):
-            not_a_tensor = {
-                "bbox": good_bbox,
-                "labels": torch.arange(good_bbox.shape[0]).tolist(),
-            }
+            not_a_tensor = {"bbox": good_bbox, "labels": torch.arange(good_bbox.shape[0]).tolist()}
             transforms.SanitizeBoundingBoxes()(not_a_tensor)
 
         with pytest.raises(ValueError, match="Number of boxes"):
-            different_sizes = {
-                "bbox": good_bbox,
-                "labels": torch.arange(good_bbox.shape[0] + 3),
-            }
+            different_sizes = {"bbox": good_bbox, "labels": torch.arange(good_bbox.shape[0] + 3)}
             transforms.SanitizeBoundingBoxes()(different_sizes)
+
+    def test_errors_functional(self):
+        good_bbox = ta_tensors.BoundingBoxes(
+            [[0, 0, 10, 10]],
+            format=ta_tensors.BoundingBoxFormat.XYXY,
+            canvas_size=(20, 20),
+        )
+
+        with pytest.raises(ValueError, match="canvas_size cannot be None if bounding_boxes is a pure tensor"):
+            F.sanitize_bounding_boxes(good_bbox.as_subclass(torch.Tensor), format="XYXY", canvas_size=None)
+
+        with pytest.raises(ValueError, match="canvas_size cannot be None if bounding_boxes is a pure tensor"):
+            F.sanitize_bounding_boxes(good_bbox.as_subclass(torch.Tensor), format=None, canvas_size=(10, 10))
+
+        with pytest.raises(ValueError, match="canvas_size must be None when bounding_boxes is a ta_tensors"):
+            F.sanitize_bounding_boxes(good_bbox, format="XYXY", canvas_size=None)
+
+        with pytest.raises(ValueError, match="canvas_size must be None when bounding_boxes is a ta_tensors"):
+            F.sanitize_bounding_boxes(good_bbox, format="XYXY", canvas_size=None)
+
+        with pytest.raises(ValueError, match="bounding_boxes must be a ta_tensors.BoundingBoxes or "):
+            F.sanitize_bounding_boxes(good_bbox.tolist())

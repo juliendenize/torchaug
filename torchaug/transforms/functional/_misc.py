@@ -330,7 +330,7 @@ def sanitize_bounding_boxes(
     else:
         if not isinstance(bounding_boxes, (ta_tensors.BoundingBoxes, ta_tensors.BatchBoundingBoxes)):
             raise ValueError(
-                "bouding_boxes must be a ta_tensors.BoundingBoxes or "
+                "bounding_boxes must be a ta_tensors.BoundingBoxes or "
                 "ta_tensors.BatchBoundingBoxes instance or a pure tensor."
             )
         if format is not None or canvas_size is not None:
