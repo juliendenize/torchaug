@@ -171,7 +171,7 @@ class JPEG(Transform):
     where ... means an arbitrary number of leading dimensions.
 
     Args:
-        quality (sequence or number): JPEG quality, from 1 to 100. Lower means more compression.
+        quality: JPEG quality, from 1 to 100. Lower means more compression.
             If quality is a sequence like (min, max), it specifies the range of JPEG quality to
             randomly select from (inclusive of both ends).
 
