@@ -9,11 +9,13 @@ on:
     paths:
       - "torchaug/**"
       - "tests/**"
+      - requirements.txt
   pull_request:
     branches: [ "main" ]
     paths:
       - "torchaug/**"
       - "tests/**"
+      - requirements.txt
 
 jobs:
   build:
