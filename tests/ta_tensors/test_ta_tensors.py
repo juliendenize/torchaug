@@ -242,6 +242,9 @@ def test_clone_wrapping(make_input, return_type):
 )
 @pytest.mark.parametrize("return_type", ["Tensor", "TATensor"])
 def test_pin_memory_wrapping(make_input, return_type):
+    if not torch.cuda.is_available():
+        pytest.skip("CUDA is not available")
+
     dp = make_input()
 
     with ta_tensors.set_return_type(return_type):
@@ -331,9 +334,11 @@ def test_force_subclass_with_metadata_bounding_boxes(return_type):
         assert bbox.format, bbox.canvas_size == (format, canvas_size)
         assert bbox.requires_grad
 
-    bbox = bbox.pin_memory()
-    if return_type == "TATensor":
-        assert bbox.format, bbox.canvas_size == (format, canvas_size)
+    if torch.cuda.is_available():
+        bbox = bbox.pin_memory()
+        if return_type == "TATensor":
+            assert bbox.format, bbox.canvas_size == (format, canvas_size)
+
     ta_tensors.set_return_type("tensor")
 
 
@@ -372,10 +377,12 @@ def test_force_subclass_with_metadata_batch_bounding_boxes(return_type):
         assert bbox.samples_ranges == [(0, 1), (1, 2), (2, 4)]
         assert bbox.requires_grad
 
-    bbox = bbox.pin_memory()
-    if return_type == "TATensor":
-        assert bbox.format, bbox.canvas_size == (format, canvas_size)
-        assert bbox.samples_ranges == [(0, 1), (1, 2), (2, 4)]
+    if torch.cuda.is_available():
+        bbox = bbox.pin_memory()
+        if return_type == "TATensor":
+            assert bbox.format, bbox.canvas_size == (format, canvas_size)
+            assert bbox.samples_ranges == [(0, 1), (1, 2), (2, 4)]
+
     ta_tensors.set_return_type("tensor")
 
 
@@ -408,9 +415,10 @@ def test_force_subclass_with_metadata_type_with_samples_ranges(class_, return_ty
         assert ta_tensor.samples_ranges == [(0, 1), (1, 2)]
         assert ta_tensor.requires_grad
 
-    ta_tensor = ta_tensor.pin_memory()
-    if return_type == "TATensor":
-        assert ta_tensor.samples_ranges == [(0, 1), (1, 2)]
+    if torch.cuda.is_available():
+        ta_tensor = ta_tensor.pin_memory()
+        if return_type == "TATensor":
+            assert ta_tensor.samples_ranges == [(0, 1), (1, 2)]
 
     ta_tensors.set_return_type("tensor")
 
