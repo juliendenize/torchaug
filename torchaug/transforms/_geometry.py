@@ -1202,7 +1202,7 @@ class ElasticTransform(Transform):
         chunks_indices: Tuple[torch.Tensor],
     ) -> List[Dict[str, Any]]:
         size = list(query_size(flat_inputs))
-        device = flat_inputs[0].device
+        device = self._get_input_device(flat_inputs)
         gaussian_blur = F.gaussian_blur_batch if self.batch_transform else F.gaussian_blur
 
         params = []
@@ -1212,7 +1212,7 @@ class ElasticTransform(Transform):
             if is_first_input_ta_tensor:
                 with set_return_type("TATensor"):
                     chunk_input = flat_inputs[0][chunks_indices]
-                chunk_batch_size = self._get_input_batch_size(chunk_input)
+                chunk_batch_size = self._get_input_batch_size([chunk_input])
             else:
                 chunk_batch_size = chunks_indices[0].shape[0]
             lead_dims = [chunk_batch_size, 1] if self.batch_transform else [1, 1]

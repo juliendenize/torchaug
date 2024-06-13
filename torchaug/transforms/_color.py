@@ -218,7 +218,7 @@ class RandomColorJitter(RandomApplyTransform):
             idx_perms = torch.randperm(len(self._combinations))[:num_chunks].tolist()
 
         params = []
-        device = flat_inputs[0].device
+        device = self._get_input_device(flat_inputs)
 
         for i in range(num_chunks):
             chunk_batch_size = chunks_indices[i].shape[0]
@@ -476,7 +476,7 @@ class RandomPhotometricDistort(RandomApplyTransform):
         num_channels, *_ = query_chw(flat_inputs)
 
         params = []
-        device = flat_inputs[0].device
+        device = self._get_input_device(flat_inputs)
 
         for i in range(num_chunks):
             chunk_params: Dict[str, Any] = {
