@@ -667,7 +667,7 @@ def _check_transform_batch_sample_input_smoke(transform, input, *, adapter, batc
             with freeze_rng_state():
                 torch.manual_seed(0)
                 needs_transform_list = transform._needs_transform_list(input_flat)
-                batch_size = transform._get_input_batch_size(input_flat[0])
+                batch_size = transform._get_input_batch_size(input_flat)
                 device = input_flat[0].device
                 if p == 1:
                     indices_transform = torch.tensor(list(range(batch_size)), dtype=torch.long, device=device)
