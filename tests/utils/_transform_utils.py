@@ -316,6 +316,7 @@ def _make_transform_sample(transform, *, image_or_video, adapter, batch=False):
     size = F.get_size(image_or_video)
     input = (
         dict(
+            string="string",
             image_or_video=image_or_video,
             image_ta_tensor=make_image(size, device=device),
             video_ta_tensor=make_video(size, device=device),
@@ -454,6 +455,7 @@ def _make_transform_batch_sample(transform, *, image_or_video, adapter, batch_si
     samples_ranges = [(0, 6)] if batch_size == 1 else [(0, 3), (3, 6), *[(6, 6) for _ in range(batch_size - 2)]]
     size = F.get_size(image_or_video)
     input = dict(
+        string="string",
         image_or_video=image_or_video,
         batch_images_ta_tensor=make_batch_images(size, device=device, batch_dims=(batch_size,)),
         batch_videos_ta_tensor=make_batch_videos(size, device=device, batch_dims=(batch_size,)),
