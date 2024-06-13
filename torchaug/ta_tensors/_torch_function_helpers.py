@@ -81,4 +81,5 @@ _FORCE_TORCHFUNCTION_SUBCLASS = {
     torch.Tensor.to,
     torch.Tensor.detach,
     torch.Tensor.requires_grad_,
+    torch.Tensor.pin_memory,
 }
