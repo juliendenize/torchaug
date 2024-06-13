@@ -6,4 +6,4 @@ sphinx
 sphinx-autodoc-defaultargs
 sphinx-copybutton
 sphinx_autodoc_typehints
-torchvision == 0.18.0+cpu
+torchvision == 0.18.1+cpu
