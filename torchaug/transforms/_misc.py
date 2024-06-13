@@ -67,7 +67,9 @@ class Lambda(Transform):
             chunks_indices=(
                 torch.tensor(
                     [0],
-                    device=flat_inputs[0].device if isinstance(flat_inputs[0], torch.Tensor) else "cpu",
+                    device=self._get_input_device(flat_inputs)
+                    if any(isinstance(inpt, torch.Tensor) for inpt in flat_inputs)
+                    else "cpu",
                 ),
             ),
         )[0]
@@ -266,7 +268,7 @@ class RandomGaussianBlur(RandomApplyTransform):
                 sigma = torch.empty(1).uniform_(self.sigma[0], self.sigma[1]).item()
                 params.append({"sigma": [sigma, sigma]})
             else:
-                device = flat_inputs[0].device
+                device = self._get_input_device(flat_inputs)
                 batch_size = chunks_indices[0].shape[0]
                 sigma = (
                     torch.empty((batch_size, 1), device=device)

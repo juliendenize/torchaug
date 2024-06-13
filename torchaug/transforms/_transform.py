@@ -107,9 +107,7 @@ class RandomApplyTransform(nn.Module):
                 return inpt.batch_size
             elif isinstance(inpt, torch.Tensor):
                 return inpt.shape[0]
-        raise ValueError(
-            "Expected one of the inputs to be a tensor or a batched tensor."
-        )
+        raise ValueError("Expected one of the inputs to be a tensor or a batched tensor.")
 
     @staticmethod
     def _get_input_device(flat_inpts: list[Any]) -> torch.device:
@@ -129,9 +127,7 @@ class RandomApplyTransform(nn.Module):
                 return inpt.device
             elif isinstance(inpt, torch.Tensor):
                 return inpt.device
-        raise ValueError(
-            "Expected one of the inputs to be a tensor or a batched tensor."
-        )
+        raise ValueError("Expected one of the inputs to be a tensor or a batched tensor.")
 
     def _get_chunks_indices(self, batch_size: int, num_chunks: int, device: torch.device) -> Tuple[torch.Tensor, ...]:
         if num_chunks <= 0:
@@ -251,7 +247,12 @@ class RandomApplyTransform(nn.Module):
         params = self._get_params(
             [inpt for (inpt, needs_transform) in zip(flat_inputs, needs_transform_list) if needs_transform],
             num_chunks=1,
-            chunks_indices=(torch.tensor([0], device=torch.device("cpu"),),)
+            chunks_indices=(
+                torch.tensor(
+                    [0],
+                    device=torch.device("cpu"),
+                ),
+            ),
         )[0]
 
         flat_outputs = [
