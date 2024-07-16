@@ -697,7 +697,7 @@ def _check_transform_batch_sample_input_smoke(transform, input, *, adapter, batc
                         else:
                             assert opt == cloned_inpt
                     else:
-                        assert type(opt) == type(cloned_inpt)
+                        assert type(opt) is type(cloned_inpt)
 
     # Enforce that the transform does not turn a degenerate bounding box, e.g. marked by RandomIoUCrop (or any other
     # future transform that does this), back into a valid one.
