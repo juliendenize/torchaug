@@ -14,7 +14,7 @@ import torchvision.transforms.v2.functional as TVF
 from torchvision.transforms.v2.functional._color import _hsv_to_rgb, _rgb_to_hsv
 
 from torchaug import ta_tensors
-from torchaug._utils import _assert_torchvision_installed, _log_api_usage_once
+from torchaug._utils import _log_api_usage_once
 
 from ._misc import to_dtype_image
 from ._utils._kernel import _get_kernel, _register_kernel_internal
@@ -80,8 +80,6 @@ def grayscale_to_rgb(inpt: torch.Tensor) -> torch.Tensor:
 @_register_kernel_internal(grayscale_to_rgb, ta_tensors.Image)
 @_register_kernel_internal(grayscale_to_rgb, ta_tensors.BatchImages)
 def grayscale_to_rgb_image(image: torch.Tensor) -> torch.Tensor:
-    _assert_torchvision_installed("0.18.0")
-
     if image.shape[-3] >= 3:
         # Image already has RGB channels. We don't need to do anything.
         return image
