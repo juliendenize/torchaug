@@ -1,3 +1,5 @@
+from importlib.metadata import version
+
 import pytest
 import torch
 import torchvision.transforms.v2 as tv_transforms
@@ -8,7 +10,6 @@ from torch.utils.data.dataloader import default_collate
 import torchaug.transforms as transforms
 import torchaug.transforms.functional as F
 from torchaug import ta_tensors
-from importlib.metadata import version
 
 from ..utils import (
     IMAGE_MAKERS,
@@ -379,6 +380,7 @@ def test_labels_getter_default_heuristic(key, sample_type):
         # it takes precedence over other keys which would otherwise be a match
         d = {key: "something_else", "labels": labels}
         assert tv_transforms._utils._find_labels_default_heuristic(d) is labels
+
 
 @pytest.mark.skipif(version("torchvision") < "0.18.0", reason="requires torchvision>=0.18.0")
 class TestJPEG:
