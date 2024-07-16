@@ -79,7 +79,7 @@ class TestRandomApplyTransform:
         output_tensor = transform(*input_flat)
         needs_transform_list = transform._needs_transform_list(input_flat)
         for inpt, opt, need_transform in zip(input_flat, output_tensor, needs_transform_list):
-            assert type(inpt) == type(opt)
+            assert type(inpt) is type(opt)
             if not need_transform:
                 assert opt is inpt
                 return
@@ -155,7 +155,7 @@ class TestRandomApplyTransform:
 
         if p == 0:
             for opt, inpt in zip(output_flat, input_flat):
-                assert type(opt) == type(inpt)
+                assert type(opt) is type(inpt)
                 assert opt is inpt
             return
 
@@ -173,7 +173,7 @@ class TestRandomApplyTransform:
 
             if num_chunks == 0:
                 for opt, inpt in zip(output_flat, input_flat):
-                    assert type(opt) == type(inpt)
+                    assert type(opt) is type(inpt)
                     assert opt is inpt
                 return
 
@@ -202,7 +202,7 @@ class TestRandomApplyTransform:
                         assert opt == inpt
                     continue
                 else:
-                    assert type(opt) == type(cloned_inpt)
+                    assert type(opt) is type(cloned_inpt)
 
                 is_ta_inpt = isinstance(inpt, ta_tensors.TATensor)
                 is_contatenated_batch_ta_tensors = isinstance(inpt, _BatchConcatenatedTATensor)
