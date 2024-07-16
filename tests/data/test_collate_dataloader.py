@@ -214,13 +214,13 @@ class TestDefaultCollate:
 
         assert isinstance(collated_batch, list)
         assert len(collated_batch) == len(sample)
-        assert type(collated_batch[0]) == BatchImages
-        assert type(collated_batch[1]) == BatchVideos
-        assert type(collated_batch[2]) == BatchBoundingBoxes
-        assert type(collated_batch[3]) == BatchMasks
-        assert type(collated_batch[4]) == BatchMasks
-        assert type(collated_batch[5]) == tuple
-        assert type(collated_batch[6]) == torch.Tensor
+        assert type(collated_batch[0]) is BatchImages
+        assert type(collated_batch[1]) is BatchVideos
+        assert type(collated_batch[2]) is BatchBoundingBoxes
+        assert type(collated_batch[3]) is BatchMasks
+        assert type(collated_batch[4]) is BatchMasks
+        assert type(collated_batch[5]) is tuple
+        assert type(collated_batch[6]) is torch.Tensor
 
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_batch_dict(self, device):
@@ -240,10 +240,10 @@ class TestDefaultCollate:
 
         assert isinstance(collated_batch, dict)
         assert len(collated_batch) == len(sample)
-        assert type(collated_batch["image"]) == BatchImages
-        assert type(collated_batch["video"]) == BatchVideos
-        assert type(collated_batch["bbox"]) == BatchBoundingBoxes
-        assert type(collated_batch["mask1"]) == BatchMasks
-        assert type(collated_batch["mask2"]) == BatchMasks
+        assert type(collated_batch["image"]) is BatchImages
+        assert type(collated_batch["video"]) is BatchVideos
+        assert type(collated_batch["bbox"]) is BatchBoundingBoxes
+        assert type(collated_batch["mask1"]) is BatchMasks
+        assert type(collated_batch["mask2"]) is BatchMasks
         assert isinstance(collated_batch["string"], list)
         assert isinstance(collated_batch["tensor"], torch.Tensor)
