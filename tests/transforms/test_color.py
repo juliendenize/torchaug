@@ -1,4 +1,5 @@
 import re
+from importlib.metadata import version
 
 import pytest
 import torch
@@ -31,6 +32,7 @@ from ..utils import (
 )
 
 
+@pytest.mark.skipif(version("torchvision") < "0.18.0", reason="requires torchvision>=0.18.0")
 class TestRgbToGrayscale:
     @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
     @pytest.mark.parametrize("device", cpu_and_cuda())

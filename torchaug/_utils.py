@@ -5,10 +5,14 @@
 # Code partially based on Torchvision (BSD 3-Clause License), available at:
 #   https://github.com/pytorch/vision
 
+from importlib.metadata import version as module_version
 from types import FunctionType
 from typing import Any
 
 import torch
+
+
+_TORCHVISION_VERSION = module_version("torchvision")
 
 
 def _log_api_usage_once(obj: Any) -> None:
@@ -37,3 +41,11 @@ def _log_api_usage_once(obj: Any) -> None:
     if isinstance(obj, FunctionType):
         name = obj.__name__
     torch._C._log_api_usage_once(f"{module}.{name}")
+
+
+def _assert_torchvision_installed(version: str) -> None:
+    """Asserts that the installed version of torchvision is at least the required version."""
+    if _TORCHVISION_VERSION < version:
+        raise RuntimeError(
+            f"Torchvision is not installed or the installed version is lower than the required version {version}."
+        )

@@ -1,3 +1,5 @@
+from importlib.metadata import version
+
 import pytest
 import torch
 import torchvision.transforms.v2 as tv_transforms
@@ -380,6 +382,7 @@ def test_labels_getter_default_heuristic(key, sample_type):
         assert tv_transforms._utils._find_labels_default_heuristic(d) is labels
 
 
+@pytest.mark.skipif(version("torchvision") < "0.18.0", reason="requires torchvision>=0.18.0")
 class TestJPEG:
     @pytest.mark.parametrize("quality", [5, 75])
     @pytest.mark.parametrize("color_space", ["RGB", "GRAY"])

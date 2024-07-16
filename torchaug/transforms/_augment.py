@@ -181,6 +181,7 @@ class JPEG(Transform):
 
     def __init__(self, quality: Union[int, Sequence[int]]):
         super().__init__()
+
         if isinstance(quality, int):
             quality = [quality, quality]
         else:
