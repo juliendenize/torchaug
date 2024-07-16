@@ -8,6 +8,7 @@ from torch.utils.data.dataloader import default_collate
 import torchaug.transforms as transforms
 import torchaug.transforms.functional as F
 from torchaug import ta_tensors
+from importlib.metadata import version
 
 from ..utils import (
     IMAGE_MAKERS,
@@ -379,7 +380,7 @@ def test_labels_getter_default_heuristic(key, sample_type):
         d = {key: "something_else", "labels": labels}
         assert tv_transforms._utils._find_labels_default_heuristic(d) is labels
 
-
+@pytest.mark.skipif(version("torchvision") < "0.18.0", reason="requires torchvision>=0.18.0")
 class TestJPEG:
     @pytest.mark.parametrize("quality", [5, 75])
     @pytest.mark.parametrize("color_space", ["RGB", "GRAY"])
