@@ -42,11 +42,6 @@ def _log_api_usage_once(obj: Any) -> None:
 
 def _assert_torchvision_installed(version: str) -> None:
     """Asserts that the installed version of torchvision is at least the required version."""
-    try:
-        import torchvision  # noqa: F401
-    except ImportError:
-        raise RuntimeError("Torchvision is not installed.")
-
     if module_version("torchvision") < version:
         raise RuntimeError(
             f"Torchvision is not installed or the installed version is lower than the required version {version}."
