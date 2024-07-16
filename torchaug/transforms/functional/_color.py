@@ -67,8 +67,6 @@ def rgb_to_grayscale_video(video: torch.Tensor, num_output_channels: int = 1) ->
 
 def grayscale_to_rgb(inpt: torch.Tensor) -> torch.Tensor:
     """See :class:`~torchvision.transforms.v2.GrayscaleToRgb` for details."""
-    _assert_torchvision_installed("0.18.0")
-
     if torch.jit.is_scripting():
         return grayscale_to_rgb_image(inpt)
 

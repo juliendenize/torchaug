@@ -171,9 +171,6 @@ class JPEG(Transform):
     The input is expected to be of a tensor of dtype uint8, on CPU, and have [..., 3 or 1, H, W] shape,
     where ... means an arbitrary number of leading dimensions.
 
-    .. warning::
-        This transform requires the torchvision package to be installed and at least version 0.18.0.
-
     Args:
         quality: JPEG quality, from 1 to 100. Lower means more compression.
             If quality is a sequence like (min, max), it specifies the range of JPEG quality to
@@ -184,8 +181,6 @@ class JPEG(Transform):
     """
 
     def __init__(self, quality: Union[int, Sequence[int]]):
-        _assert_torchvision_installed("0.18.0")
-
         super().__init__()
 
         if isinstance(quality, int):

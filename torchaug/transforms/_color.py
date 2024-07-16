@@ -55,15 +55,11 @@ class Grayscale(Transform):
 class RGB(Transform):
     """Convert images or videos to RGB (if they are already not RGB).
 
-    .. warning::
-        This transform requires the torchvision package to be installed and at least version 0.18.0.
-
     If the input is a :class:`torch.Tensor`, it is expected
     to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions
     """
 
     def __init__(self):
-        _assert_torchvision_installed("0.18.0")
         super().__init__()
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:

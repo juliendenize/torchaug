@@ -67,8 +67,6 @@ def erase_video(
 
 def jpeg(image: torch.Tensor, quality: int) -> torch.Tensor:
     """See :class:`~torchaug.transforms.JPEG` for details."""
-    _assert_torchvision_installed("0.18.0")
-
     if torch.jit.is_scripting():
         return jpeg_image(image, quality=quality)
 
@@ -82,8 +80,6 @@ def jpeg(image: torch.Tensor, quality: int) -> torch.Tensor:
 @_register_kernel_internal(jpeg, ta_tensors.Image)
 @_register_kernel_internal(jpeg, ta_tensors.BatchImages)
 def jpeg_image(image: torch.Tensor, quality: int) -> torch.Tensor:
-    _assert_torchvision_installed("0.18.0")
-
     original_shape = image.shape
     image = image.view((-1,) + image.shape[-3:])
 
