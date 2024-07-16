@@ -5,6 +5,7 @@
 # Code partially based on Torchvision (BSD 3-Clause License), available at:
 #   https://github.com/pytorch/vision
 
+from importlib.metadata import version as module_version
 from types import FunctionType
 from typing import Any
 
@@ -41,8 +42,6 @@ def _log_api_usage_once(obj: Any) -> None:
 
 def _assert_torchvision_installed(version: str) -> None:
     """Asserts that the installed version of torchvision is at least the required version."""
-    from importlib.metadata import version as module_version
-
     try:
         import torchvision  # noqa: F401
     except ImportError:
