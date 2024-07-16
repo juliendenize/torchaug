@@ -12,7 +12,7 @@ import torchvision.transforms.v2.functional as TVF
 from torchvision.io import decode_jpeg, encode_jpeg
 
 from torchaug import ta_tensors
-from torchaug._utils import _assert_torchvision_installed, _log_api_usage_once
+from torchaug._utils import _log_api_usage_once
 
 from ._utils._kernel import _get_kernel, _register_kernel_internal
 

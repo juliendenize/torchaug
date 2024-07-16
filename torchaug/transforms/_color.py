@@ -13,8 +13,6 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import torch
 
-from torchaug._utils import _assert_torchvision_installed
-
 from . import functional as F
 from ._transform import RandomApplyTransform, Transform
 from ._utils import query_chw

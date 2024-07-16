@@ -16,7 +16,6 @@ from torch.utils._pytree import tree_flatten, tree_unflatten
 from torchvision.transforms.v2._utils import _check_sequence_input, _parse_labels_getter, has_any, query_chw
 
 from torchaug import ta_tensors
-from torchaug._utils import _assert_torchvision_installed
 
 from . import functional as F
 from ._transform import RandomApplyTransform, Transform
