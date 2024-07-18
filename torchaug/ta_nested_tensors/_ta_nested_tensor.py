@@ -1,8 +1,20 @@
-from typing import List, Optional, Sequence
+from __future__ import annotations
+
+from typing import List, Optional, Sequence, Union
 
 import torch
 from torch import Size, Tensor, memory_format
 from torch._prims_common import DeviceLikeType
+
+
+def _assert_is_ta_nested_tensor(obj: object) -> None:
+    if not isinstance(obj, TANestedTensor):
+        raise TypeError(f"Expected a TANestedTensor, but got {type(obj)}")
+
+
+def _assert_is_tensor(obj: object) -> None:
+    if not isinstance(obj, Tensor):
+        raise TypeError(f"Expected a Tensor, but got {type(obj)}")
 
 
 class TANestedTensor:
@@ -17,7 +29,7 @@ class TANestedTensor:
             elif tensor.dtype != tensors[0].dtype:
                 raise ValueError("All tensors must have the same dtype")
 
-        self.tensors = tensors
+        self.tensors = list(tensors)
 
     @property
     def device(self) -> torch.device:
@@ -39,19 +51,19 @@ class TANestedTensor:
     def __repr__(self) -> str:
         return str(self.tensors)
 
-    def __add__(self, other: "TANestedTensor") -> "TANestedTensor":
+    def __add__(self, other: Union["TANestedTensor", float, int]) -> "TANestedTensor":
         return self.add(other)
 
-    def __mul__(self, other: "TANestedTensor") -> "TANestedTensor":
+    def __mul__(self, other: Union["TANestedTensor", float, int]) -> "TANestedTensor":
         return self.mul(other)
 
-    def __truediv__(self, other: "TANestedTensor") -> "TANestedTensor":
+    def __truediv__(self, other: Union["TANestedTensor", float, int]) -> "TANestedTensor":
         return self.div(other)
 
-    def __floordiv__(self, other: "TANestedTensor") -> "TANestedTensor":
+    def __floordiv__(self, other: Union["TANestedTensor", float, int]) -> "TANestedTensor":
         return self.floor_divide(other)
 
-    def __mod__(self, other: "TANestedTensor") -> "TANestedTensor":
+    def __mod__(self, other: Union["TANestedTensor", float, int]) -> "TANestedTensor":
         return self.remainder(other)
 
     def __len__(self) -> int:
@@ -61,62 +73,122 @@ class TANestedTensor:
         return self.tensors[index]
 
     def __setitem__(self, index: int, tensor: Tensor) -> None:
+        _assert_is_tensor(tensor)
+        if tensor.device != self.device:
+            raise ValueError("tensor must be on the same device")
+        elif tensor.dtype != self.dtype:
+            raise ValueError("tensor must have the same dtype")
+        elif index < 0 or index >= len(self.tensors):
+            raise IndexError("index out of range")
         self.tensors[index] = tensor
 
     def __iter__(self):
         return iter(self.tensors)
 
-    def __eq__(self, other: "TANestedTensor") -> bool:
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, TANestedTensor):
+            return False
         return all(t1.equal(t2) for t1, t2 in zip(self.tensors, other.tensors))
 
-    def __ne__(self, other: "TANestedTensor") -> bool:
+    def __ne__(self, other: object) -> bool:
         return not self.__eq__(other)
 
     def count(self, tensor: Tensor) -> int:
+        _assert_is_tensor(tensor)
         return self.tensors.count(tensor)
 
     def index(self, tensor: Tensor) -> int:
+        _assert_is_tensor(tensor)
         return self.tensors.index(tensor)
 
     def clone(self, memory_format: Optional[memory_format] = None) -> "TANestedTensor":
-        return self.__deepcopy__(memory_format=memory_format)
+        return TANestedTensor([tensor.clone(memory_format) for tensor in self.tensors])
 
-    def add(self, other: "TANestedTensor") -> "TANestedTensor":
+    def add(self, other: Union["TANestedTensor", float, int]) -> "TANestedTensor":
+        if isinstance(other, (float, int)):
+            return TANestedTensor([tensor + other for tensor in self.tensors])
+
+        _assert_is_ta_nested_tensor(other)
         return TANestedTensor([t1 + t2 for t1, t2 in zip(self.tensors, other.tensors, strict=True)])
 
-    def add_(self, other: "TANestedTensor") -> "TANestedTensor":
+    def add_(self, other: Union["TANestedTensor", float, int]) -> "TANestedTensor":
+        if isinstance(other, (float, int)):
+            for tensor in self.tensors:
+                tensor.add_(other)
+            return self
+
+        _assert_is_ta_nested_tensor(other)
         for t1, t2 in zip(self.tensors, other.tensors, strict=True):
             t1.add_(t2)
         return self
 
-    def mul(self, other: "TANestedTensor") -> "TANestedTensor":
-        return TANestedTensor([t1 * t2 for t1, t2 in zip(self.tensors, other.tensors, strict=True)])
+    def mul(self, other: Union["TANestedTensor", float, int]) -> "TANestedTensor":
+        if isinstance(other, (float, int)):
+            return TANestedTensor([tensor.mul(other) for tensor in self.tensors])
 
-    def mul_(self, other: "TANestedTensor") -> "TANestedTensor":
+        _assert_is_ta_nested_tensor(other)
+        return TANestedTensor([t1.mul(t2) for t1, t2 in zip(self.tensors, other.tensors, strict=True)])
+
+    def mul_(self, other: Union["TANestedTensor", float, int]) -> "TANestedTensor":
+        if isinstance(other, (float, int)):
+            for tensor in self.tensors:
+                tensor.mul_(other)
+            return self
+
+        _assert_is_ta_nested_tensor(other)
         for t1, t2 in zip(self.tensors, other.tensors, strict=True):
             t1.mul_(t2)
         return self
 
-    def div(self, other: "TANestedTensor") -> "TANestedTensor":
-        return TANestedTensor([t1 / t2 for t1, t2 in zip(self.tensors, other.tensors, strict=True)])
+    def div(self, other: Union["TANestedTensor", float, int]) -> "TANestedTensor":
+        if isinstance(other, (float, int)):
+            return TANestedTensor([tensor.div(other) for tensor in self.tensors])
+        _assert_is_ta_nested_tensor(other)
+        return TANestedTensor([t1.div(t2) for t1, t2 in zip(self.tensors, other.tensors, strict=True)])
 
-    def div_(self, other: "TANestedTensor") -> "TANestedTensor":
+    def div_(self, other: Union["TANestedTensor", float, int]) -> "TANestedTensor":
+        if isinstance(other, (float, int)):
+            for tensor in self.tensors:
+                tensor.div_(other)
+            return self
+
+        _assert_is_ta_nested_tensor(other)
         for t1, t2 in zip(self.tensors, other.tensors, strict=True):
             t1.div_(t2)
         return self
 
-    def floor_divide(self, other: "TANestedTensor") -> "TANestedTensor":
+    def floor_divide(self, other: Union["TANestedTensor", float, int]) -> "TANestedTensor":
+        if isinstance(other, (float, int)):
+            return TANestedTensor([tensor.floor_divide(other) for tensor in self.tensors])
+
+        _assert_is_ta_nested_tensor(other)
         return TANestedTensor([t1.floor_divide(t2) for t1, t2 in zip(self.tensors, other.tensors, strict=True)])
 
-    def floor_divide_(self, other: "TANestedTensor") -> "TANestedTensor":
+    def floor_divide_(self, other: Union["TANestedTensor", float, int]) -> "TANestedTensor":
+        if isinstance(other, (float, int)):
+            for tensor in self.tensors:
+                tensor.floor_divide_(other)
+            return self
+
+        _assert_is_ta_nested_tensor(other)
         for t1, t2 in zip(self.tensors, other.tensors, strict=True):
             t1.floor_divide_(t2)
         return self
 
-    def remainder(self, other: "TANestedTensor") -> "TANestedTensor":
+    def remainder(self, other: Union["TANestedTensor", float, int]) -> "TANestedTensor":
+        if isinstance(other, (float, int)):
+            return TANestedTensor([tensor.remainder(other) for tensor in self.tensors])
+
+        _assert_is_ta_nested_tensor(other)
         return TANestedTensor([t1.remainder(t2) for t1, t2 in zip(self.tensors, other.tensors, strict=True)])
 
-    def remainder_(self, other: "TANestedTensor") -> "TANestedTensor":
+    def remainder_(self, other: Union["TANestedTensor", float, int]) -> "TANestedTensor":
+        if isinstance(other, (float, int)):
+            for tensor in self.tensors:
+                tensor.remainder_(other)
+            return self
+
+        _assert_is_ta_nested_tensor(other)
         for t1, t2 in zip(self.tensors, other.tensors, strict=True):
             t1.remainder_(t2)
         return self
