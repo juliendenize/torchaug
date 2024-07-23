@@ -13,3 +13,4 @@ In this section are defined the Torchaug tensors that are classes to handle spec
     mask
     bounding_boxes
     labels
+    nested
