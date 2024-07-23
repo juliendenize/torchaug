@@ -5,10 +5,6 @@
 # ruff: noqa: F401
 # ruff: noqa: D104
 
-from __future__ import annotations
-
-from typing import Tuple, Type
-
 from ._batch_bounding_boxes import (
     BatchBoundingBoxes,
     convert_batch_bboxes_to_bboxes,
@@ -35,3 +31,20 @@ from ._ta_tensor import TATensor
 from ._torch_function_helpers import set_return_type
 from ._video import Video
 from ._wrap import wrap
+
+
+from .nested import (  # isort:skip
+    BoundingBoxesNestedTensors,
+    ImageNestedTensors,
+    LabelsNestedTensors,
+    MaskNestedTensors,
+    NestedTensors,
+    TANestedTensors,
+    VideoNestedTensors,
+)
+
+from ._registry import (  # isort:skip
+    _BATCH_TA_TENSORS,
+    _NESTED_TA_TENSORS,
+    _SAMPLE_TA_TENSORS,
+)

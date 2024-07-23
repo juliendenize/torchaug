@@ -272,7 +272,7 @@ class RandomResizedCrop(Transform):
         self,
         flat_inputs: List[Any],
         num_chunks: int,
-        chunks_indices: Tuple[torch.Tensor],
+        chunks_indices: Tuple[torch.Tensor, ...],
     ) -> List[Dict[str, Any]]:
         height, width = query_size(flat_inputs)
         area = height * width
@@ -584,7 +584,7 @@ class RandomZoomOut(RandomApplyTransform):
         self,
         flat_inputs: List[Any],
         num_chunks: int,
-        chunks_indices: Tuple[torch.Tensor],
+        chunks_indices: Tuple[torch.Tensor, ...],
     ) -> List[Dict[str, Any]]:
         orig_h, orig_w = query_size(flat_inputs)
         params = []
@@ -696,7 +696,7 @@ class RandomRotation(Transform):
         self,
         flat_inputs: List[Any],
         num_chunks: int,
-        chunks_indices: Tuple[torch.Tensor],
+        chunks_indices: Tuple[torch.Tensor, ...],
     ) -> List[Dict[str, Any]]:
         params = [
             {"angle": torch.empty(1).uniform_(self.degrees[0], self.degrees[1]).item()} for _ in range(num_chunks)
@@ -812,7 +812,7 @@ class RandomAffine(Transform):
         self,
         flat_inputs: List[Any],
         num_chunks: int,
-        chunks_indices: Tuple[torch.Tensor],
+        chunks_indices: Tuple[torch.Tensor, ...],
     ) -> List[Dict[str, Any]]:
         height, width = query_size(flat_inputs)
 
@@ -931,7 +931,7 @@ class RandomCrop(Transform):
         self,
         flat_inputs: List[Any],
         num_chunks: int,
-        chunks_indices: Tuple[torch.Tensor],
+        chunks_indices: Tuple[torch.Tensor, ...],
     ) -> List[Dict[str, Any]]:
         padded_height, padded_width = query_size(flat_inputs)
 
@@ -1081,7 +1081,7 @@ class RandomPerspective(RandomApplyTransform):
         self,
         flat_inputs: List[Any],
         num_chunks: int,
-        chunks_indices: Tuple[torch.Tensor],
+        chunks_indices: Tuple[torch.Tensor, ...],
     ) -> List[Dict[str, Any]]:
         height, width = query_size(flat_inputs)
 
@@ -1199,7 +1199,7 @@ class ElasticTransform(Transform):
         self,
         flat_inputs: List[Any],
         num_chunks: int,
-        chunks_indices: Tuple[torch.Tensor],
+        chunks_indices: Tuple[torch.Tensor, ...],
     ) -> List[Dict[str, Any]]:
         size = list(query_size(flat_inputs))
         device = self._get_input_device(flat_inputs)
@@ -1322,7 +1322,7 @@ class RandomIoUCrop(Transform):
         self,
         flat_inputs: List[Any],
         num_chunks: int,
-        chunks_indices: Tuple[torch.Tensor],
+        chunks_indices: Tuple[torch.Tensor, ...],
     ) -> List[Dict[str, Any]]:
         orig_h, orig_w = query_size(flat_inputs)
         bboxes = get_batch_bounding_boxes(flat_inputs) if self.batch_transform else get_bounding_boxes(flat_inputs)
@@ -1458,7 +1458,7 @@ class ScaleJitter(Transform):
         self,
         flat_inputs: List[Any],
         num_chunks: int,
-        chunks_indices: Tuple[torch.Tensor],
+        chunks_indices: Tuple[torch.Tensor, ...],
     ) -> List[Dict[str, Any]]:
         orig_height, orig_width = query_size(flat_inputs)
 
@@ -1523,7 +1523,7 @@ class RandomShortestSize(Transform):
         self,
         flat_inputs: List[Any],
         num_chunks: int,
-        chunks_indices: Tuple[torch.Tensor],
+        chunks_indices: Tuple[torch.Tensor, ...],
     ) -> List[Dict[str, Any]]:
         orig_height, orig_width = query_size(flat_inputs)
 
@@ -1602,7 +1602,7 @@ class RandomResize(Transform):
         self,
         flat_inputs: List[Any],
         num_chunks: int,
-        chunks_indices: Tuple[torch.Tensor],
+        chunks_indices: Tuple[torch.Tensor, ...],
     ) -> List[Dict[str, Any]]:
         return [{"size": [int(torch.randint(self.min_size, self.max_size, ()))]} for _ in range(num_chunks)]
 

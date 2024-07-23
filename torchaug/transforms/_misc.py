@@ -259,7 +259,7 @@ class RandomGaussianBlur(RandomApplyTransform):
         self,
         flat_inputs: List[Any],
         num_chunks: int,
-        chunks_indices: Tuple[torch.Tensor],
+        chunks_indices: Tuple[torch.Tensor, ...],
     ) -> List[Dict[str, Any]]:
         params = []
 

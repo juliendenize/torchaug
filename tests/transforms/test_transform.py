@@ -1,60 +1,32 @@
-import functools
-import math
 from copy import deepcopy
 
 import numpy as np
 import pytest
 import torch
-import torchvision.transforms.v2 as tv_transforms
-import torchvision.transforms.v2.functional as TVF
-from torch import nn
-from torch.utils._pytree import tree_flatten, tree_unflatten
-from torchvision.ops.boxes import box_iou
-from torchvision.transforms.functional import _get_perspective_coeffs
+from torch.utils._pytree import tree_flatten
 
 import torchaug.transforms as transforms
 import torchaug.transforms.functional as F
+from tests.utils._make_tensors import (
+    make_nested_bounding_boxes,
+    make_nested_images,
+    make_nested_segmentation_masks,
+    make_nested_videos,
+)
 from torchaug import ta_tensors
 from torchaug.ta_tensors import set_return_type
 from torchaug.ta_tensors._batch_concatenated_ta_tensor import _BatchConcatenatedTATensor
-from torchaug.ta_tensors._bounding_boxes import _convert_ta_format_to_tv_format
-from torchaug.transforms import RandomApplyTransform, Transform
+from torchaug.transforms import RandomApplyTransform
 from torchaug.transforms.functional._utils._kernel import _get_kernel
 
 from ..utils import (
-    ALL_IMAGES_MAKERS,
-    BATCH_IMAGES_TENSOR_AND_MAKERS,
-    BOUNDING_BOXES_MAKERS,
-    CORRECTNESS_FILLS,
-    EXHAUSTIVE_TYPE_FILLS,
-    IMAGE_MAKERS,
-    IMAGE_TENSOR_AND_MAKERS,
-    MASKS_MAKERS,
-    VIDEO_MAKERS,
-    adapt_fill,
     assert_equal,
     assert_not_equal,
-    check_batch_transform,
-    check_functional,
-    check_functional_kernel_signature_match,
-    check_kernel,
-    check_transform,
-    cpu_and_cuda,
     freeze_rng_state,
-    make_batch_bounding_boxes,
-    make_batch_detection_masks,
     make_batch_images,
-    make_batch_images_tensor,
-    make_batch_segmentation_masks,
     make_batch_videos,
-    make_bounding_boxes,
-    make_detection_masks,
     make_image,
-    make_image_tensor,
-    make_segmentation_mask,
     make_video,
-    param_value_parametrization,
-    transform_cls_to_functional,
 )
 from ..utils._transform_utils import _make_transform_batch_sample, _make_transform_sample
 
@@ -343,3 +315,38 @@ class TestRandomApplyTransform:
                         assert_equal(chunk_opt, chunk_expected_opt)
                     else:
                         assert_equal(chunk_cloned_inpt, chunk_opt)
+
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_nested_images, make_nested_videos, make_nested_bounding_boxes, make_nested_segmentation_masks],
+    )
+    @pytest.mark.parametrize("batch_size", [1, 2, 4])
+    @pytest.mark.parametrize("seed", list(range(5)))
+    @pytest.mark.parametrize(
+        "transform",
+        [
+            transforms.RandomColorJitter(
+                brightness=0.5,
+                p=0.5,
+            ),
+            transforms.RandomResizedCrop(
+                size=[3, 3],
+            ),
+        ],
+    )
+    def test_forward_nested(self, make_input, batch_size, seed, transform):
+        nested_input = make_input(batch_dims=batch_size)
+        batch_input = list(nested_input.tensors)
+        with freeze_rng_state():
+            torch.manual_seed(seed)
+            nested_output = transform(nested_input)
+
+        for nest_in, nest_out in zip(nested_input, nested_output):
+            assert isinstance(nest_out, type(nest_in))
+
+        with freeze_rng_state():
+            torch.manual_seed(seed)
+            batch_output = [transform(batch_input) for batch_input in batch_input]
+
+        for nested, batch in zip(nested_output, batch_output):
+            torch.testing.assert_close(nested, batch)

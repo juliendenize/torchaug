@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import enum
 from math import ceil, floor
-from typing import Any, Callable, Dict, List, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union, cast
 
 import torch
 from torch import nn
@@ -18,7 +18,7 @@ from torchvision.transforms.v2._utils import check_type, has_any
 
 from torchaug import ta_tensors
 from torchaug._utils import _log_api_usage_once
-from torchaug.ta_tensors import _BatchConcatenatedTATensor, set_return_type
+from torchaug.ta_tensors import TANestedTensors, _BatchConcatenatedTATensor, set_return_type
 
 from ._utils import is_pure_tensor
 from .functional._utils._kernel import _get_kernel
@@ -103,7 +103,7 @@ class RandomApplyTransform(nn.Module):
             The batch size of the input.
         """
         for inpt in flat_inpts:
-            if isinstance(inpt, _BatchConcatenatedTATensor):
+            if isinstance(inpt, (_BatchConcatenatedTATensor, TANestedTensors)):
                 return inpt.batch_size
             elif isinstance(inpt, torch.Tensor):
                 return inpt.shape[0]
@@ -123,9 +123,7 @@ class RandomApplyTransform(nn.Module):
             The device of the input.
         """
         for inpt in flat_inpts:
-            if isinstance(inpt, _BatchConcatenatedTATensor):
-                return inpt.device
-            elif isinstance(inpt, torch.Tensor):
+            if isinstance(inpt, (_BatchConcatenatedTATensor, torch.Tensor, TANestedTensors)):
                 return inpt.device
         raise ValueError("Expected one of the inputs to be a tensor or a batched tensor.")
 
@@ -148,17 +146,9 @@ class RandomApplyTransform(nn.Module):
 
     def _needs_transform_list(self, flat_inputs: List[Any]) -> List[bool]:
         # Below is a heuristic on how to deal with pure tensor inputs:
-        # 1. Pure tensors, i.e. tensors that are not a ta_tensor, are passed through if there is an explicit image
-        #    (`ta_tensors.Image`, `ta_tensors.BatchImages`) or video (`ta_tensors.Video`, `ta_tensors.BatchVideos`)
-        #    in the sample.
-        # 2. If there is no explicit image or video in the sample, only the first encountered pure tensor is
-        #    transformed as image, while the rest is passed through. The order is defined by the returned `flat_inputs`
-        #    of `tree_flatten`, which recurses depth-first through the input.
-        #
-        # This heuristic stems from two requirements:
-        # 1. We need to keep BC for single input pure tensors and treat them as images.
-        # 2. We don't want to treat all pure tensors as images, because some datasets like `CelebA` or `Widerface`
-        #    return supplemental numerical data as tensors that cannot be transformed as images.
+        # Pure tensors, i.e. tensors that are not a ta_tensor, are passed through if there is an explicit image
+        # (`ta_tensors.Image`, `ta_tensors.BatchImages`) or video (`ta_tensors.Video`, `ta_tensors.BatchVideos`)
+        # in the sample.
         #
         # The heuristic should work well for most people in practice. The only case where it doesn't is if someone
         # tries to transform multiple pure tensors at the same time, expecting them all to be treated as images.
@@ -197,7 +187,7 @@ class RandomApplyTransform(nn.Module):
         self,
         flat_inputs: List[Any],
         num_chunks: int,
-        chunks_indices: Tuple[torch.Tensor],
+        chunks_indices: Tuple[torch.Tensor, ...],
     ) -> List[Dict[str, Any]]:
         return [{} for _ in range(num_chunks)]
 
@@ -225,6 +215,8 @@ class RandomApplyTransform(nn.Module):
             indices_transform = torch.randint(0, batch_size, (1,), device=device)
         elif num_transform > 1:
             indices_transform = torch.randperm(batch_size, device=device)[:num_transform]
+        else:
+            raise ValueError("The number of elements to transform should be greater than or equal to 0.")
         return indices_transform
 
     def _check_inputs(self, flat_inputs: List[Any]) -> None:
@@ -271,18 +263,17 @@ class RandomApplyTransform(nn.Module):
 
         if self.p == 1:  # if p is 1, transform all inputs
             transform_all = True
-
+            indices_transform = torch.arange(batch_size, device=torch.device("cpu"))
         else:
             indices_transform = self._get_indices_transform(
                 batch_size,
                 torch.device("cpu"),
             )
-
             transform_all = indices_transform.shape[0] == batch_size
+
         if not transform_all and indices_transform.shape[0] == 0:  # if no augmentation return the inputs directly.
             return flat_inputs
-
-        if transform_all:
+        elif transform_all:
             transform_inpts = flat_inputs
         else:
             transform_inpts = []  # store the input part to be augmented
@@ -307,6 +298,7 @@ class RandomApplyTransform(nn.Module):
                 flat_pre_outputs.append(pre_output)
 
                 if is_contatenated_batch_ta_tensors:
+                    pre_output = cast(_BatchConcatenatedTATensor, pre_output)
                     transform_inpt = pre_output.get_chunk(chunk_indices=indices_transform)
                 else:
                     with set_return_type("TATensor" if is_ta_inpt else "Tensor"):
@@ -415,6 +407,55 @@ class RandomApplyTransform(nn.Module):
 
         return flat_outputs
 
+    def forward_nested(self, flat_inputs: List[Any]):
+        if self.p == 0:  # if p is 0, return the input directly after checking the input
+            return flat_inputs
+
+        flattened_flat_inputs = []
+        nested_types: List[Optional[Type]] = []
+        batch_size = None
+        for inpt in flat_inputs:
+            nested_types.append(type(inpt))
+            if isinstance(inpt, TANestedTensors):
+                flattened_flat_inputs.append(list(inpt.tensors))
+                if batch_size is None:
+                    batch_size = inpt.batch_size
+                elif inpt.batch_size != batch_size:
+                    raise ValueError("All nested tensors should have the same batch size.")
+            elif isinstance(inpt, torch.Tensor):
+                raise ValueError("Expected a nested tensor, but got a single tensor.")
+            else:
+                flattened_flat_inputs.append(inpt)
+                nested_types[-1] = None
+
+        if batch_size is None:
+            raise ValueError("Expected at least one nested tensor.")
+
+        sample_outputs = []
+        for i in range(batch_size):
+            sample_input = [
+                flattened_inpt[i] if nested_types[j] is not None else flattened_inpt
+                for j, flattened_inpt in enumerate(flattened_flat_inputs)
+            ]
+
+            self._check_inputs(sample_input)
+
+            sample_outputs.append(self.forward_single(sample_input))
+
+        flat_outputs = []
+        for i in range(len(sample_outputs[0])):
+            flat_outputs.append(
+                [
+                    sample_output[i] if nested_types[i] is not None else sample_output
+                    for sample_output in sample_outputs
+                ]
+            )
+            nested_type = nested_types[i]
+            if nested_type is not None:
+                flat_outputs[-1] = nested_type(flat_outputs[-1])
+
+        return flat_outputs
+
     def forward(self, *inputs: Any) -> Any:
         """Performs forward pass of the transform.
 
@@ -430,10 +471,25 @@ class RandomApplyTransform(nn.Module):
         else:
             flat_inputs = list(inputs)
 
-        self._check_inputs(flat_inputs)
-        if not self.batch_transform:
+        if any(isinstance(inpt, TANestedTensors) for inpt in flat_inputs):
+            batch_transform = self.batch_transform
+            num_chunks = self.num_chunks
+            permute_chunks = self.permute_chunks
+
+            self.batch_transform = False
+            self.num_chunks = 1
+            self.permute_chunks = False
+
+            flat_outputs = self.forward_nested(flat_inputs)
+
+            self.batch_transform = batch_transform
+            self.num_chunks = num_chunks
+            self.permute_chunks = permute_chunks
+        elif not self.batch_transform:
+            self._check_inputs(flat_inputs)
             flat_outputs = self.forward_single(flat_inputs)
         else:
+            self._check_inputs(flat_inputs)
             flat_outputs = self.forward_batch(flat_inputs)
         if not self._receive_flatten_inputs:
             return tree_unflatten(flat_outputs, spec)

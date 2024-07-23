@@ -65,4 +65,4 @@ from ._misc import (
 )
 from ._temporal import UniformTemporalSubsample
 from ._transform import RandomApplyTransform, Transform
-from ._type_conversion import ToBatchImages, ToImage, ToPureTensor
+from ._type_conversion import NestedToBatch, NestedToList, ToBatchImages, ToImage, ToPureTensor

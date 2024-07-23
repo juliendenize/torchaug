@@ -7,7 +7,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Union
+from typing import Any, Dict, List, Union
 
 import numpy as np
 import torch
@@ -59,3 +59,23 @@ class ToPureTensor(Transform):
 
     def _transform(self, inpt: Any, params: Dict[str, Any]) -> torch.Tensor:
         return inpt.as_subclass(torch.Tensor)
+
+
+class NestedToList(Transform):
+    """Convert nested TATensors to nested lists.
+
+    This doesn't scale or change the values, only the type.
+    """
+
+    def forward_nested(self, flat_inputs: List[Any]):
+        return [x.to_list() if isinstance(x, ta_tensors.TANestedTensors) else x for x in flat_inputs]
+
+
+class NestedToBatch(Transform):
+    """Convert nested TATensors to nested BatchTensors.
+
+    This doesn't scale or change the values, only the type.
+    """
+
+    def forward_nested(self, flat_inputs: List[Any]):
+        return [x.to_batch() if isinstance(x, ta_tensors.TANestedTensors) else x for x in flat_inputs]
