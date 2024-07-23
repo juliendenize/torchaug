@@ -165,5 +165,5 @@ from ._misc import (
     to_dtype_video,
 )
 from ._temporal import uniform_temporal_subsample, uniform_temporal_subsample_video
-from ._type_conversion import to_batch_images, to_image
+from ._type_conversion import nested_to_batch, nested_to_list, to_batch_images, to_image
 from ._utils import is_pure_tensor, register_kernel

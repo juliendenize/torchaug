@@ -55,6 +55,10 @@ def make_batch_images(*args, batch_dims=BATCH_DEFAULT_SIZE, **kwargs):
     return ta_tensors.BatchImages(make_image_tensor(*args, batch_dims=batch_dims, **kwargs))
 
 
+def make_nested_images(*args, batch_dims=BATCH_DEFAULT_SIZE, **kwargs):
+    return ta_tensors.ImageNestedTensors([make_image(*args, batch_dims=[], **kwargs) for _ in range(batch_dims)])
+
+
 def make_batch_images_tensor(*args, **kwargs):
     return make_batch_images(*args, **kwargs).as_subclass(torch.Tensor)
 
@@ -127,6 +131,29 @@ def make_batch_bounding_boxes(
     return ta_tensors.BatchBoundingBoxes(bboxes, format=format, canvas_size=canvas_size, samples_ranges=samples_ranges)
 
 
+def make_nested_bounding_boxes(
+    canvas_size=DEFAULT_SIZE,
+    *,
+    format=ta_tensors.BoundingBoxFormat.XYXY,
+    num_boxes=1,
+    batch_dims=BATCH_DEFAULT_SIZE[0],
+    dtype=None,
+    device="cpu",
+):
+    return ta_tensors.BoundingBoxesNestedTensors(
+        [
+            make_bounding_boxes(
+                canvas_size=canvas_size,
+                format=format,
+                num_boxes=num_boxes,
+                dtype=dtype,
+                device=device,
+            )
+            for _ in range(batch_dims)
+        ]
+    )
+
+
 def make_detection_masks(size=DEFAULT_SIZE, *, num_masks=1, dtype=None, device="cpu"):
     """Make a "detection" mask, i.e. (N, H, W), where each object is encoded as one of N boolean masks."""
     return ta_tensors.Mask(
@@ -167,6 +194,27 @@ def make_batch_detection_masks(
     return ta_tensors.BatchMasks(masks, samples_ranges=samples_ranges)
 
 
+def make_nested_detection_masks(
+    size=DEFAULT_SIZE,
+    *,
+    num_masks=1,
+    batch_dims=BATCH_DEFAULT_SIZE,
+    dtype=None,
+    device="cpu",
+):
+    return ta_tensors.MaskNestedTensors(
+        [
+            make_detection_masks(
+                size=size,
+                num_masks=num_masks,
+                dtype=dtype,
+                device=device,
+            )
+            for _ in range(batch_dims)
+        ]
+    )
+
+
 def make_segmentation_mask(size=DEFAULT_SIZE, *, num_categories=10, batch_dims=(), dtype=None, device="cpu"):
     """Make a "segmentation" mask, i.e. (*, H, W), where the category is encoded as pixel value."""
     return ta_tensors.Mask(
@@ -205,6 +253,27 @@ def make_batch_segmentation_masks(
     return ta_tensors.BatchMasks(masks, samples_ranges=samples_ranges)
 
 
+def make_nested_segmentation_masks(
+    size=DEFAULT_SIZE,
+    *,
+    num_categories=10,
+    batch_dims=BATCH_DEFAULT_SIZE,
+    dtype=None,
+    device="cpu",
+):
+    return ta_tensors.MaskNestedTensors(
+        [
+            make_segmentation_mask(
+                size=size,
+                num_categories=num_categories,
+                dtype=dtype,
+                device=device,
+            )
+            for _ in range(batch_dims)
+        ]
+    )
+
+
 def make_video(size=DEFAULT_SIZE, *, num_frames=3, batch_dims=(), **kwargs):
     return ta_tensors.Video(make_image(size, batch_dims=(*batch_dims, num_frames), **kwargs))
 
@@ -221,6 +290,10 @@ def make_batch_videos_tensor(*args, **kwargs):
     return make_batch_videos(*args, **kwargs).as_subclass(torch.Tensor)
 
 
+def make_nested_videos(*args, batch_dims=BATCH_DEFAULT_SIZE, **kwargs):
+    return ta_tensors.VideoNestedTensors([make_video(*args, batch_dims=[], **kwargs) for _ in range(batch_dims)])
+
+
 def make_labels(size=DEFAULT_SIZE, *, batch_dims=(), **kwargs):
     return ta_tensors.Labels(torch.randint(0, 10, (*batch_dims, *size), **kwargs))
 
@@ -230,6 +303,10 @@ def make_batch_labels(size=DEFAULT_SIZE, *, batch_dims=BATCH_DEFAULT_SIZE, **kwa
     return ta_tensors.BatchLabels(
         torch.randint(0, 10, (batch_dims[0] * size[0], *size[1:]), **kwargs), samples_ranges=samples_ranges
     )
+
+
+def make_nested_labels(*args, batch_dims=BATCH_DEFAULT_SIZE, **kwargs):
+    return ta_tensors.LabelsNestedTensors([make_labels(*args, batch_dims=[], **kwargs) for _ in range(batch_dims)])
 
 
 SAMPLE_MAKERS = [
@@ -264,3 +341,12 @@ VIDEO_MAKERS = [make_video, make_batch_videos]
 SAMPLE_MASK_MAKERS = [make_segmentation_mask, make_detection_masks]
 BATCH_MASK_MAKERS = [make_batch_segmentation_masks, make_batch_detection_masks]
 MASKS_MAKERS = SAMPLE_MASK_MAKERS + BATCH_MASK_MAKERS
+
+NESTED_MAKERS = [
+    make_nested_bounding_boxes,
+    make_nested_detection_masks,
+    make_nested_images,
+    make_nested_labels,
+    make_nested_segmentation_masks,
+    make_nested_videos,
+]

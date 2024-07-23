@@ -109,7 +109,7 @@ class RandomErasing(RandomApplyTransform):
         self,
         flat_inputs: List[Any],
         num_chunks: int,
-        chunks_indices: Tuple[torch.Tensor],
+        chunks_indices: Tuple[torch.Tensor, ...],
     ) -> List[Dict[str, Any]]:
         img_c, img_h, img_w = query_chw(flat_inputs)
 
@@ -196,7 +196,7 @@ class JPEG(Transform):
         self,
         flat_inputs: List[Any],
         num_chunks: int,
-        chunks_indices: Tuple[torch.Tensor],
+        chunks_indices: Tuple[torch.Tensor, ...],
     ) -> List[Dict[str, Any]]:
         params: List[Dict[str, Any]] = []
         for i in range(num_chunks):
@@ -306,7 +306,7 @@ class MixUp(_BaseMixUpCutMix):
     """
 
     def _get_params(
-        self, flat_inputs: List[Any], num_chunks: int, chunks_indices: Tuple[torch.Tensor]
+        self, flat_inputs: List[Any], num_chunks: int, chunks_indices: Tuple[torch.Tensor, ...]
     ) -> List[Dict[str, Any]]:
         return [{"lam": float(self._dist.sample(()))}]
 
@@ -366,7 +366,7 @@ class CutMix(_BaseMixUpCutMix):
     """
 
     def _get_params(
-        self, flat_inputs: List[Any], num_chunks: int, chunks_indices: Tuple[torch.Tensor]
+        self, flat_inputs: List[Any], num_chunks: int, chunks_indices: Tuple[torch.Tensor, ...]
     ) -> List[Dict[str, Any]]:
         lam = float(self._dist.sample(()))  # type: ignore[arg-type]
 

@@ -210,7 +210,7 @@ class RandomColorJitter(RandomApplyTransform):
         self,
         flat_inputs: List[Any],
         num_chunks: int,
-        chunks_indices: Tuple[torch.Tensor],
+        chunks_indices: Tuple[torch.Tensor, ...],
     ) -> List[Dict[str, Any]]:
         if num_chunks == 1:
             idx_perms = [torch.randint(0, len(self._combinations), (1,)).item()]
@@ -402,7 +402,7 @@ class RandomChannelPermutation(RandomApplyTransform):
         self,
         flat_inputs: List[Any],
         num_chunks: int,
-        chunks_indices: Tuple[torch.Tensor],
+        chunks_indices: Tuple[torch.Tensor, ...],
     ) -> List[Dict[str, Any]]:
         num_channels, *_ = query_chw(flat_inputs)
 

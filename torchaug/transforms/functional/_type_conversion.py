@@ -7,7 +7,7 @@
 
 from __future__ import annotations
 
-from typing import Union
+from typing import Any, List, Union
 
 import numpy as np
 import torch
@@ -35,3 +35,21 @@ def to_batch_images(inpt: torch.Tensor) -> ta_tensors.BatchImages:
     else:
         raise TypeError("Input should be a Tensor.")
     return ta_tensors.BatchImages(output)
+
+
+@torch.jit.unused
+def nested_to_list(inpt: ta_tensors.TANestedTensors) -> List:
+    """Convert a nested structure of Tensors to a list."""
+    if isinstance(inpt, ta_tensors.TANestedTensors):
+        return inpt.to_list()
+    else:
+        raise TypeError(f"Inpt should be a TANestedTensors, but got {type(inpt)} instead.")
+
+
+@torch.jit.unused
+def nested_to_batch(inpt: ta_tensors.TANestedTensors) -> Any:
+    """Convert a nested structure of Tensors to a batch of Tensors."""
+    if isinstance(inpt, ta_tensors.TANestedTensors):
+        return inpt.to_batch()
+    else:
+        raise TypeError(f"Inpt should be a TANestedTensors, but got {type(inpt)} instead.")
