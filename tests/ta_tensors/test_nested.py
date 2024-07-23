@@ -71,7 +71,7 @@ class TestTANestedTensors:
         result = nested_tensors1 + nested_tensors2
         assert isinstance(result, type_nested)
         assert len(result) == 5
-        for tensor1, tensor2, tensor in zip(tensors1, tensors2, result.tensors, strict=True):
+        for tensor1, tensor2, tensor in zip(tensors1, tensors2, result.tensors):
             assert_equal(tensor, tensor1 + tensor2)
 
         # Test 2: Add nested tensors with tensor
@@ -79,14 +79,14 @@ class TestTANestedTensors:
         result = nested_tensors1 + tensor
         assert isinstance(result, type_nested)
         assert len(result) == 5
-        for tensor1, result_tensor in zip(tensors1, result.tensors, strict=True):
+        for tensor1, result_tensor in zip(tensors1, result.tensors):
             assert_equal(result_tensor, tensor1 + tensor)
 
         # Test 3: Add nested tensors with number
         scalar_result = nested_tensors1 + 1.0
         assert isinstance(scalar_result, type_nested)
         assert len(scalar_result) == 5
-        for result_tensor, tensor1 in zip(scalar_result.tensors, tensors1, strict=True):
+        for result_tensor, tensor1 in zip(scalar_result.tensors, tensors1):
             assert_equal(result_tensor, tensor1 + 1.0)
 
     @pytest.mark.parametrize(
@@ -110,7 +110,7 @@ class TestTANestedTensors:
         results = nested_tensors1.clone()
         results.add_(nested_tensors2)
         assert len(nested_tensors1) == 5
-        for tensor1, tensor2, tensor in zip(tensors1, tensors2, results.tensors, strict=True):
+        for tensor1, tensor2, tensor in zip(tensors1, tensors2, results.tensors):
             assert_equal(tensor, tensor1 + tensor2)
 
         # Test 2: Add nested tensors with tensor
@@ -118,7 +118,7 @@ class TestTANestedTensors:
         results = nested_tensors1.clone()
         results.add_(tensor)
         assert len(nested_tensors1) == 5
-        for tensor1, result_tensor in zip(tensors1, results.tensors, strict=True):
+        for tensor1, result_tensor in zip(tensors1, results.tensors):
             assert_equal(result_tensor, tensor1 + tensor)
 
         # Test 3: Add nested tensors with number
@@ -133,7 +133,7 @@ class TestTANestedTensors:
             raise ValueError(f"Unsupported dtype {tensors1[0].dtype}")
         results.add_(number)
         assert len(nested_tensors1) == 5
-        for result_tensor, tensor1 in zip(results.tensors, tensors1, strict=True):
+        for result_tensor, tensor1 in zip(results.tensors, tensors1):
             assert_equal(result_tensor, tensor1 + number)
 
     @pytest.mark.parametrize(
@@ -157,7 +157,7 @@ class TestTANestedTensors:
         result = nested_tensors1 * nested_tensors2
         assert isinstance(result, type_nested)
         assert len(result) == 5
-        for tensor1, tensor2, tensor in zip(tensors1, tensors2, result.tensors, strict=True):
+        for tensor1, tensor2, tensor in zip(tensors1, tensors2, result.tensors):
             assert_equal(tensor, tensor1 * tensor2)
 
         # Test 2: Multiply nested tensors with tensor
@@ -165,14 +165,14 @@ class TestTANestedTensors:
         result = nested_tensors1 * tensor
         assert isinstance(result, type_nested)
         assert len(result) == 5
-        for tensor1, result_tensor in zip(tensors1, result.tensors, strict=True):
+        for tensor1, result_tensor in zip(tensors1, result.tensors):
             assert_equal(result_tensor, tensor1 * tensor)
 
         # Test 3: Multiply nested tensors with number
         scalar_result = nested_tensors1 * 2.0
         assert isinstance(scalar_result, type_nested)
         assert len(scalar_result) == 5
-        for result_tensor, tensor1 in zip(scalar_result.tensors, tensors1, strict=True):
+        for result_tensor, tensor1 in zip(scalar_result.tensors, tensors1):
             assert_equal(result_tensor, tensor1 * 2.0)
 
     @pytest.mark.parametrize(
@@ -196,7 +196,7 @@ class TestTANestedTensors:
         results = nested_tensors1.clone()
         results.mul_(nested_tensors2)
         assert len(nested_tensors1) == 5
-        for tensor1, tensor2, tensor in zip(tensors1, tensors2, results.tensors, strict=True):
+        for tensor1, tensor2, tensor in zip(tensors1, tensors2, results.tensors):
             assert_equal(tensor, tensor1 * tensor2)
 
         # Test 2: Multiply nested tensors with tensor
@@ -204,7 +204,7 @@ class TestTANestedTensors:
         results = nested_tensors1.clone()
         results.mul_(tensor)
         assert len(nested_tensors1) == 5
-        for tensor1, result_tensor in zip(tensors1, results.tensors, strict=True):
+        for tensor1, result_tensor in zip(tensors1, results.tensors):
             assert_equal(result_tensor, tensor1 * tensor)
 
         # Test 3: Multiply nested tensors with number
@@ -219,7 +219,7 @@ class TestTANestedTensors:
             raise ValueError(f"Unsupported dtype {tensors1[0].dtype}")
         results.mul_(number)
         assert len(nested_tensors1) == 5
-        for result_tensor, tensor1 in zip(results.tensors, tensors1, strict=True):
+        for result_tensor, tensor1 in zip(results.tensors, tensors1):
             assert_equal(result_tensor, tensor1 * number)
 
     @pytest.mark.parametrize(
@@ -242,7 +242,7 @@ class TestTANestedTensors:
         result = nested_tensors1 - nested_tensors2
         assert isinstance(result, type_nested)
         assert len(result) == 5
-        for tensor1, tensor2, tensor in zip(tensors1, tensors2, result.tensors, strict=True):
+        for tensor1, tensor2, tensor in zip(tensors1, tensors2, result.tensors):
             assert_equal(tensor, tensor1 - tensor2)
 
         # Test 2: Subtract nested tensors with tensor
@@ -250,14 +250,14 @@ class TestTANestedTensors:
         result = nested_tensors1 - tensor
         assert isinstance(result, type_nested)
         assert len(result) == 5
-        for tensor1, result_tensor in zip(tensors1, result.tensors, strict=True):
+        for tensor1, result_tensor in zip(tensors1, result.tensors):
             assert_equal(result_tensor, tensor1 - tensor)
 
         # Test 3: Subtract nested tensors with number
         scalar_result = nested_tensors1 - 1.0
         assert isinstance(scalar_result, type_nested)
         assert len(scalar_result) == 5
-        for result_tensor, tensor1 in zip(scalar_result.tensors, tensors1, strict=True):
+        for result_tensor, tensor1 in zip(scalar_result.tensors, tensors1):
             assert_equal(result_tensor, tensor1 - 1.0)
 
     @pytest.mark.parametrize(
@@ -280,7 +280,7 @@ class TestTANestedTensors:
         results = nested_tensors1.clone()
         results.sub_(nested_tensors2)
         assert len(nested_tensors1) == 5
-        for tensor1, tensor2, tensor in zip(tensors1, tensors2, results.tensors, strict=True):
+        for tensor1, tensor2, tensor in zip(tensors1, tensors2, results.tensors):
             assert_equal(tensor, tensor1 - tensor2)
 
         # Test 2: Subtract nested tensors with tensor
@@ -288,7 +288,7 @@ class TestTANestedTensors:
         results = nested_tensors1.clone()
         results.sub_(tensor)
         assert len(nested_tensors1) == 5
-        for tensor1, result_tensor in zip(tensors1, results.tensors, strict=True):
+        for tensor1, result_tensor in zip(tensors1, results.tensors):
             assert_equal(result_tensor, tensor1 - tensor)
 
         # Test 3: Subtract nested tensors with number
@@ -303,7 +303,7 @@ class TestTANestedTensors:
             raise ValueError(f"Unsupported dtype {tensors1[0].dtype}")
         results.sub_(number)
         assert len(nested_tensors1) == 5
-        for result_tensor, tensor1 in zip(results.tensors, tensors1, strict=True):
+        for result_tensor, tensor1 in zip(results.tensors, tensors1):
             assert_equal(result_tensor, tensor1 - number)
 
     @pytest.mark.parametrize(
@@ -328,7 +328,7 @@ class TestTANestedTensors:
         result = nested_tensors1 / nested_tensors2
         assert isinstance(result, type_nested)
         assert len(result) == 5
-        for tensor1, tensor2, tensor in zip(tensors1, tensors2, result.tensors, strict=True):
+        for tensor1, tensor2, tensor in zip(tensors1, tensors2, result.tensors):
             assert_equal(tensor, tensor1 / tensor2)
 
         # Test 2: Divide nested tensors with tensor
@@ -337,14 +337,14 @@ class TestTANestedTensors:
         result = nested_tensors1 / tensor
         assert isinstance(result, type_nested)
         assert len(result) == 5
-        for tensor1, result_tensor in zip(tensors1, result.tensors, strict=True):
+        for tensor1, result_tensor in zip(tensors1, result.tensors):
             assert_equal(result_tensor, tensor1 / tensor)
 
         # Test 3: Divide nested tensors with number
         scalar_result = nested_tensors1 / 2.0
         assert isinstance(scalar_result, type_nested)
         assert len(scalar_result) == 5
-        for result_tensor, tensor1 in zip(scalar_result.tensors, tensors1, strict=True):
+        for result_tensor, tensor1 in zip(scalar_result.tensors, tensors1):
             assert_equal(result_tensor, tensor1 / 2.0)
 
     @pytest.mark.parametrize(
@@ -369,7 +369,7 @@ class TestTANestedTensors:
         results = nested_tensors1.clone()
         results.div_(nested_tensors2)
         assert len(nested_tensors1) == 5
-        for tensor1, tensor2, tensor in zip(tensors1, tensors2, results.tensors, strict=True):
+        for tensor1, tensor2, tensor in zip(tensors1, tensors2, results.tensors):
             assert_equal(tensor, tensor1 / tensor2)
 
         # Test 2: Divide nested tensors with tensor
@@ -378,7 +378,7 @@ class TestTANestedTensors:
         results = nested_tensors1.clone()
         results.div_(tensor)
         assert len(nested_tensors1) == 5
-        for tensor1, result_tensor in zip(tensors1, results.tensors, strict=True):
+        for tensor1, result_tensor in zip(tensors1, results.tensors):
             assert_equal(result_tensor, tensor1 / tensor)
 
         # Test 3: Divide nested tensors with number
@@ -393,7 +393,7 @@ class TestTANestedTensors:
             raise ValueError(f"Unsupported dtype {tensors1[0].dtype}")
         results.div_(number)
         assert len(nested_tensors1) == 5
-        for result_tensor, tensor1 in zip(results.tensors, tensors1, strict=True):
+        for result_tensor, tensor1 in zip(results.tensors, tensors1):
             assert_equal(result_tensor, tensor1 / number)
 
     @pytest.mark.parametrize(
@@ -418,7 +418,7 @@ class TestTANestedTensors:
         result = nested_tensors1 // nested_tensors2
         assert isinstance(result, type_nested)
         assert len(result) == 5
-        for tensor1, tensor2, tensor in zip(tensors1, tensors2, result.tensors, strict=True):
+        for tensor1, tensor2, tensor in zip(tensors1, tensors2, result.tensors):
             assert_equal(tensor, tensor1 // tensor2)
 
         # Test 2: Floor divide nested tensors with tensor
@@ -427,14 +427,14 @@ class TestTANestedTensors:
         result = nested_tensors1 // tensor
         assert isinstance(result, type_nested)
         assert len(result) == 5
-        for tensor1, result_tensor in zip(tensors1, result.tensors, strict=True):
+        for tensor1, result_tensor in zip(tensors1, result.tensors):
             assert_equal(result_tensor, tensor1 // tensor)
 
         # Test 3: Floor divide nested tensors with number
         scalar_result = nested_tensors1 // 2.0
         assert isinstance(scalar_result, type_nested)
         assert len(scalar_result) == 5
-        for result_tensor, tensor1 in zip(scalar_result.tensors, tensors1, strict=True):
+        for result_tensor, tensor1 in zip(scalar_result.tensors, tensors1):
             assert_equal(result_tensor, tensor1 // 2.0)
 
     @pytest.mark.parametrize(
@@ -459,7 +459,7 @@ class TestTANestedTensors:
         results = nested_tensors1.clone()
         results.floor_divide_(nested_tensors2)
         assert len(nested_tensors1) == 5
-        for tensor1, tensor2, tensor in zip(tensors1, tensors2, results.tensors, strict=True):
+        for tensor1, tensor2, tensor in zip(tensors1, tensors2, results.tensors):
             assert_equal(tensor, tensor1 // tensor2)
 
         # Test 2: Floor divide nested tensors with tensor
@@ -468,7 +468,7 @@ class TestTANestedTensors:
         results = nested_tensors1.clone()
         results.floor_divide_(tensor)
         assert len(nested_tensors1) == 5
-        for tensor1, result_tensor in zip(tensors1, results.tensors, strict=True):
+        for tensor1, result_tensor in zip(tensors1, results.tensors):
             assert_equal(result_tensor, tensor1 // tensor)
 
         # Test 3: Floor divide nested tensors with number
@@ -483,7 +483,7 @@ class TestTANestedTensors:
             raise ValueError(f"Unsupported dtype {tensors1[0].dtype}")
         results.floor_divide_(number)
         assert len(nested_tensors1) == 5
-        for result_tensor, tensor1 in zip(results.tensors, tensors1, strict=True):
+        for result_tensor, tensor1 in zip(results.tensors, tensors1):
             assert_equal(result_tensor, tensor1 // number)
 
     @pytest.mark.parametrize(
@@ -508,7 +508,7 @@ class TestTANestedTensors:
         result = nested_tensors1 % nested_tensors2
         assert isinstance(result, type_nested)
         assert len(result) == 5
-        for tensor1, tensor2, tensor in zip(tensors1, tensors2, result.tensors, strict=True):
+        for tensor1, tensor2, tensor in zip(tensors1, tensors2, result.tensors):
             assert_equal(tensor, tensor1 % tensor2)
 
         # Test 2: Remainder nested tensors with tensor
@@ -518,14 +518,14 @@ class TestTANestedTensors:
         result = nested_tensors1 % tensor
         assert isinstance(result, type_nested)
         assert len(result) == 5
-        for tensor1, result_tensor in zip(tensors1, result.tensors, strict=True):
+        for tensor1, result_tensor in zip(tensors1, result.tensors):
             assert_equal(result_tensor, tensor1 % tensor)
 
         # Test 3: Remainder nested tensors with number
         scalar_result = nested_tensors1 % 2.0
         assert isinstance(scalar_result, type_nested)
         assert len(scalar_result) == 5
-        for result_tensor, tensor1 in zip(scalar_result.tensors, tensors1, strict=True):
+        for result_tensor, tensor1 in zip(scalar_result.tensors, tensors1):
             assert_equal(result_tensor, tensor1 % 2.0)
 
     @pytest.mark.parametrize(
@@ -550,7 +550,7 @@ class TestTANestedTensors:
         results = nested_tensors1.clone()
         results.remainder_(nested_tensors2)
         assert len(nested_tensors1) == 5
-        for tensor1, tensor2, tensor in zip(tensors1, tensors2, results.tensors, strict=True):
+        for tensor1, tensor2, tensor in zip(tensors1, tensors2, results.tensors):
             assert_equal(tensor, tensor1 % tensor2)
 
         # Test 2: Remainder nested tensors with tensor
@@ -559,7 +559,7 @@ class TestTANestedTensors:
         results = nested_tensors1.clone()
         results.remainder_(tensor)
         assert len(nested_tensors1) == 5
-        for tensor1, result_tensor in zip(tensors1, results.tensors, strict=True):
+        for tensor1, result_tensor in zip(tensors1, results.tensors):
             assert_equal(result_tensor, tensor1 % tensor)
 
         # Test 3: Remainder nested tensors with number
@@ -574,7 +574,7 @@ class TestTANestedTensors:
             raise ValueError(f"Unsupported dtype {tensors1[0].dtype}")
         results.remainder_(number)
         assert len(nested_tensors1) == 5
-        for result_tensor, tensor1 in zip(results.tensors, tensors1, strict=True):
+        for result_tensor, tensor1 in zip(results.tensors, tensors1):
             assert_equal(result_tensor, tensor1 % number)
 
     @pytest.mark.parametrize(

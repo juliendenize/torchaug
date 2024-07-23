@@ -218,8 +218,10 @@ class TANestedTensors(ABC, Generic[T, BATCH_T]):
                         f"but got {type(other)}"
                     )
                 )
+            elif len(other.tensors) != len(self.tensors):
+                raise ValueError("The number of tensors must be the same")
 
-            return self.__class__([t1 + t2 for t1, t2 in zip(self.tensors, other.tensors, strict=True)])
+            return self.__class__([t1 + t2 for t1, t2 in zip(self.tensors, other.tensors)])
 
     def add_(self, other: Union[Self, T, Tensor, Number, _complex, torch.SymInt, torch.SymFloat]) -> Self:
         """Add a tensor or a scalar to the nested tensors in-place."""
@@ -235,8 +237,10 @@ class TANestedTensors(ABC, Generic[T, BATCH_T]):
                         f"but got {type(other)}"
                     )
                 )
+            elif len(other.tensors) != len(self.tensors):
+                raise ValueError("The number of tensors must be the same")
 
-            for t1, t2 in zip(self.tensors, other.tensors, strict=True):
+            for t1, t2 in zip(self.tensors, other.tensors):
                 t1.add_(t2)
             return self
 
@@ -252,8 +256,10 @@ class TANestedTensors(ABC, Generic[T, BATCH_T]):
                         f"but got {type(other)}"
                     )
                 )
+            elif len(other.tensors) != len(self.tensors):
+                raise ValueError("The number of tensors must be the same")
 
-            return self.__class__([t1.sub(t2) for t1, t2 in zip(self.tensors, other.tensors, strict=True)])
+            return self.__class__([t1.sub(t2) for t1, t2 in zip(self.tensors, other.tensors)])
 
     def sub_(self, other: Union[Self, T, Tensor, Number, _complex, torch.SymInt, torch.SymFloat]) -> Self:
         """Subtract a tensor or a scalar to the nested tensors in-place."""
@@ -269,8 +275,10 @@ class TANestedTensors(ABC, Generic[T, BATCH_T]):
                         f"but got {type(other)}"
                     )
                 )
+            elif len(other.tensors) != len(self.tensors):
+                raise ValueError("The number of tensors must be the same")
 
-            for t1, t2 in zip(self.tensors, other.tensors, strict=True):
+            for t1, t2 in zip(self.tensors, other.tensors):
                 t1.sub_(t2)
             return self
 
@@ -286,9 +294,11 @@ class TANestedTensors(ABC, Generic[T, BATCH_T]):
                         f"but got {type(other)}"
                     )
                 )
+            elif len(other.tensors) != len(self.tensors):
+                raise ValueError("The number of tensors must be the same")
 
             _assert_is_ta_nested_tensor(other)
-            return self.__class__([t1.mul(t2) for t1, t2 in zip(self.tensors, other.tensors, strict=True)])
+            return self.__class__([t1.mul(t2) for t1, t2 in zip(self.tensors, other.tensors)])
 
     def mul_(self, other: Union[Self, T, Tensor, Number, _complex, torch.SymInt, torch.SymFloat]) -> Self:
         """Multiply a tensor or a scalar to the nested tensors in-place."""
@@ -304,8 +314,10 @@ class TANestedTensors(ABC, Generic[T, BATCH_T]):
                         f"but got {type(other)}"
                     )
                 )
+            elif len(other.tensors) != len(self.tensors):
+                raise ValueError("The number of tensors must be the same")
 
-            for t1, t2 in zip(self.tensors, other.tensors, strict=True):
+            for t1, t2 in zip(self.tensors, other.tensors):
                 t1.mul_(t2)
             return self
 
@@ -321,8 +333,10 @@ class TANestedTensors(ABC, Generic[T, BATCH_T]):
                         f"but got {type(other)}"
                     )
                 )
+            elif len(other.tensors) != len(self.tensors):
+                raise ValueError("The number of tensors must be the same")
 
-            return self.__class__([t1.div(t2) for t1, t2 in zip(self.tensors, other.tensors, strict=True)])
+            return self.__class__([t1.div(t2) for t1, t2 in zip(self.tensors, other.tensors)])
 
     def div_(self, other: Union[Self, T, Tensor, Number, _complex, torch.SymInt, torch.SymFloat]) -> Self:
         """Divide the nested tensors by a tensor or a scalar in-place."""
@@ -338,8 +352,10 @@ class TANestedTensors(ABC, Generic[T, BATCH_T]):
                         f"but got {type(other)}"
                     )
                 )
+            elif len(other.tensors) != len(self.tensors):
+                raise ValueError("The number of tensors must be the same")
 
-            for t1, t2 in zip(self.tensors, other.tensors, strict=True):
+            for t1, t2 in zip(self.tensors, other.tensors):
                 t1.div_(t2)
             return self
 
@@ -355,8 +371,10 @@ class TANestedTensors(ABC, Generic[T, BATCH_T]):
                         f"but got {type(other)}"
                     )
                 )
+            elif len(other.tensors) != len(self.tensors):
+                raise ValueError("The number of tensors must be the same")
 
-            return self.__class__([t1.floor_divide(t2) for t1, t2 in zip(self.tensors, other.tensors, strict=True)])
+            return self.__class__([t1.floor_divide(t2) for t1, t2 in zip(self.tensors, other.tensors)])
 
     def floor_divide_(self, other: Union[Self, T, Tensor, Number, _complex, torch.SymInt, torch.SymFloat]) -> Self:
         """Floor divide the nested tensors by a tensor or a scalar in-place."""
@@ -372,8 +390,10 @@ class TANestedTensors(ABC, Generic[T, BATCH_T]):
                         f"but got {type(other)}"
                     )
                 )
+            elif len(other.tensors) != len(self.tensors):
+                raise ValueError("The number of tensors must be the same")
 
-            for t1, t2 in zip(self.tensors, other.tensors, strict=True):
+            for t1, t2 in zip(self.tensors, other.tensors):
                 t1.floor_divide_(t2)
             return self
 
@@ -389,8 +409,10 @@ class TANestedTensors(ABC, Generic[T, BATCH_T]):
                         f"but got {type(other)}"
                     )
                 )
+            elif len(other.tensors) != len(self.tensors):
+                raise ValueError("The number of tensors must be the same")
 
-            return self.__class__([t1.remainder(t2) for t1, t2 in zip(self.tensors, other.tensors, strict=True)])
+            return self.__class__([t1.remainder(t2) for t1, t2 in zip(self.tensors, other.tensors)])
 
     def remainder_(self, other: Union[Self, T, Tensor, Number, _complex]) -> Self:
         """Return the remainder of the nested tensors by a tensor or a scalar in-place."""
@@ -406,8 +428,10 @@ class TANestedTensors(ABC, Generic[T, BATCH_T]):
                         f"but got {type(other)}"
                     )
                 )
+            elif len(other.tensors) != len(self.tensors):
+                raise ValueError("The number of tensors must be the same")
 
-            for t1, t2 in zip(self.tensors, other.tensors, strict=True):
+            for t1, t2 in zip(self.tensors, other.tensors):
                 t1.remainder_(t2)
             return self
 
