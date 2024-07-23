@@ -128,7 +128,7 @@ class TestNestedToList:
             assert t is o
 
 
-class TestNestedToBatch():
+class TestNestedToBatch:
     @pytest.mark.parametrize(
         "make_input,type_nested,fn",
         [
