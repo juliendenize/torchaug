@@ -104,19 +104,13 @@ resized_crop_transform = RandomResizedCrop(..., batch_transform=True)
 
 Containers can be used to perform sequential transforms. [Compose](#torchaug.transforms.Compose) has the same behavior as [Torchvision's](#torchvision.transforms.v2.Compose).
 
-To make it easier to have a batch transform and avoid setting parameters for all transforms, Torchaug provides the [SequentialTransform](#torchaug.transforms.SequentialTransform) container which offers the ability to override the attributes of its children thanks to its `transforms_attributes_override` argument:
+To make it easier to have a batch transform and avoid setting parameters for all transforms, Torchaug provides the [SequentialTransform](#torchaug.transforms.SequentialTransform) container which offers the ability to override the attributes of its children thanks to its `transforms_attributes_override` kwargs arguments:
 ```python
 class SequentialTransform(Transform):
     def __init__(
         self,
         transforms: List[RandomApplyTransform],
-        transforms_attributes_override: Optional[Dict[str, Any]] = {
-            "inplace": True,
-            "batch_inplace": True,
-            "batch_transform": True,
-            "num_chunks": -1,
-            "permute_chunks": False,
-        },
+        **transforms_attributes_override
     ):
         ...
 ```

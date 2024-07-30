@@ -184,13 +184,32 @@ class SequentialTransform(Transform):
     """Sequentially apply a list of transforms.
 
     .. note::
-        By default this SequentialTransform makes all its transforms to be inplace, batch_inplace, and
-        batch_transform with unlimited chunks.
+        By default this SequentialTransform makes all its transforms to be inplace, batched inplace, and
+        batched transform with unlimited chunks. If you want to change this behavior, you can override the
+        default parameters by passing them as arguments. For example, if you want to make the transforms
+        non-inplace, you can do the following:
+
+        >>> transforms = SequentialTransform(
+        >>>     [
+        >>>         Normalize([0.5], [0.5]),
+        >>>         RandomColorJitter(),
+        >>>     ],
+        >>>     inplace=False,
+        >>>     batch_inplace=False,
+        >>> )
+
+        Passing `batch_transform=False` will make the transforms non-batched and not inplace.
 
     Args:
         transforms: A list of transforms.
-        transforms_attributes_override: A dictionary of parameters to override the default parameters
-            of the transforms if they exist. Useful to make transforms for batches.
+        transforms_attributes_override: Additional parameters to override the default parameters
+            of the transforms if they exist. Useful to make transforms for batches. The list of
+            parameters that can be overridden are:
+                - inplace: whether the transform is inplace or not.
+                - batch_inplace: whether the transform is inplace for batches or not.
+                - batch_transform: whether the transform is batched or not.
+                - num_chunks: number of chunks to split the input tensor.
+                - permute_chunks: whether to permute the chunks or not.
     """
 
     _receive_flatten_inputs = False
@@ -198,20 +217,27 @@ class SequentialTransform(Transform):
     def __init__(
         self,
         transforms: List[RandomApplyTransform],
-        transforms_attributes_override: Optional[Dict[str, Any]] = {
-            "inplace": True,
-            "batch_inplace": True,
-            "batch_transform": True,
-            "num_chunks": -1,
-            "permute_chunks": False,
-        },
+        **transforms_attributes_override: Dict[str, Any],
     ) -> None:
         super().__init__()
         _log_api_usage_once(self)
 
         _assert_list_of_modules(transforms)
 
-        self.transforms_attributes_override = transforms_attributes_override
+        base_override: Dict[str, Any] = {
+            "inplace": True,
+            "batch_inplace": True,
+            "batch_transform": True,
+            "num_chunks": -1,
+            "permute_chunks": False,
+        }
+        base_override.update(transforms_attributes_override)
+        if not base_override["batch_transform"]:
+            base_override["num_chunks"] = 1
+            base_override["permute_chunks"] = False
+            base_override["batch_inplace"] = False
+
+        self.transforms_attributes_override = base_override
 
         self._prepare_transforms(transforms)
 

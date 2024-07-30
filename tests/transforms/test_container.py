@@ -193,10 +193,10 @@ class TestSequentialTransform:
     def test_forward(self, batch):
         transform = transforms.SequentialTransform(
             [
-                transforms.RandomHorizontalFlip(p=1, batch_transform=batch),
-                transforms.RandomVerticalFlip(p=1, batch_transform=batch),
+                transforms.RandomHorizontalFlip(p=1),
+                transforms.RandomVerticalFlip(p=1),
             ],
-            None,
+            batch_transform=batch,
         )
 
         input = make_image() if not batch else make_batch_images()
@@ -219,18 +219,18 @@ class TestSequentialTransform:
                 transforms.Normalize([0.5], [0.5]),
                 transforms.RandomColorJitter(),
             ],
-            {
-                "inplace": inplace,
-                "batch_inplace": batch_inplace,
-                "batch_transform": batch_transform,
-                "num_chunks": num_chunks,
-            },
+            inplace=inplace,
+            batch_inplace=batch_inplace,
+            batch_transform=batch_transform,
+            num_chunks=num_chunks,
         )
 
         assert transform.transforms[0].inplace == inplace
-        assert transform.transforms[1].batch_inplace == batch_inplace
+        assert transform.transforms[1].batch_inplace == (batch_inplace if batch_transform else False)
         assert transform.transforms[1].batch_transform == batch_transform
-        assert transform.transforms[1].num_chunks == (num_chunks if 24 > num_chunks > -1 else 24)
+        assert transform.transforms[1].num_chunks == (
+            (num_chunks if 24 > num_chunks > -1 else 24) if batch_transform else 1
+        )
 
     def test_errors(self):
         with pytest.raises(TypeError, match="Collection should be a list of modules."):

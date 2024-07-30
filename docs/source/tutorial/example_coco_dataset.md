@@ -144,13 +144,11 @@ torchaug_transform = ta_transforms.SequentialTransform(
         ta_transforms.ColorJitter(0.4, 0.4, 0.4, 0.2),
         ta_transforms.RandomResizedCrop(224),
     ],
-    transforms_attributes_override={
-        "inplace": True,
-        "batch_inplace": True,
-        "batch_transform": True,
-        "num_chunks": 2,
-        "permute_chunks": False,
-    },
+    inplace=True,
+    batch_inplace=True,
+    batch_transform=True,
+    num_chunks=2,
+    permute_chunks=False,
 )
 
 batch = next(iter(torchaug_dataloader))
