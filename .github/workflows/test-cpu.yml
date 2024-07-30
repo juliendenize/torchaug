@@ -10,12 +10,14 @@ on:
       - "torchaug/**"
       - "tests/**"
       - requirements.txt
+      - .pre-commit-config.yaml
   pull_request:
     branches: [ "main" ]
     paths:
       - "torchaug/**"
       - "tests/**"
       - requirements.txt
+      - .pre-commit-config.yaml
 
 jobs:
   build:
