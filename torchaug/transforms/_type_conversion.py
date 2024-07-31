@@ -11,6 +11,7 @@ from typing import Any, Dict, List, Union
 
 import numpy as np
 import torch
+from PIL.Image import Image as PILImage
 
 from torchaug import ta_tensors
 
@@ -26,7 +27,7 @@ class ToImage(Transform):
     This transform does not support torchscript.
     """
 
-    _transformed_types = (is_pure_tensor, np.ndarray, ta_tensors.BatchImages)
+    _transformed_types = (is_pure_tensor, np.ndarray, ta_tensors.BatchImages, PILImage)
 
     def _transform(self, inpt: Union[torch.Tensor, np.ndarray], params: Dict[str, Any]) -> ta_tensors.Image:
         return F.to_image(inpt)
@@ -43,7 +44,7 @@ class ToBatchImages(Transform):
 
     def _transform(
         self,
-        inpt: Union[torch.Tensor, ta_tensors.Image, np.ndarray],
+        inpt: torch.Tensor,
         params: Dict[str, Any],
     ) -> ta_tensors.BatchImages:
         return F.to_batch_images(inpt)

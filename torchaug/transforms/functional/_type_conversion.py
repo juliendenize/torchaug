@@ -11,19 +11,25 @@ from typing import Any, List, Union
 
 import numpy as np
 import torch
+from PIL.Image import Image as PILImage
+from torchvision.transforms.v2.functional import pil_to_tensor
 
 from torchaug import ta_tensors
 
 
 @torch.jit.unused
-def to_image(inpt: Union[torch.Tensor, np.ndarray]) -> ta_tensors.Image:
+def to_image(inpt: Union[torch.Tensor, np.ndarray, PILImage]) -> ta_tensors.Image:
     """See :class:`~torchaug.transforms.ToImage` for details."""
-    if isinstance(inpt, np.ndarray):
+    if isinstance(inpt, (np.ndarray, PILImage)):
         output = torch.from_numpy(np.atleast_3d(inpt)).permute((2, 0, 1)).contiguous()
+    elif isinstance(inpt, PILImage):
+        output = pil_to_tensor(inpt)
     elif isinstance(inpt, torch.Tensor):
         output = inpt
     else:
-        raise TypeError(f"Input can either be a pure Tensor, a numpy array, but got {type(inpt)} instead.")
+        raise TypeError(
+            f"Input can either be a pure Tensor, a numpy array, a PIL image, but got {type(inpt)} instead."
+        )
     return ta_tensors.Image(output)
 
 

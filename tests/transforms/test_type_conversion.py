@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 import torch
+from torchvision.transforms import ToPILImage
 
 import torchaug.transforms as transforms
 import torchaug.transforms.functional as F
@@ -45,6 +46,14 @@ class TestToImage:
 
         if isinstance(input, torch.Tensor):
             assert output.data_ptr() == input.data_ptr()
+
+    @pytest.mark.parametrize("fn", [F.to_image, transform_cls_to_functional(transforms.ToImage)])
+    def test_image_functional_and_transform(self, fn):
+        input = ToPILImage()(torch.ones(3, 10, 10, dtype=torch.uint8))
+        output = fn(input)
+
+        assert isinstance(output, ta_tensors.Image)
+        assert F.get_size(output) == [10, 10]
 
     def test_2d_np_array(self):
         # Non-regression test for https://github.com/pytorch/vision/issues/8255
