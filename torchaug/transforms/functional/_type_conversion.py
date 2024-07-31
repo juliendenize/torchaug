@@ -20,7 +20,7 @@ from torchaug import ta_tensors
 @torch.jit.unused
 def to_image(inpt: Union[torch.Tensor, np.ndarray, PILImage]) -> ta_tensors.Image:
     """See :class:`~torchaug.transforms.ToImage` for details."""
-    if isinstance(inpt, (np.ndarray, PILImage)):
+    if isinstance(inpt, np.ndarray):
         output = torch.from_numpy(np.atleast_3d(inpt)).permute((2, 0, 1)).contiguous()
     elif isinstance(inpt, PILImage):
         output = pil_to_tensor(inpt)
