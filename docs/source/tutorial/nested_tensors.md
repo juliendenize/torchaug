@@ -2,7 +2,7 @@
 
 ## Introduction
 
-[TANestedTensors](#torchaug.ta_tensors.TANestedTensors) are data structures that store [Tensor](#torch.Tensor) and [TATensor](#torchaug.ta_tensors.TATensor).
+[TANestedTensors](#torchaug.ta_tensors.nested.TANestedTensors) are data structures that store [Tensor](#torch.Tensor) and [TATensor](#torchaug.ta_tensors.TATensor).
 
 They are meant to be used when it is impossible to resize the inputs to collate batches which is particularly interesting during inference for object detections, segmentations, ...
 
@@ -15,31 +15,31 @@ It is not particularly efficient compared to using directly a for loop on batche
 
 ## All the nested tensors
 
-We define several [TANestedTensors](#torchaug.ta_tensors.TANestedTensors) as describe in the next subsections.
+We define several [TANestedTensors](#torchaug.ta_tensors.nested.TANestedTensors) as describe in the next subsections.
 
 ### NestedTensors
 
-[NestedTensors](#torchaug.ta_tensors.NestedTensors) store [Tensor](#torch.Tensor).
+[NestedTensors](#torchaug.ta_tensors.nested.NestedTensors) store [Tensor](#torch.Tensor).
 
 ### ImageNestedTensors
 
-[ImageNestedTensors](#torchaug.ta_tensors.ImageNestedTensors) store [Image](#torchaug.ta_tensors.Image).
+[ImageNestedTensors](#torchaug.ta_tensors.nested.ImageNestedTensors) store [Image](#torchaug.ta_tensors.Image).
 
 ### VideoNestedTensors
 
-[VideoNestedTensors](#torchaug.ta_tensors.VideoNestedTensors) store [Video](#torchaug.ta_tensors.Video).
+[VideoNestedTensors](#torchaug.ta_tensors.nested.VideoNestedTensors) store [Video](#torchaug.ta_tensors.Video).
 
 ### BoundingBoxesNestedTensors
 
-[BoundingBoxesNestedTensors](#torchaug.ta_tensors.BoundingBoxesNestedTensors) store [BoundingBoxes](#torchaug.ta_tensors.BoundingBoxes).
+[BoundingBoxesNestedTensors](#torchaug.ta_tensors.nested.BoundingBoxesNestedTensors) store [BoundingBoxes](#torchaug.ta_tensors.BoundingBoxes).
 
 ### MaskNestedTensors
 
-[MaskNestedTensors](#torchaug.ta_tensors.MaskNestedTensors) store [Mask](#torchaug.ta_tensors.Mask).
+[MaskNestedTensors](#torchaug.ta_tensors.nested.MaskNestedTensors) store [Mask](#torchaug.ta_tensors.Mask).
 
 ### LabelsNestedTensors
 
-[LabelsNestedTensors](#torchaug.ta_tensors.LabelsNestedTensors) store [Labels](#torchaug.ta_tensors.Labels).
+[LabelsNestedTensors](#torchaug.ta_tensors.nested.LabelsNestedTensors) store [Labels](#torchaug.ta_tensors.Labels).
 
 
 ## How NestedTensors are used
@@ -56,7 +56,7 @@ Torchaug provides also transforms to convert the nested tensors to batches when 
 
 ### In your code
 
-To use [TANestedTensors](#torchaug.ta_tensors.TANestedTensors), you can simply import the classes and instantiate them:
+To use [TANestedTensors](#torchaug.ta_tensors.nested.TANestedTensors), you can simply import the classes and instantiate them:
 
 ```python
 from torchaug.ta_tensors import NestedImages, Image
@@ -68,7 +68,7 @@ images = [
 nested_images = NestedImages(images)
 ```
 
-To help you to collate [TANestedTensors](#torchaug.ta_tensors.TANestedTensors) in batches, torchaug provides a [default_nested_collate](#torchaug.data.dataloader.default_nested_collate) to use with [DataLoader](#torch.utils.data.DataLoader):
+To help you to collate [TANestedTensors](#torchaug.ta_tensors.nested.TANestedTensors) in batches, torchaug provides a [default_nested_collate](#torchaug.data.dataloader.default_nested_collate) to use with [DataLoader](#torch.utils.data.DataLoader):
 
 ```python
 import torch
