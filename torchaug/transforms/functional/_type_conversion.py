@@ -1,7 +1,9 @@
-# @Copyright: CEA-LIST/DIASI/SIALV/ (2023-    )
-# @Author: CEA-LIST/DIASI/SIALV/ <julien.denize@cea.fr>
-# @License: CECILL-C
-#
+# =======================================================
+# Copyright: CEA-LIST/DIASI/SIALV/
+# Author : CEA-LIST/DIASI/SIALV/ <julien.denize@cea.fr>
+# License: CECILL-C
+# =======================================================
+
 # Code partially based on Torchvision (BSD 3-Clause License), available at:
 #   https://github.com/pytorch/vision
 
