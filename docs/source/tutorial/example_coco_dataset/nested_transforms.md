@@ -1,4 +1,4 @@
-# COCO dataset example: nested transforms
+# COCO dataset example using nested tensors
 
 ## Introduction
 

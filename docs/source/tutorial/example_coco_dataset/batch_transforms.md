@@ -1,4 +1,4 @@
-# COCO dataset example: batch transforms
+# COCO dataset example using batch tensors
 
 ## Introduction
 
