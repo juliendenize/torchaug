@@ -1,8 +1,16 @@
-# COCO dataset example
+# COCO dataset example: batch transforms
+
+## Introduction
+
+In this example, we will show you how to perform transformations for object detection using **Torchaug** through **batch tensors** that stacks images, boxes and masks. This can only be used when images are of the same shape which requires former resizing.
+
+We also make qualitative comparison with Torchvision that cannot handle batch transforms or nested tensors natively. However, **Torchaug follows Torchvision's implementations** which lets you chose the transform library of your choice.
 
 ## Set Up
 
 ### Imports
+
+Here we import all the required modules for the notebook.
 
 ```python
 import pathlib
@@ -25,6 +33,8 @@ from torchaug.data.dataset import wrap_dataset_for_transforms_v2
 ```
 
 ### Utils functions
+
+Here we define utilities functions for plotting and handling various data structure.
 
 ```python
 #### visualization function tools
@@ -102,6 +112,7 @@ def uncollate_batch(batch):
 
 ### Dataset creations
 
+Configurate paths for the COCO dataset.
 ```python
 ROOT = pathlib.Path("your_path") / "coco"  # replace by your path
 IMAGES_PATH = str(ROOT / "val2017")
@@ -110,14 +121,15 @@ ANNOTATIONS_PATH = str(ROOT / "annotations" / "instances_val2017.json")
 
 #### Torchaug
 
+We define the dataloaders for **batched tensors** that requires resizing in the dataset in order to stack the tensors:
+
 ```python
-torchaug_dataset = datasets.CocoDetection(IMAGES_PATH, ANNOTATIONS_PATH, transforms=ta_transforms.Resize([224, 224]))
-torchaug_dataset = wrap_dataset_for_transforms_v2(torchaug_dataset, target_keys=("boxes", "labels", "masks"))
-torchaug_dataloader = DataLoader(torchaug_dataset, batch_size=5, collate_fn=default_collate)
+torchaug_batch_dataset = datasets.CocoDetection(IMAGES_PATH, ANNOTATIONS_PATH, transforms=ta_transforms.Resize([224, 224]))
+torchaug_batch_dataset = wrap_dataset_for_transforms_v2(torchaug_batch_dataset, target_keys=("boxes", "labels", "masks"))
+torchaug_batch_dataloader = DataLoader(torchaug_batch_dataset, batch_size=5, collate_fn=default_collate)
 ```
 
 #### Torchvision
-
 ```python
 torchvision_dataset = datasets.CocoDetection(
     IMAGES_PATH, ANNOTATIONS_PATH, transforms=tv_transforms.Resize([224, 224])
@@ -132,6 +144,10 @@ seed = 203  # set seed for reproducibility
 ```
 
 #### Torchaug
+We define the following transformations:
+- Horizontal flip
+- Color jittering
+- RandomResizedCrop
 
 ```python
 torch.manual_seed(seed)
@@ -151,7 +167,7 @@ torchaug_transform = ta_transforms.SequentialTransform(
     permute_chunks=False,
 )
 
-batch = next(iter(torchaug_dataloader))
+batch = next(iter(torchaug_batch_dataloader))
 torchaug_transformed_batch = torchaug_transform(batch)
 torchaug_transformed_batch_uncollated = uncollate_batch(torchaug_transformed_batch)
 sanitized_torchaug_batch = ta_transforms.SanitizeBoundingBoxes()(torchaug_transformed_batch)
@@ -159,13 +175,14 @@ sanitized_torchaug_batch_uncollated = uncollate_batch(sanitized_torchaug_batch)
 ```
 
 #### Torchvision
+To perform the same random transforms as Torchaug we override the sampling of parameters for the data augmentations.
 
 ```python
 torch.manual_seed(seed)
 random.seed(seed)
 np.random.seed(seed)
 
-batch = next(iter(torchaug_dataloader))
+batch = next(iter(torchaug_batch_dataloader))
 indices_flip = torchaug_transform.transforms[0]._get_indices_transform(5, "cpu")
 params_color = torchaug_transform.transforms[1]._get_params(
     batch[0], 2, (torch.tensor([0, 1, 2]), torch.tensor([3, 4]))
@@ -197,11 +214,12 @@ sanitized_torchvision_batch = [tv_transforms.SanitizeBoundingBoxes()(img) for im
 ## Visualization
 
 ### Torchaug
+Here we qualitatively visualize the results of Torchaug after transformations. Sanitized batch removed boxes and masks that are not valid.
 
 ```python
 plot(
     [
-        [torchaug_dataset[i] for i in range(5)],
+        [torchaug_batch_dataset[i] for i in range(5)],
         torchaug_transformed_batch_uncollated,
         sanitized_torchaug_batch_uncollated,
     ],
@@ -210,17 +228,9 @@ plot(
 ```
 ![](_static_example_coco/torchaug.png)
 
-### Torchvision
-
-```python
-plot(
-    [[torchvision_dataset[i] for i in range(5)], torchvision_batch, sanitized_torchvision_batch],
-    row_title=["torchvision dataset", "torchvision transformed", "torchvision sanitized"],
-)
-```
-![](_static_example_coco/torchvision.png)
 
 ### Torchaug and Torchvision
+
 
 ```python
 plot(
@@ -234,3 +244,5 @@ plot(
 ```
 ![](_static_example_coco/torchaug_vs_torchvision_transformed.png)
 ![](_static_example_coco/torchaug_vs_torchvision_sanitized.png)
+
+**As we can see Torchaug provides the same augmentations as Torchvision which allows you to switch between frameworks !**
