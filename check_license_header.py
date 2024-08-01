@@ -1,8 +1,8 @@
-# =======================================================
+# ==================================
 # Copyright: CEA-LIST/DIASI/SIALV/
-# Author : CEA-LIST/DIASI/SIALV/ <julien.denize@cea.fr>
+# Author : Torchaug Developers
 # License: CECILL-C
-# =======================================================
+# ==================================
 
 """Check if all files contain the required license header."""
 
@@ -13,11 +13,11 @@ from pathlib import Path
 FILE_PATH = Path(os.path.abspath(__file__))
 
 # Header for each file type
-HEADER = """# =======================================================
+HEADER = """# ==================================
 # Copyright: CEA-LIST/DIASI/SIALV/
-# Author : CEA-LIST/DIASI/SIALV/ <julien.denize@cea.fr>
+# Author : Torchaug Developers
 # License: CECILL-C
-# =======================================================
+# ==================================
 \n"""
 
 

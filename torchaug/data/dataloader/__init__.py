@@ -1,8 +1,8 @@
-# =======================================================
+# ==================================
 # Copyright: CEA-LIST/DIASI/SIALV/
-# Author : CEA-LIST/DIASI/SIALV/ <julien.denize@cea.fr>
+# Author : Torchaug Developers
 # License: CECILL-C
-# =======================================================
+# ==================================
 
 # ruff: noqa: D104
 # ruff: noqa: F401

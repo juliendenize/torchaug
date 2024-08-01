@@ -1,8 +1,8 @@
-# =======================================================
+# ==================================
 # Copyright: CEA-LIST/DIASI/SIALV/
-# Author : CEA-LIST/DIASI/SIALV/ <julien.denize@cea.fr>
+# Author : Torchaug Developers
 # License: CECILL-C
-# =======================================================
+# ==================================
 
 from ._batch_bounding_boxes import BatchBoundingBoxes
 from ._batch_images import BatchImages

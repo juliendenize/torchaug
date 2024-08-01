@@ -1,8 +1,8 @@
-# =======================================================
+# ==================================
 # Copyright: CEA-LIST/DIASI/SIALV/
-# Author : CEA-LIST/DIASI/SIALV/ <julien.denize@cea.fr>
+# Author : Torchaug Developers
 # License: CECILL-C
-# =======================================================
+# ==================================
 
 from __future__ import annotations
 

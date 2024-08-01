@@ -1,8 +1,8 @@
-# =======================================================
+# ==================================
 # Copyright: CEA-LIST/DIASI/SIALV/
-# Author : CEA-LIST/DIASI/SIALV/ <julien.denize@cea.fr>
+# Author : Torchaug Developers
 # License: CECILL-C
-# =======================================================
+# ==================================
 
 # Code partially based on Pytorch, available at:
 #   https://github.com/pytorch/pytorch
