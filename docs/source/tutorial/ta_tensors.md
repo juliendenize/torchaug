@@ -1,10 +1,12 @@
 # TA Tensors Tutorial
 
-## All the TATensors
+## Introduction
 
 Torchaug tensors are a subclass of [Tensor](#torch.Tensor). They are largely based on the [torchvision tensors](#torchvision.tv_tensors.TVTensor). Their use is described in detail in [this section](#how-tatensors-are-used).
 
 Therefore a [TATensor](#torchaug.ta_tensors.TATensor) can be used in torch operations just like any [Tensor](#torch.Tensor) but some operations need to be considered carefully We recommand that you first have a look at [Torchvision's documentation](https://pytorch.org/vision/stable/auto_examples/transforms/plot_tv_tensors.html#what-can-i-do-with-a-tvtensor).
+
+## All the TATensors
 
 We define several [TATensor](#torchaug.ta_tensors.TATensor) as describe in the next subsections.
 
@@ -97,10 +99,9 @@ To use [TA tensors](#torchaug.ta_tensors.TATensor), you can simply import the cl
 from torchaug.ta_tensors import Image
 
 image = Image(torch.randint(0, 256, (3, 224, 224), dtype=torch.uint8))
-assert isinstance(image, Image)
 ```
 
-To help you with collate TATensors and form batches, torchaug provides a [default_collate](#torchaug.data.dataloader.default_collate) to use with [DataLoader](#torch.utils.data.DataLoader).
+To help you to collate TATensors in batches, torchaug provides a [default_collate](#torchaug.data.dataloader.default_collate) to use with [DataLoader](#torch.utils.data.DataLoader).
 
 ```python
 import torch

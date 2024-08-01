@@ -8,4 +8,5 @@ In this section we provide several tutorial to understand how to use Torchaug. A
 
     transforms
     ta_tensors
+    nested_tensors
     example_coco_dataset
