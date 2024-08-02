@@ -10,6 +10,7 @@ TA Nested Tensors
     TANestedTensors
     ImageNestedTensors
     LabelsNestedTensors
+    BoundingBoxesNestedTensors
     MaskNestedTensors
     NestedTensors
     VideoNestedTensors
