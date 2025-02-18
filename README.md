@@ -1,6 +1,6 @@
 **Efficient vision data augmentations for CPU/GPU per-sample/batched data.**
 
-***Under active development, subject to API change***
+***This repository is now archived as I work on other projects. I do not plan to reopen it any time soon.***
 
 [![PyPI python](https://img.shields.io/pypi/pyversions/torchaug)](https://pypi.org/project/torchaug)
 [![PyPI version](https://badge.fury.io/py/torchaug.svg)](https://pypi.org/project/torchaug)
